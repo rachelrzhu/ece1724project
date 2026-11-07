@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Foundation profiles, not a complete authentication schema. Better Auth
+// records and recipe-domain models will be added with those features.
+model User {
+  id        String       @id(map: "users_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String       @unique(map: "users_email_unique")
+  name      String?
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  files     StoredFile[]
+
+  @@map("users")
+}
+
+// Mirrors existing metadata; bytes remain in private Blob storage.
+// The database's files_size_positive CHECK is retained in migration SQL.
+model StoredFile {
+  id          String   @id(map: "files_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId     String   @map("owner_id") @db.Uuid
+  name        String
+  pathname    String   @unique(map: "files_pathname_unique")
+  contentType String   @map("content_type")
+  size        Int
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "files_owner_id_users_id_fk")
+
+  @@index([ownerId], map: "files_owner_id_idx")
+  @@map("files")
+}

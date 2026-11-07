@@ -1,145 +1,97 @@
 #!/usr/bin/env node
 
-// Uses only Node built-ins so this works before npm packages are installed.
+// Bootstrap uses only Node built-ins so it works before dependencies exist.
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkExistingServer, parseOptions, prepareEnvironment } from "./setup-lib.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const nodeDownload = "https://nodejs.org/en/download";
+const windows = process.platform === "win32";
 let activeChild;
 let interrupted = false;
 
-for (const signal of ["SIGINT", "SIGTERM"]) {
+for (const [signal, exitCode] of [["SIGINT", 130], ["SIGTERM", 143]]) {
   process.on(signal, () => {
     interrupted = true;
+    process.exitCode = exitCode;
     activeChild?.kill(signal);
   });
 }
 
 function run(command, args = [], options = {}) {
   return new Promise((resolveRun, reject) => {
-    activeChild = spawn(command, args, {
-      cwd: projectRoot,
-      stdio: "inherit",
-      ...options,
-    });
+    activeChild = spawn(command, args, { cwd: projectRoot, stdio: "inherit", ...options });
     activeChild.once("error", reject);
-    activeChild.once("close", (code) => {
+    activeChild.once("close", (code, signal) => {
       activeChild = undefined;
-      resolveRun(code);
+      resolveRun(signal ? 1 : code);
     });
   });
-}
-
-function parseOptions(args) {
-  const options = { installOnly: false, port: undefined, help: false };
-  for (let index = 0; index < args.length; index++) {
-    const arg = args[index];
-    if (arg === "--install-only") options.installOnly = true;
-    else if (arg === "--help" || arg === "-h") options.help = true;
-    else if (arg === "--port") {
-      const value = args[++index];
-      if (!/^\d{1,5}$/.test(value ?? "") || Number(value) < 1024 || Number(value) > 65535) {
-        throw new Error("Use --port followed by a number from 1024 to 65535. Example: npm run setup -- --port 3002");
-      }
-      options.port = value;
-    } else {
-      throw new Error(`Unknown option: ${arg}. Run npm run setup -- --help for available options.`);
-    }
-  }
-  return options;
-}
-
-function checkExistingServer() {
-  const lockPath = join(projectRoot, ".next", "dev", "lock");
-  if (!existsSync(lockPath)) return;
-
-  let pid;
-  try {
-    pid = JSON.parse(readFileSync(lockPath, "utf8")).pid;
-  } catch {
-    throw new Error("A Next.js server lock exists. Stop this project's running server with Ctrl+C before setup. See README.md if a previous server crashed.");
-  }
-  if (!Number.isInteger(pid) || pid <= 0) {
-    throw new Error("A Next.js server lock exists. See the 'Server already running' instructions in README.md.");
-  }
-
-  try {
-    process.kill(pid, 0); // Check only; do not stop another process.
-  } catch (error) {
-    if (error.code === "ESRCH") return; // Stale metadata; Next.js can reacquire its lock.
-    throw new Error("Cannot check the existing development server. Stop it before running setup.");
-  }
-  throw new Error("This project's server is already running. Use its browser page, or press Ctrl+C in its terminal before running setup again.");
 }
 
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   if (options.help) {
-    console.log(`ECE1724 local setup
+    console.log(`ECE1724 Recipe App setup
 
-npm run setup                       Install packages and start the app
-npm run setup -- --install-only      Install packages without starting
-npm run setup -- --port 3002         Start on a specific port
+npm run setup                       Install/configure and start the app
+npm run setup -- --install-only      Install/configure without starting
+npm run setup -- --port 3002         Request a specific port
 
-Requires Node.js 24 with npm. No database credentials are needed for Hello world.
-Next.js serves the frontend and server-side code together in one process tree.`);
+Requires Node.js 24 with npm. Preserves existing .env.local values.
+Generates Prisma Client and a missing local auth secret; never applies migrations.
+Next.js serves frontend and server code together. Cloud credentials are optional
+for the placeholder; configure them before using database/storage features.`);
     return;
   }
 
-  console.log("\nECE1724 - local development setup\n");
+  console.log("\nECE1724 Recipe App — local setup\n");
   if (Number(process.versions.node.split(".")[0]) !== 24) {
-    throw new Error(`This project uses Node.js 24. You have ${process.version}. Install version 24 from ${nodeDownload}, then reopen your terminal and try again.`);
+    throw new Error(`Use Node.js 24; this terminal has ${process.version}. Install/select Node 24, reopen the terminal, and retry. https://nodejs.org/en/download`);
   }
-
-  for (const file of ["package.json", "package-lock.json"]) {
-    if (!existsSync(join(projectRoot, file))) {
-      throw new Error(`Missing ${file}. Download and extract the complete project folder before running setup.`);
-    }
+  for (const file of ["package.json", "package-lock.json", ".env.example", "prisma/schema.prisma"]) {
+    if (!existsSync(join(projectRoot, file))) throw new Error(`Missing ${file}. Download/extract the complete repository before setup.`);
   }
-
-  const windows = process.platform === "win32";
-  // On Windows, npm.cmd must run through a shell. The command is a fixed string.
   const npmVersion = windows
     ? spawnSync("npm --version", { shell: true, encoding: "utf8", cwd: projectRoot })
     : spawnSync("npm", ["--version"], { encoding: "utf8", cwd: projectRoot });
   if (npmVersion.error || npmVersion.status !== 0) {
-    throw new Error(`npm was not found. Reinstall Node.js 24 with npm from ${nodeDownload} and reopen your terminal.`);
+    throw new Error("npm was not found. Reinstall Node.js 24 with npm, then reopen the terminal.");
   }
 
-  checkExistingServer();
-  console.log(`1/2  Installing the project's packages with Node ${process.version} and npm ${npmVersion.stdout.trim()}.`);
-  console.log("Internet is required. This may take a few minutes on the first run.");
-  console.log("Existing .env.local credentials will be left untouched.\n");
-
+  checkExistingServer(projectRoot);
+  console.log(`1/4 Installing locked dependencies with Node ${process.version} and npm ${npmVersion.stdout.trim()}.`);
+  console.log("Prisma Client generation runs during installation. Internet access is required.\n");
+  // Windows needs a shell for npm.cmd. This is a fixed command, without user input.
   const installCode = windows
     ? await run("npm ci --include=dev --no-fund --no-audit", [], { shell: true })
     : await run("npm", ["ci", "--include=dev", "--no-fund", "--no-audit"]);
   if (interrupted) return;
-  if (installCode !== 0) {
-    throw new Error("Package installation failed. Check your internet connection and the error above, then run setup again. If it still fails, share that error with your teammate.");
-  }
+  if (installCode !== 0) throw new Error("Installation/client generation failed. Check the error above and your network connection, then retry. Dependency versions were not changed.");
+
+  console.log("\n2/4 Preparing local environment.");
+  const envResult = prepareEnvironment(projectRoot, options.port);
+  console.log(envResult.created ? "Created .env.local with private file permissions and a local auth secret." : `Preserved existing values; added ${envResult.added.length} missing environment keys.`);
+  console.log("No database migrations or cloud writes are performed.");
+
+  console.log("\n3/4 Validating configured environment values.");
+  const checkCode = await run(process.execPath, [join(projectRoot, "node_modules/tsx/dist/cli.mjs"), join(projectRoot, "scripts/check-env.ts")]);
+  if (interrupted) return;
+  if (checkCode !== 0) throw new Error("The environment check could not complete. Read the error above and correct any named keys in .env.local, then retry. Existing values were preserved.");
 
   if (options.installOnly) {
-    console.log("\nSetup complete. Run npm run dev when you are ready to start the app.");
+    console.log("\nSetup complete. Run npm run dev when ready. Use npm run storage:check to test cloud connectivity.");
     return;
   }
 
-  console.log("\n2/2  Starting the app (frontend and Next.js server together).");
-  console.log("Wait for Ready, then open the Local address printed below in your browser.");
-  console.log("You should see Hello world. Keep this terminal open; press Ctrl+C to stop.\n");
-
-  const args = [join(projectRoot, "node_modules", "next", "dist", "bin", "next"), "dev", "--hostname", "127.0.0.1"];
-  // Without an explicit port, Next.js selects the next free port if 3000 is busy.
+  console.log("\n4/4 Starting Next.js (frontend and server together).");
+  console.log("Open the Local address printed below. Keep this terminal open; Ctrl+C stops the app.\n");
+  const args = [join(projectRoot, "node_modules/next/dist/bin/next"), "dev", "--hostname", "localhost"];
   if (options.port) args.push("--port", options.port);
-  const serverCode = await run(process.execPath, args, {
-    env: { ...process.env, NODE_ENV: "development" },
-  });
-  if (!interrupted && serverCode !== 0) {
-    throw new Error("The app could not start. Check the error above. If the port is busy, try npm run setup -- --port 3002. If this folder already has a running server, stop it with Ctrl+C first.");
-  }
+  const code = await run(process.execPath, args, { env: { ...process.env, NODE_ENV: "development" } });
+  if (!interrupted && code !== 0) throw new Error("Next.js could not start. Read the error above; check the port or another server running in this checkout.");
 }
 
 main().catch((error) => {
