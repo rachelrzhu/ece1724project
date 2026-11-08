@@ -4,6 +4,7 @@
 
 ## 1. Motivation
 
+Recipes usually list ingredient amounts for a fixed number of servings. When someone wants to cook for a different number of people, they must recalculate those amounts themselves. They may also need to make a smaller batch because they have a limited amount of an ingredient. Manual calculations can introduce errors, while keeping recipes in browser bookmarks and personal notes makes changes difficult to track. People with dietary preferences or restrictions may also find it difficult to identify suitable recipes when ingredient information is incomplete or inconsistently written.
 
 We propose a recipe-sharing application where users can create, browse, and save recipes. Its main feature will automatically adjust ingredient quantities based on either the desired number of servings or the available amount of one selected ingredient. For example, a user could change a four-serving recipe to two servings, or halve a recipe that requires 400 g of flour when they have only 200 g. Users can bookmark recipes, with editable personal copies and dietary filtering planned as later features.
 
