@@ -4,6 +4,8 @@ Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeS
 
 See the [system architecture](docs/architecture.md), [requirements](docs/requirements.md), and [database workflow](prisma/README.md) for implementation details and status.
 
+For safe releases, use **dev → preprod → main (prod)**. See the [deployment guide](docs/deployment.md) for branches, Vercel settings, separate credentials, and rollback.
+
 ## First-time setup (no web development experience needed)
 
 ### 1. Install Node.js 24
