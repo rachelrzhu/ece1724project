@@ -8,10 +8,10 @@ vi.mock("server-only", () => ({}));
 function setup(userId: string | null = ownerId) {
   const transaction = {
     storedFile: { findFirst: vi.fn().mockResolvedValue(null) },
-    recipe: { create: vi.fn().mockResolvedValue({ id: recipeId }) },
+    recipe: { create: vi.fn().mockResolvedValue({ id: recipeId }), findFirst: vi.fn().mockResolvedValue(null), update: vi.fn().mockResolvedValue({ id: recipeId }) },
   };
   const client = {
-    recipe: { findFirst: vi.fn().mockResolvedValue(null) },
+    recipe: { findFirst: vi.fn().mockResolvedValue(null), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
     $transaction: vi.fn(async (callback) => callback(transaction)),
   };
   const database = vi.fn(() => client as unknown as PrismaClient);
@@ -89,5 +89,64 @@ describe("recipe service boundaries", () => {
     const selection = client.recipe.findFirst.mock.calls[0][0].select;
     expect(selection).not.toHaveProperty("cover");
     expect(selection).not.toHaveProperty("author");
+  });
+
+  it("requires a session for listing, editing, and deleting", async () => {
+    const { service, database } = setup(null);
+    await expect(service.listOwn()).rejects.toBeInstanceOf(RecipeAccessError);
+    await expect(service.update(recipeId, recipeInput())).rejects.toBeInstanceOf(RecipeAccessError);
+    await expect(service.remove(recipeId)).rejects.toBeInstanceOf(RecipeAccessError);
+    expect(database).not.toHaveBeenCalled();
+  });
+
+  it("lists only the session owner's recipes with a bounded result count", async () => {
+    const { service, client } = setup();
+    await service.listOwn();
+    expect(client.recipe.findMany.mock.calls[0][0]).toMatchObject({ where: { authorId: ownerId }, take: 50 });
+  });
+
+  it("rejects invalid edits and IDs before touching the database", async () => {
+    const { service, database } = setup();
+    await expect(service.update(recipeId, { ...recipeInput(), baseServings: 0 })).rejects.toThrow();
+    await expect(service.update(recipeId, { ...recipeInput(), authorId: otherUserId })).rejects.toThrow();
+    await expect(service.update("not-an-id", recipeInput())).rejects.toThrow();
+    await expect(service.remove("not-an-id")).rejects.toThrow();
+    expect(database).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unavailable cover before replacing any saved children", async () => {
+    const { service, transaction } = setup();
+    transaction.recipe.findFirst.mockResolvedValue({ id: recipeId });
+    await expect(service.update(recipeId, { ...recipeInput(), coverFileId: coverId })).rejects.toBeInstanceOf(RecipeCoverError);
+    expect(transaction.recipe.update).not.toHaveBeenCalled();
+  });
+
+  it("does not edit an inaccessible recipe or inspect its cover", async () => {
+    const { service, transaction } = setup(otherUserId);
+    await expect(service.update(recipeId, { ...recipeInput(), coverFileId: coverId })).resolves.toBeNull();
+    expect(transaction.recipe.findFirst.mock.calls[0][0].where).toEqual({ id: recipeId, authorId: otherUserId });
+    expect(transaction.recipe.update).not.toHaveBeenCalled();
+    expect(transaction.storedFile.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("replaces ordered children inside the edit transaction and retains an eligible current cover", async () => {
+    const { service, transaction, client } = setup();
+    transaction.recipe.findFirst.mockResolvedValue({ id: recipeId });
+    transaction.storedFile.findFirst.mockResolvedValue({ id: coverId });
+    await service.update(recipeId, { ...recipeInput(), coverFileId: coverId });
+    const { where, data } = transaction.recipe.update.mock.calls[0][0];
+    expect(where).toEqual({ id: recipeId, authorId: ownerId });
+    expect(data.ingredients).toMatchObject({ deleteMany: {}, create: [{ position: 0, canonicalName: "flour" }] });
+    expect(data.steps).toMatchObject({ deleteMany: {}, create: [{ position: 0 }] });
+    expect(client.$transaction).toHaveBeenCalledOnce();
+    expect(transaction.storedFile.findFirst.mock.calls[0][0].where.OR).toEqual([{ coverOf: { is: null } }, { coverOf: { is: { id: recipeId } } }]);
+  });
+
+  it("deletes only a recipe belonging to the session owner", async () => {
+    const { service, client } = setup(otherUserId);
+    await expect(service.remove(recipeId)).resolves.toBe(false);
+    expect(client.recipe.deleteMany.mock.calls[0][0].where).toEqual({ id: recipeId, authorId: otherUserId });
+    client.recipe.deleteMany.mockResolvedValue({ count: 1 });
+    await expect(service.remove(recipeId)).resolves.toBe(true);
   });
 });
