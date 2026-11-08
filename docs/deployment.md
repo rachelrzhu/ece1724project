@@ -31,7 +31,7 @@ In the existing **ece1724project** project:
 4. Leave Preview deployment protection enabled. Changing credentials requires a new deployment.
 5. For an additional manual release gate, disable **Auto-assign Custom Production Domains** under Production Branch Tracking. New production builds then need explicit promotion. This is optional; do not promote a Preview build that was built with development credentials.
 
-The GitHub **Production** environment is restricted to `main`. Vercel's own branch/domain settings still determine where traffic goes; a GitHub environment alone does not configure Vercel.
+GitHub branch protection controls merges into `main`. Vercel's own branch/domain settings determine where traffic goes; creating a GitHub environment alone does not configure Vercel.
 
 ## Isolate data as well as pages
 
