@@ -9,7 +9,18 @@
 * 🟢 You can import this file directly.
 */
 
+export const RecipeVisibility = {
+  PRIVATE: 'PRIVATE',
+  PUBLIC: 'PUBLIC'
+} as const
+
+export type RecipeVisibility = (typeof RecipeVisibility)[keyof typeof RecipeVisibility]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const RecipeDifficulty = {
+  EASY: 'EASY',
+  MEDIUM: 'MEDIUM',
+  HARD: 'HARD'
+} as const
+
+export type RecipeDifficulty = (typeof RecipeDifficulty)[keyof typeof RecipeDifficulty]

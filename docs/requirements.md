@@ -2,7 +2,7 @@
 
 
 
-Related documents: [proposal](proposal.md), [architecture decision](architecture.md), [setup review](setup-review.md).
+Related documents: [proposal](proposal.md), [architecture](architecture.md), [database workflow](../prisma/README.md).
 
 ## Product goal and ownership
 
@@ -70,9 +70,9 @@ The [official handout](https://www.eecg.utoronto.ca/~cying/courses/ece1724-web/p
 
 | Area | Planned evidence | Current status |
 | --- | --- | --- |
-| Required frontend/server stack | Responsive recipe views; Server Component reads, actions, and routes | Framework/components exist; recipe workflows absent. |
-| Relational persistence | Schema/migrations and database-backed recipe workflow | Users/files tables reachable; recipe models absent. |
-| Cloud file handling | Real photo upload, record association, authorized delivery | Helpers tested; live connectivity passes; browser workflow absent. |
+| Required frontend/server stack | Responsive recipe views; Server Component reads, actions, and routes | Framework, HeroUI styles, and internal recipe services exist; recipe interfaces absent. |
+| Relational persistence | Schema/migrations and database-backed recipe workflow | Recipe models/migrations and live Prisma operations verified in a disposable schema; application database adoption remains pending. |
+| Cloud file handling | Real photo upload, record association, authorized delivery | Internal image validation/upload/owner-read services and a live private Blob round trip pass; browser upload and recipe visibility-aware delivery remain planned. |
 | Advanced feature 1 | Session flows and two-user access-control demonstration | Better Auth absent. |
 | Advanced feature 2 | Shared scaling controls, selectors, mode changes, reset/undo, state tests | Engine/store absent. |
 
@@ -87,7 +87,7 @@ Items are local planning records, not published GitHub issues. Each implementati
 | 01 / PLAN-01 | Nov 6–8 | Confirm monolith, ORM, media policy, and scope; resolve proposal draft choices. | Rachel + Grace | Confirmed November 7 |
 | 02 / FOUND-01 | Nov 9 | Review existing changes, select compatible versions, document environment placeholders and test-resource isolation. Commit baseline only after review. | Rachel | PLAN-01 |
 | 03 / DB-01 | Nov 9–10 | Adopt chosen ORM; preserve users/files; validate compatible identity IDs and transaction rollback; add recipe schema/migrations and seed conventions. | Rachel | FOUND-01 |
-| 04 / UI-01 | Nov 9–11 | Agree on service/input contracts; build navigation and accessible editor/detail skeletons using existing shadcn components. | Grace | PLAN-01; contracts with DB-01 |
+| 04 / UI-01 | Nov 9–11 | Agree on service/input contracts; build navigation and accessible editor/detail skeletons using HeroUI components. | Grace | PLAN-01; contracts with DB-01 |
 | 05 / AUTH-03 | Nov 10–12 | Integrate Better Auth, Google callback configuration, protected sessions, and matching auth views; prove two-user isolation. | Rachel + Grace | DB-01, UI-01 |
 | 06 / REC-03 | Nov 12–15 | Deliver create→view→edit→delete with visibility and child-row transactions. Integrate form errors and permission failures. | Rachel + Grace | AUTH-03 |
 | 07 / IMG-04 | Nov 14–16 | Integrate cover uploads, recipe association, visibility-aware image delivery, and cleanup; complete a cloud round trip. | Rachel + Grace | REC-03 |
@@ -114,8 +114,8 @@ Verified against the [course overview](https://www.eecg.utoronto.ca/~cying/cours
 | November 27 / December 4 | Assigned presentation session; check assignment and attendance instructions. |
 | December 6 | Repository submission with source, README final report, AI record, demo video, and deployment link if applicable. |
 
-Final-report target: at most 5,000 words, clear setup and user guide, individual contributions, verification/AI evaluation, and a `Video Demo` link. Keep 2–4 representative AI interactions in `ai-session.md`, including decisions and verification. Record this planning session honestly: Rachel originated the idea; AI helped draft/review; architecture remains pending. Preserve the November 26 presentation snapshot independently of later improvements. Ensure graders can access a private repository.
+Final-report target: at most 5,000 words, clear setup and user guide, individual contributions, verification/AI evaluation, and a `Video Demo` link. Keep 2–4 representative AI interactions in `ai-session.md`, including decisions and verification. Record the project origin and assistance accurately: Rachel originated the idea; AI helped draft/review; the architecture document records the selected design and implementation status. Preserve the November 26 presentation snapshot independently of later improvements. Ensure graders can access a private repository.
 
-## Next authorized boundary
+## Implementation status
 
-Rachel confirmed Prisma on November 7 and supplied a revised proposal selecting HeroUI. Foundation setup and validation are authorized. Continue with the backlog after the setup is verified; do not treat authentication, recipe workflows, or scaling as implemented. Cloud account creation, production deployment, and pushing commits are outside this setup task.
+The implementation includes Prisma configuration, mapped legacy models, recipe migration SQL, Zod contracts, internal create/detail services, private-image validation/upload/owner-read services, environment setup, HeroUI styles, a liveness endpoint, and automated checks. Live Prisma CRUD/rollback and private Blob upload/read/delete passed in disposable test resources with verified cleanup. Public application tables and migration history remain unchanged. Authentication, recipe interfaces, browser uploads, recipe visibility-aware media delivery, discovery/bookmark services, and scaling remain planned. Remote CI and deployment verification remain outstanding. See the [architecture](architecture.md) for current boundaries and the next integrated milestone.

@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RecipeVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum RecipeDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+// Preserve the existing profile table. Authentication records are added separately.
+model User {
+  id        String       @id(map: "users_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String       @unique(map: "users_email_unique")
+  name      String?
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  files     StoredFile[]
+  recipes   Recipe[]
+  bookmarks Bookmark[]
+
+  @@map("users")
+}
+
+model StoredFile {
+  id          String   @id(map: "files_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerId     String   @map("owner_id") @db.Uuid
+  name        String
+  pathname    String   @unique(map: "files_pathname_unique")
+  contentType String   @map("content_type")
+  size        Int
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "files_owner_id_users_id_fk")
+  coverOf     Recipe?
+
+  @@index([ownerId], map: "files_owner_id_idx")
+  @@map("files")
+}
+
+model Recipe {
+  id           String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  authorId     String             @map("author_id") @db.Uuid
+  title        String             @db.VarChar(160)
+  description  String             @db.VarChar(5000)
+  baseServings Decimal            @map("base_servings") @db.Decimal(12, 4)
+  prepMinutes  Int                @map("prep_minutes")
+  cookMinutes  Int                @map("cook_minutes")
+  difficulty   RecipeDifficulty
+  visibility   RecipeVisibility   @default(PRIVATE)
+  coverFileId  String?            @unique @map("cover_file_id") @db.Uuid
+  createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  author       User               @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  cover        StoredFile?        @relation(fields: [coverFileId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  ingredients  RecipeIngredient[]
+  steps        RecipeStep[]
+  bookmarks    Bookmark[]
+
+  @@index([authorId, updatedAt])
+  @@index([visibility, createdAt, id])
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId      String   @map("recipe_id") @db.Uuid
+  position      Int
+  name          String   @db.VarChar(160)
+  canonicalName String   @map("canonical_name") @db.VarChar(160)
+  quantity      Decimal? @db.Decimal(16, 6)
+  unit          String?  @db.VarChar(32)
+  note          String?  @db.VarChar(300)
+  recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([recipeId, position])
+  @@index([canonicalName])
+  @@map("recipe_ingredients")
+}
+
+model RecipeStep {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  recipeId    String @map("recipe_id") @db.Uuid
+  position    Int
+  instruction String @db.VarChar(4000)
+  recipe      Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([recipeId, position])
+  @@map("recipe_steps")
+}
+
+model Bookmark {
+  userId    String   @map("user_id") @db.Uuid
+  recipeId  String   @map("recipe_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, recipeId])
+  @@index([recipeId])
+  @@map("bookmarks")
+}

@@ -2,7 +2,7 @@
 
 // Uses only Node built-ins so this works before npm packages are installed.
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { constants, copyFileSync, existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -84,7 +84,8 @@ npm run setup                       Install packages and start the app
 npm run setup -- --install-only      Install packages without starting
 npm run setup -- --port 3002         Start on a specific port
 
-Requires Node.js 24 with npm. No database credentials are needed for Hello world.
+Requires Node.js 24 with npm. No cloud credentials are needed for the homepage or tests.
+Generates Prisma client and prepares .env.local if missing. Never applies migrations.
 Next.js serves the frontend and server-side code together in one process tree.`);
     return;
   }
@@ -120,6 +121,12 @@ Next.js serves the frontend and server-side code together in one process tree.`)
   if (interrupted) return;
   if (installCode !== 0) {
     throw new Error("Package installation failed. Check your internet connection and the error above, then run setup again. If it still fails, share that error with your teammate.");
+  }
+
+  const environmentPath = join(projectRoot, ".env.local");
+  if (!existsSync(environmentPath)) {
+    copyFileSync(join(projectRoot, ".env.example"), environmentPath, constants.COPYFILE_EXCL);
+    console.log("\nCreated .env.local from the environment template. Add development credentials when needed.");
   }
 
   if (options.installOnly) {

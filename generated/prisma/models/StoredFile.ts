@@ -233,6 +233,7 @@ export type StoredFileWhereInput = {
   size?: Prisma.IntFilter<"StoredFile"> | number
   createdAt?: Prisma.DateTimeFilter<"StoredFile"> | Date | string
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  coverOf?: Prisma.XOR<Prisma.RecipeNullableScalarRelationFilter, Prisma.RecipeWhereInput> | null
 }
 
 export type StoredFileOrderByWithRelationInput = {
@@ -244,6 +245,7 @@ export type StoredFileOrderByWithRelationInput = {
   size?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   owner?: Prisma.UserOrderByWithRelationInput
+  coverOf?: Prisma.RecipeOrderByWithRelationInput
 }
 
 export type StoredFileWhereUniqueInput = Prisma.AtLeast<{
@@ -258,6 +260,7 @@ export type StoredFileWhereUniqueInput = Prisma.AtLeast<{
   size?: Prisma.IntFilter<"StoredFile"> | number
   createdAt?: Prisma.DateTimeFilter<"StoredFile"> | Date | string
   owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  coverOf?: Prisma.XOR<Prisma.RecipeNullableScalarRelationFilter, Prisma.RecipeWhereInput> | null
 }, "id" | "pathname">
 
 export type StoredFileOrderByWithAggregationInput = {
@@ -296,6 +299,7 @@ export type StoredFileCreateInput = {
   size: number
   createdAt?: Date | string
   owner: Prisma.UserCreateNestedOneWithoutFilesInput
+  coverOf?: Prisma.RecipeCreateNestedOneWithoutCoverInput
 }
 
 export type StoredFileUncheckedCreateInput = {
@@ -306,6 +310,7 @@ export type StoredFileUncheckedCreateInput = {
   contentType: string
   size: number
   createdAt?: Date | string
+  coverOf?: Prisma.RecipeUncheckedCreateNestedOneWithoutCoverInput
 }
 
 export type StoredFileUpdateInput = {
@@ -316,6 +321,7 @@ export type StoredFileUpdateInput = {
   size?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   owner?: Prisma.UserUpdateOneRequiredWithoutFilesNestedInput
+  coverOf?: Prisma.RecipeUpdateOneWithoutCoverNestedInput
 }
 
 export type StoredFileUncheckedUpdateInput = {
@@ -326,6 +332,7 @@ export type StoredFileUncheckedUpdateInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverOf?: Prisma.RecipeUncheckedUpdateOneWithoutCoverNestedInput
 }
 
 export type StoredFileCreateManyInput = {
@@ -405,6 +412,11 @@ export type StoredFileSumOrderByAggregateInput = {
   size?: Prisma.SortOrder
 }
 
+export type StoredFileNullableScalarRelationFilter = {
+  is?: Prisma.StoredFileWhereInput | null
+  isNot?: Prisma.StoredFileWhereInput | null
+}
+
 export type StoredFileCreateNestedManyWithoutOwnerInput = {
   create?: Prisma.XOR<Prisma.StoredFileCreateWithoutOwnerInput, Prisma.StoredFileUncheckedCreateWithoutOwnerInput> | Prisma.StoredFileCreateWithoutOwnerInput[] | Prisma.StoredFileUncheckedCreateWithoutOwnerInput[]
   connectOrCreate?: Prisma.StoredFileCreateOrConnectWithoutOwnerInput | Prisma.StoredFileCreateOrConnectWithoutOwnerInput[]
@@ -455,6 +467,22 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type StoredFileCreateNestedOneWithoutCoverOfInput = {
+  create?: Prisma.XOR<Prisma.StoredFileCreateWithoutCoverOfInput, Prisma.StoredFileUncheckedCreateWithoutCoverOfInput>
+  connectOrCreate?: Prisma.StoredFileCreateOrConnectWithoutCoverOfInput
+  connect?: Prisma.StoredFileWhereUniqueInput
+}
+
+export type StoredFileUpdateOneWithoutCoverOfNestedInput = {
+  create?: Prisma.XOR<Prisma.StoredFileCreateWithoutCoverOfInput, Prisma.StoredFileUncheckedCreateWithoutCoverOfInput>
+  connectOrCreate?: Prisma.StoredFileCreateOrConnectWithoutCoverOfInput
+  upsert?: Prisma.StoredFileUpsertWithoutCoverOfInput
+  disconnect?: Prisma.StoredFileWhereInput | boolean
+  delete?: Prisma.StoredFileWhereInput | boolean
+  connect?: Prisma.StoredFileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StoredFileUpdateToOneWithWhereWithoutCoverOfInput, Prisma.StoredFileUpdateWithoutCoverOfInput>, Prisma.StoredFileUncheckedUpdateWithoutCoverOfInput>
+}
+
 export type StoredFileCreateWithoutOwnerInput = {
   id?: string
   name: string
@@ -462,6 +490,7 @@ export type StoredFileCreateWithoutOwnerInput = {
   contentType: string
   size: number
   createdAt?: Date | string
+  coverOf?: Prisma.RecipeCreateNestedOneWithoutCoverInput
 }
 
 export type StoredFileUncheckedCreateWithoutOwnerInput = {
@@ -471,6 +500,7 @@ export type StoredFileUncheckedCreateWithoutOwnerInput = {
   contentType: string
   size: number
   createdAt?: Date | string
+  coverOf?: Prisma.RecipeUncheckedCreateNestedOneWithoutCoverInput
 }
 
 export type StoredFileCreateOrConnectWithoutOwnerInput = {
@@ -512,6 +542,62 @@ export type StoredFileScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"StoredFile"> | Date | string
 }
 
+export type StoredFileCreateWithoutCoverOfInput = {
+  id?: string
+  name: string
+  pathname: string
+  contentType: string
+  size: number
+  createdAt?: Date | string
+  owner: Prisma.UserCreateNestedOneWithoutFilesInput
+}
+
+export type StoredFileUncheckedCreateWithoutCoverOfInput = {
+  id?: string
+  ownerId: string
+  name: string
+  pathname: string
+  contentType: string
+  size: number
+  createdAt?: Date | string
+}
+
+export type StoredFileCreateOrConnectWithoutCoverOfInput = {
+  where: Prisma.StoredFileWhereUniqueInput
+  create: Prisma.XOR<Prisma.StoredFileCreateWithoutCoverOfInput, Prisma.StoredFileUncheckedCreateWithoutCoverOfInput>
+}
+
+export type StoredFileUpsertWithoutCoverOfInput = {
+  update: Prisma.XOR<Prisma.StoredFileUpdateWithoutCoverOfInput, Prisma.StoredFileUncheckedUpdateWithoutCoverOfInput>
+  create: Prisma.XOR<Prisma.StoredFileCreateWithoutCoverOfInput, Prisma.StoredFileUncheckedCreateWithoutCoverOfInput>
+  where?: Prisma.StoredFileWhereInput
+}
+
+export type StoredFileUpdateToOneWithWhereWithoutCoverOfInput = {
+  where?: Prisma.StoredFileWhereInput
+  data: Prisma.XOR<Prisma.StoredFileUpdateWithoutCoverOfInput, Prisma.StoredFileUncheckedUpdateWithoutCoverOfInput>
+}
+
+export type StoredFileUpdateWithoutCoverOfInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  pathname?: Prisma.StringFieldUpdateOperationsInput | string
+  contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  owner?: Prisma.UserUpdateOneRequiredWithoutFilesNestedInput
+}
+
+export type StoredFileUncheckedUpdateWithoutCoverOfInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  pathname?: Prisma.StringFieldUpdateOperationsInput | string
+  contentType?: Prisma.StringFieldUpdateOperationsInput | string
+  size?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 export type StoredFileCreateManyOwnerInput = {
   id?: string
   name: string
@@ -528,6 +614,7 @@ export type StoredFileUpdateWithoutOwnerInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverOf?: Prisma.RecipeUpdateOneWithoutCoverNestedInput
 }
 
 export type StoredFileUncheckedUpdateWithoutOwnerInput = {
@@ -537,6 +624,7 @@ export type StoredFileUncheckedUpdateWithoutOwnerInput = {
   contentType?: Prisma.StringFieldUpdateOperationsInput | string
   size?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  coverOf?: Prisma.RecipeUncheckedUpdateOneWithoutCoverNestedInput
 }
 
 export type StoredFileUncheckedUpdateManyWithoutOwnerInput = {
@@ -559,6 +647,7 @@ export type StoredFileSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   size?: boolean
   createdAt?: boolean
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  coverOf?: boolean | Prisma.StoredFile$coverOfArgs<ExtArgs>
 }, ExtArgs["result"]["storedFile"]>
 
 export type StoredFileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -596,6 +685,7 @@ export type StoredFileSelectScalar = {
 export type StoredFileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ownerId" | "name" | "pathname" | "contentType" | "size" | "createdAt", ExtArgs["result"]["storedFile"]>
 export type StoredFileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  coverOf?: boolean | Prisma.StoredFile$coverOfArgs<ExtArgs>
 }
 export type StoredFileIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -608,6 +698,7 @@ export type $StoredFilePayload<ExtArgs extends runtime.Types.Extensions.Internal
   name: "StoredFile"
   objects: {
     owner: Prisma.$UserPayload<ExtArgs>
+    coverOf: Prisma.$RecipePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1012,6 +1103,7 @@ readonly fields: StoredFileFieldRefs;
 export interface Prisma__StoredFileClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   owner<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  coverOf<T extends Prisma.StoredFile$coverOfArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.StoredFile$coverOfArgs<ExtArgs>>): Prisma.Prisma__RecipeClient<runtime.Types.Result.GetResult<Prisma.$RecipePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1446,6 +1538,25 @@ export type StoredFileDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.In
    * Limit how many StoredFiles to delete.
    */
   limit?: number
+}
+
+/**
+ * StoredFile.coverOf
+ */
+export type StoredFile$coverOfArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Recipe
+   */
+  select?: Prisma.RecipeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Recipe
+   */
+  omit?: Prisma.RecipeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RecipeInclude<ExtArgs> | null
+  where?: Prisma.RecipeWhereInput
 }
 
 /**

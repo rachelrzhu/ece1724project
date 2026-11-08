@@ -1,6 +1,8 @@
 # ECE1724 Project
 
-This project uses Next.js, React, TypeScript, and Tailwind CSS. The current homepage is a simple **Hello world** placeholder.
+Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated create/read services, private-image upload/read services, and automated checks. Authentication and recipe interfaces are next; the homepage remains a **Hello world** placeholder.
+
+See the [system architecture](docs/architecture.md), [requirements](docs/requirements.md), and [database workflow](prisma/README.md) for implementation details and status.
 
 ## First-time setup (no web development experience needed)
 
@@ -30,7 +32,7 @@ npm run setup
 
 To open a terminal in the right folder, use your editor's **Open Folder** and then **Terminal → New Terminal**. Alternatively, type `cd ` followed by the project folder's path, putting the path in double quotes if it contains spaces.
 
-Setup checks Node.js and npm, installs the exact packages listed in `package-lock.json`, and starts the app. An internet connection is needed for installation and the first run, including downloading the starter's Google fonts. No Vercel login, PostgreSQL installation, Docker, or credentials are required for this placeholder.
+Setup checks Node.js and npm, installs the exact packages listed in `package-lock.json`, generates the Prisma client, prepares `.env.local` if missing, and starts the app. An internet connection is needed for installation and the first run, including downloading Google fonts. No Vercel login, PostgreSQL installation, Docker, or credentials are required for the placeholder or automated checks. Setup does not apply database migrations.
 
 ### 4. Open the app
 
@@ -45,10 +47,15 @@ Keep the terminal open while using the app. Press **Ctrl+C** to stop it.
 Next.js runs the frontend and its server-side code together. **You only need one command and one terminal**; there is no separate backend server to install or start.
 
 - The frontend homepage is in `app/page.tsx`.
-- Backend API routes can later be added under `app/api/.../route.ts`; the same development server runs them.
-- The current starter has no custom API endpoints, database features, or upload features yet. This script starts the existing application; it does not provision cloud services.
+- `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
+- `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
+- `lib/recipes/` contains Zod input contracts and internal recipe creation/detail services. These services require a verified session reader before connecting authenticated interfaces.
+- `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
+- The app has no sign-in, recipe editor, browser upload workflow, or scaling interface yet. Setup does not provision cloud services.
 
-An existing `.env.local` is left untouched. New laptops do not need that file for Hello world. If future features need credentials, get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The `docs/` folder is also ignored and is not required to run the app.
+An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. Authentication placeholders describe the planned Better Auth integration.
+
+Migrations are explicit. Read the [database workflow](prisma/README.md) before running `npm run db:migrate`, especially against an existing database with `users` and `files` tables. The automated tests use isolated in-memory PostgreSQL and do not access Neon or Blob.
 
 ## Everyday use
 
@@ -67,10 +74,25 @@ npm run setup -- --install-only   # Install packages without starting the app
 npm run setup -- --port 3002      # Install and start on a specific port
 npm run dev -- --port 3002        # Start on that port without reinstalling
 npm run lint                     # Check code style and common mistakes
+npm run typecheck                # Generate route types and check TypeScript
+npm test                         # Run input, service-boundary, and migration tests
+npm run check                    # Validate schema, lint, typecheck, and run tests
 npm run build                    # Check that a production build succeeds
 ```
 
 The launchers can be run from any working directory. The `npm run ...` commands must be run from the folder containing `package.json`. Setup intentionally does not change your system settings or install Node.js for you.
+
+## Manual live storage check
+
+With database and Blob credentials configured, run:
+
+```bash
+npm run storage:check
+```
+
+This command writes disposable test data. It creates a uniquely named PostgreSQL schema, applies both migrations there, and tests real Prisma create/read/update/delete operations, transaction rollback, visibility, and bookmarks. It also uploads the sample PNG to private Blob storage, verifies its contents and access restrictions, modifies its file metadata, and removes the object and records. Cleanup removes the temporary schema and verifies that no sample Blob objects remain.
+
+It does not modify public application tables or their migration history. The database role must be allowed to create a schema. This check is manual and is not part of setup or CI. It writes a credential-free report to [storage-test-results.json](docs/storage-test-results.json). See the [system architecture](docs/architecture.md) for current boundaries and remaining integration work.
 
 ## Troubleshooting
 

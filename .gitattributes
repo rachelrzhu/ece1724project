@@ -1,0 +1,2 @@
+# Prisma output is regenerated; keep generated formatting out of source whitespace checks.
+generated/prisma/** linguist-generated=true -whitespace

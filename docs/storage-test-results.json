@@ -1,0 +1,69 @@
+{
+  "checkedAt": "2026-11-08T05:01:35.868Z",
+  "runId": "c50ca07c-0c51-420c-81df-8e522cc4841f",
+  "status": "passed",
+  "scope": "Live PostgreSQL through Prisma in a disposable schema; private Blob sample upload/read/delete. Public database tables and migration history are not modified. Test identities are injected, not authenticated browser sessions.",
+  "sample": "tests/fixtures/storage-sample.png",
+  "checks": [
+    {
+      "name": "database: connect to the configured PostgreSQL server",
+      "status": "passed"
+    },
+    {
+      "name": "database: apply both migrations in a disposable schema",
+      "status": "passed"
+    },
+    {
+      "name": "database: add and read users, recipe, ingredients, and steps",
+      "status": "passed"
+    },
+    {
+      "name": "database: modify and reread recipe, ingredient, and profile",
+      "status": "passed"
+    },
+    {
+      "name": "database: enforce private/public reads with two test identities",
+      "status": "passed"
+    },
+    {
+      "name": "database: prevent duplicate bookmarks",
+      "status": "passed"
+    },
+    {
+      "name": "database: roll back a recipe when its child write fails",
+      "status": "passed"
+    },
+    {
+      "name": "database: delete a recipe and verify cascading child deletion",
+      "status": "passed"
+    },
+    {
+      "name": "blob: upload a decoded sample PNG and persist its metadata",
+      "status": "passed"
+    },
+    {
+      "name": "blob: read matching bytes and reject a second user's access",
+      "status": "passed"
+    },
+    {
+      "name": "database: modify uploaded image metadata",
+      "status": "passed"
+    },
+    {
+      "name": "blob: delete the sample object and its metadata",
+      "status": "passed"
+    },
+    {
+      "name": "database: remove the disposable test users",
+      "status": "passed"
+    },
+    {
+      "name": "cleanup: no sample Blob objects remain",
+      "status": "passed"
+    },
+    {
+      "name": "cleanup: disposable PostgreSQL schema removed",
+      "status": "passed"
+    }
+  ]
+}
