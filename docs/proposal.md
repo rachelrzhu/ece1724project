@@ -4,7 +4,6 @@
 
 ## 1. Motivation
 
-Home cooks often find recipes that do not match the number of people they are feeding or the ingredients they have available. Adapting quantities manually can introduce arithmetic errors, while saving recipes across browser bookmarks and personal notes makes modifications difficult to track. Dietary preferences introduce another discovery problem: ingredient information is often unstructured, making it difficult to identify declared conflicts consistently.
 
 We propose a recipe-sharing application where users can create, browse, and save recipes. Its main feature will automatically adjust ingredient quantities based on either the desired number of servings or the available amount of one selected ingredient. For example, a user could change a four-serving recipe to two servings, or halve a recipe that requires 400 g of flour when they have only 200 g. Users can bookmark recipes, with editable personal copies and dietary filtering planned as later features.
 
