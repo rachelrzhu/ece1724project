@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-11-08T05:01:35.868Z",
-  "runId": "c50ca07c-0c51-420c-81df-8e522cc4841f",
+  "checkedAt": "2026-11-08T10:05:42.727Z",
+  "runId": "f27f5d7e-bd1e-4f99-8cce-ae75e978a3b9",
   "status": "passed",
   "scope": "Live PostgreSQL through Prisma in a disposable schema; private Blob sample upload/read/delete. Public database tables and migration history are not modified. Test identities are injected, not authenticated browser sessions.",
   "sample": "tests/fixtures/storage-sample.png",
@@ -19,6 +19,14 @@
     },
     {
       "name": "database: modify and reread recipe, ingredient, and profile",
+      "status": "passed"
+    },
+    {
+      "name": "database: isolate owned listing and reject non-owner or anonymous mutations",
+      "status": "passed"
+    },
+    {
+      "name": "database: roll back an entire service update when a replacement child fails",
       "status": "passed"
     },
     {

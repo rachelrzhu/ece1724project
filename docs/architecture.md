@@ -77,7 +77,7 @@ lib/
   recipes/
     schemas.ts             Bounded recipe input contracts
     access.ts              Visibility query predicates
-    service.ts             Session-aware reads and transactional creation
+    service.ts             Session-aware CRUD and transactional recipe writes
   storage/
     image.ts               Bounded image content inspection
     blob.ts                Private Blob SDK adapter
@@ -91,7 +91,7 @@ tests/                     Input, service-boundary, and migration tests
 
 Authentication, media, and scaling modules are added alongside recipes as their workflows are implemented. Browser-safe schemas and pure calculations remain separate from server-only modules. Generated Prisma output is a build artifact, regenerated from the schema.
 
-Services accept a session reader supplied by the server authentication module. Identity must come from a verified session, never from form data or a submitted owner ID. The initial recipe service is internal and has no public mutation endpoint until authentication is integrated.
+Services accept a session reader supplied by the server authentication module. Identity must come from a verified session, never from form data or a submitted owner ID. Product mutation endpoints remain closed until authentication is integrated. A separate local tester uses a fixed identity inside a dedicated development schema.
 
 ## 5. Data model
 
@@ -130,9 +130,9 @@ Detail queries include visibility in the database predicate: an anonymous viewer
 
 ### Edit, discovery, and bookmarks
 
-Edit and delete services will constrain writes by the session user's identifier. Public discovery will filter visibility before applying title/ingredient search and bounded pagination. Saved views will reapply access rules when reading bookmark references. Making a recipe private must revoke public detail, discovery, bookmark-display, and image access.
+Edit and delete services constrain writes by the session user's identifier. Updates replace ordered ingredients and steps in the recipe transaction; owned listing is bounded to 50 records. Public discovery will filter visibility before applying title/ingredient search and bounded pagination. Saved views will reapply access rules when reading bookmark references. Making a recipe private must revoke public detail, discovery, bookmark-display, and image access.
 
-These workflows are planned; the initial service implements creation and detail reads only.
+Owned listing, creation, detail reads, editing, and deletion are implemented as internal services. Product interfaces, public discovery, and bookmark workflows remain planned.
 
 ### Cover photographs
 
@@ -142,7 +142,7 @@ Images will be delivered through a server route that checks the associated recip
 
 Blob operations cannot participate in a PostgreSQL transaction. Failed upload/metadata writes trigger compensating deletion of the attempt's unique path. A cleanup failure retains that path in a server-side error for retry. Automated reconciliation and recipe replacement/deletion cleanup remain planned.
 
-The owner-scoped image reader checks file ownership before accessing Blob and keeps private paths out of its response. It supports image management; public/private recipe photo delivery still needs the visibility-aware route described above. No upload or media HTTP endpoint is exposed before authentication is integrated.
+The owner-scoped image reader checks file ownership before accessing Blob and keeps private paths out of its response. It supports image management; public/private recipe photo delivery still needs the visibility-aware route described above. Product upload and media HTTP endpoints remain closed before authentication is integrated; the local tester has separate development-only endpoints.
 
 ## 7. Scaling and workspace state
 
@@ -170,13 +170,17 @@ Dietary discovery will use structured ingredient-to-allergen relationships and s
 
 Development, preview, and production must use deliberately selected resources before database mutations. Secrets remain outside Git and browser bundles. Production database changes and application deployment are separate operations from local setup.
 
+### Local backend integration page
+
+`/backend-test` is a minimal development interface with multiple ingredient rows, one editable cooking step, CRUD buttons, image controls, and raw API responses. Ingredient names, quantities, units, notes, and order survive loading and editing; additional saved cooking steps are retained. Its routes require development mode, a loopback host, and same-origin writes. They use the normal services against a separate schema prepared with `npm run backend-test:setup`; production requests return 404. Local schema/user configuration is ignored by Git. The test identity does not implement or replace product authentication. The main application page remains available for product frontend development. See the [run instructions](../README.md#simple-local-backend-tester).
+
 ## 9. Implementation status and delivery sequence
 
 | Area | Current implementation | Remaining work |
 | --- | --- | --- |
-| Foundation | Prisma configuration/client, environment template, HeroUI styles, liveness route, setup tooling, checks, and CI definition | Execute CI remotely and configure deployment resources. |
+| Foundation | Prisma configuration/client, environment template, HeroUI styles, liveness route, setup tooling, automated checks, and verified GitHub Actions | Keep CI passing and configure deployment resources. |
 | Persistence | Mapped legacy models; recipe, ingredient, step, and bookmark models; migration SQL and real Prisma CRUD/rollback verified in a disposable cloud schema | Review/baseline the application database and apply migrations. Public-schema migrations remain unapplied. |
-| Recipe services | Zod contracts, visibility-filtered detail reads, session-derived transactional creation, cover eligibility checks | Connect verified authentication, actions, and recipe interfaces; implement editing and deletion. |
+| Recipe services | Zod contracts, visibility-filtered reads, owner-scoped listing/creation/update/delete, transactional child writes, cover checks | Connect verified authentication and product interfaces. |
 | Authentication | Session-reader integration contract | Better Auth schema, configuration, account views, Google callbacks, and two-account verification. |
 | Media | Decoded image validation, private Blob adapter, owner-scoped upload/read services, compensating cleanup, and a verified live sample round trip | Authentication/UI integration, visibility-aware recipe photo delivery, deletion workflow, and automated cleanup reconciliation. |
 | Discovery and collections | Normalized ingredient search field, visibility index, and unique bookmark constraint | Browse/search queries, pagination, saved/owned views, and bookmark services. |
@@ -184,9 +188,9 @@ Development, preview, and production must use deliberately selected resources be
 
 The first integrated milestone is authentication with recipe create/view. Recipe editing, deletion, cover uploads, discovery, and bookmarks follow. Scaling and coordinated state complete the minimum viable product. Optional copies and dietary discovery begin after core acceptance checks pass.
 
-Local checks include 52 tests covering validation, session/visibility boundaries, image inspection, compensating cleanup, decimal serialization, and migration behavior. Unit service tests mock Prisma; PGlite tests apply the migration SQL locally.
+Local automated checks cover validation, session/visibility boundaries, image inspection, compensating cleanup, decimal serialization, and migration behavior. Unit service tests mock Prisma; PGlite tests apply the migration SQL locally. The local tester was also exercised in the browser for create/read/update/delete and image upload/preview/removal.
 
-The manual `storage:check` command also verifies the real Prisma adapter and migrations on the configured PostgreSQL server within a disposable schema, plus private Blob upload/read/delete and ownership checks. The November 8 run passed all 15 checks and removed its schema and sample objects. Public application tables and migration history were not changed. Browser authentication, recipe visibility-aware media routes, responsive layouts, remote CI, and deployment checks remain outstanding. See the [recorded results](storage-test-results.json).
+The manual `storage:check` command also verifies the real Prisma adapter and migrations on the configured PostgreSQL server within a disposable schema, plus private Blob upload/read/delete and ownership checks. The November 8 CRUD review passed all 17 checks, including real service updates/deletes, two-identity write isolation, and rollback of an update whose replacement child fails. It removed its schema and sample objects. Public application tables and migration history were not changed. Browser authentication, recipe visibility-aware product media routes, product responsive layouts, and deployment checks remain outstanding. See the [recorded results](storage-test-results.json) and [CRUD review](crud-review.md).
 
 ## 10. Design references
 

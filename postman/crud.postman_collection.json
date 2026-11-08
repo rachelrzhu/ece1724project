@@ -1,0 +1,1512 @@
+{
+  "info": {
+    "name": "ECE1724 · Local CRUD review",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run the entire collection in order against the local development tester after backend-test:setup. Uses only its dedicated sandbox and generated recipe/image IDs; deletes its own successful test records. No sign-in credentials are needed. This fixed-identity tester does not prove product session authentication or public-recipe media access. Optional image lifecycle requests require runImageTests=true and Blob credentials configured on the server. See postman/README.md."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string"
+    },
+    {
+      "key": "runImageTests",
+      "value": "false",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const base=pm.variables.get(\"baseUrl\");",
+          "if (!/^http:\\/\\/(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$/.test(base)) throw new Error(\"baseUrl must be a loopback HTTP origin with no trailing slash.\");"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Responses are not shared-cached\", () => pm.expect(pm.response.headers.get(\"Cache-Control\")).to.include(\"no-store\"));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Recipe CRUD and request validation",
+      "item": [
+        {
+          "name": "01 · Health and initialize this run",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"runId\", pm.variables.replaceIn(\"{{$guid}}\"));",
+                  "for (const key of [\"recipeId\", \"imageId\", \"imageRecipeId\"]) pm.collectionVariables.unset(key);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Application is live\", () => pm.expect(pm.response.json()).to.eql({status:\"ok\"}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/health"
+          },
+          "response": []
+        },
+        {
+          "name": "02 · List owned recipes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Owned list is bounded\", () => { const rows=pm.response.json().recipes; pm.expect(rows).to.be.an(\"array\"); pm.expect(rows.length).to.be.at.most(50); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes"
+          },
+          "response": []
+        },
+        {
+          "name": "03 · Create private recipe with ordered ingredients and steps",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const recipe=pm.response.json().recipe;",
+                  "if (recipe && recipe.id) pm.collectionVariables.set(\"recipeId\",recipe.id);",
+                  "pm.test(\"Created recipe has a UUID and defaults to private\", () => { pm.expect(recipe.id).to.match(/^[0-9a-f-]{36}$/i); pm.expect(recipe.visibility).to.eql(\"PRIVATE\"); });",
+                  "pm.test(\"Quantities serialize as precise strings and notes survive\", () => { pm.expect(recipe.baseServings).to.eql(\"4\"); pm.expect(recipe.ingredients.map(x=>x.quantity)).to.eql([\"400\",\"1\",null]); pm.expect(recipe.ingredients[2].note).to.eql(\"to taste\"); });",
+                  "pm.test(\"Ingredient and step order survives create\", () => { pm.expect(recipe.ingredients.map(x=>x.name)).to.eql([\"Flour\",\"Eggs\",\"Salt\"]); pm.expect(recipe.steps.map(x=>x.instruction)).to.eql([\"Mix the ingredients.\",\"Bake the bread.\"]); });",
+                  "pm.test(\"No storage paths or credential records leak\", () => { pm.expect(recipe).not.to.have.any.keys(\"cover\",\"author\",\"pathname\",\"password\",\"session\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "04 · Read the created recipe by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Read returns the created recipe\", () => { const r=pm.response.json().recipe; pm.expect(r.id).to.eql(pm.collectionVariables.get(\"recipeId\")); pm.expect(r.title).to.eql(\"Postman bread \"+pm.collectionVariables.get(\"runId\")); pm.expect(r.steps).to.have.lengthOf(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "05 · Created recipe appears in owned list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Owned list contains the created ID\", () => pm.expect(pm.response.json().recipes.map(x=>x.id)).to.include(pm.collectionVariables.get(\"recipeId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes"
+          },
+          "response": []
+        },
+        {
+          "name": "06 · Update, reorder children, and publish",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"All updated fields and ordered children persist\", () => { const r=pm.response.json().recipe; pm.expect(r.baseServings).to.eql(\"6\"); pm.expect(r.visibility).to.eql(\"PUBLIC\"); pm.expect(r.ingredients.map(x=>x.name)).to.eql([\"Salt\",\"Flour\",\"Eggs\"]); pm.expect(r.ingredients.map(x=>x.quantity)).to.eql([null,\"600.123456\",\"1.5\"]); pm.expect(r.ingredients[1].note).to.eql(\"sifted\"); pm.expect(r.steps.map(x=>x.instruction)).to.eql([\"Sift, then mix.\",\"Bake, then cool.\"]); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "07 · Invalid update is rejected with field errors",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);",
+                  "pm.test(\"Validation identifies servings\", () => pm.expect(pm.response.json().fields.map(x=>x.field)).to.include(\"baseServings\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 0,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "08 · Rejected update leaves saved recipe unchanged",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Previous data and children remain intact\", () => { const r=pm.response.json().recipe; pm.expect(r.baseServings).to.eql(\"6\"); pm.expect(r.title).to.eql(\"Updated bread \"+pm.collectionVariables.get(\"runId\")); pm.expect(r.ingredients.map(x=>x.quantity)).to.eql([null,\"600.123456\",\"1.5\"]); pm.expect(r.steps).to.have.lengthOf(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "09 · Unknown cover is rejected without changing recipe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\",\n  \"coverFileId\": \"11111111-1111-4111-8111-111111111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "10 · Reject client-supplied ownership on create",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ],\n  \"authorId\": \"11111111-1111-4111-8111-111111111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "11 · Reject client-supplied ownership on update",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\",\n  \"authorId\": \"11111111-1111-4111-8111-111111111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "12 · Reject zero servings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 0,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "13 · Reject negative ingredient quantity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": -1,\n      \"unit\": \"g\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "14 · Reject an unmeasured ingredient without a note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "15 · Reject malformed recipe ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id=not-a-uuid"
+          },
+          "response": []
+        },
+        {
+          "name": "16 · Missing recipe returns 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id=11111111-1111-4111-8111-111111111111"
+          },
+          "response": []
+        },
+        {
+          "name": "17 · Cannot update missing recipe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id=11111111-1111-4111-8111-111111111111",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "18 · Cannot delete missing recipe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id=11111111-1111-4111-8111-111111111111"
+          },
+          "response": []
+        },
+        {
+          "name": "19 · Update requires a selected ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "20 · Delete requires a selected ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes"
+          },
+          "response": []
+        },
+        {
+          "name": "21 · Reject malformed JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{broken json",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "22 · Enforce streamed JSON body limit",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set(\"oversizedBody\", \"x\".repeat(65537));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 413\", () => pm.response.to.have.status(413));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{{oversizedBody}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "23 · Reject writes without Origin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "24 · Reject a foreign Origin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "https://example.com"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "25 · Reject cross-site reads",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Sec-Fetch-Site",
+                "value": "cross-site"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "26 · Reject a non-loopback Host",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Host",
+                "value": "example.com"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes"
+          },
+          "response": []
+        },
+        {
+          "name": "27 · Reject malformed multipart as a client error",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data; boundary=missing"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images",
+            "body": {
+              "mode": "raw",
+              "raw": "broken multipart",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "28 · Require a file rather than a multipart text field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "text",
+                  "value": "not a file"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "29 · Reject a file whose bytes are not an image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "README.md",
+                  "contentType": "image/png"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "30 · Delete the created recipe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Deletion is confirmed\", () => pm.expect(pm.response.json()).to.eql({deleted:true}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "31 · Deleted recipe cannot be read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "32 · Repeated deletion returns 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "33 · Deleted recipe is absent from owned list",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Deleted ID is absent\", () => pm.expect(pm.response.json().recipes.map(x=>x.id)).not.to.include(pm.collectionVariables.get(\"recipeId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Optional image lifecycle · set runImageTests=true",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (String(pm.variables.get(\"runImageTests\")) !== \"true\") pm.execution.skipRequest();"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "34 · Upload a real private PNG",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const image=pm.response.json().image; if(image && image.id) pm.collectionVariables.set(\"imageId\",image.id);",
+                  "pm.test(\"Metadata describes a private validated image\", () => { pm.expect(image.id).to.match(/^[0-9a-f-]{36}$/i); pm.expect(image.contentType).to.eql(\"image/png\"); pm.expect(image.size).to.be.above(0); pm.expect(image).not.to.have.property(\"pathname\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "tests/fixtures/storage-sample.png",
+                  "contentType": "image/png"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "35 · Read uploaded private PNG",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Image is served as PNG with nonempty bytes\", () => { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"image/png\"); pm.expect(pm.response.responseSize).to.be.above(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images?id={{imageId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "36 · Associate an owned cover with a private recipe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const r=pm.response.json().recipe; if(r && r.id) pm.collectionVariables.set(\"imageRecipeId\",r.id);",
+                  "pm.test(\"Cover association persists\", () => pm.expect(r.coverFileId).to.eql(pm.collectionVariables.get(\"imageId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman image recipe {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ],\n  \"coverFileId\": \"{{imageId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "37 · Attached image cannot be deleted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images?id={{imageId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "38 · A second recipe cannot reuse an attached cover",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman image recipe {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ],\n  \"coverFileId\": \"{{imageId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "39 · Updating a recipe may retain its current cover",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Current owned cover is retained\", () => pm.expect(pm.response.json().recipe.coverFileId).to.eql(pm.collectionVariables.get(\"imageId\")));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{imageRecipeId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated image recipe {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ],\n  \"coverFileId\": \"{{imageId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "40 · Delete recipe before cleaning up its cover",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/recipes?id={{imageRecipeId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "41 · Recipe deletion retains independently owned image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Retained asset is still an image\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"image/png\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images?id={{imageId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "42 · Delete the now-unattached image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Image deletion is confirmed\", () => pm.expect(pm.response.json()).to.eql({deleted:true}));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images?id={{imageId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "43 · Deleted image cannot be read",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images?id={{imageId}}"
+          },
+          "response": []
+        },
+        {
+          "name": "44 · Repeated image deletion returns 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Origin",
+                "value": "{{baseUrl}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/backend-test/images?id={{imageId}}"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

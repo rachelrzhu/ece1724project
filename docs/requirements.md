@@ -70,7 +70,7 @@ The [official handout](https://www.eecg.utoronto.ca/~cying/courses/ece1724-web/p
 
 | Area | Planned evidence | Current status |
 | --- | --- | --- |
-| Required frontend/server stack | Responsive recipe views; Server Component reads, actions, and routes | Framework, HeroUI styles, and internal recipe services exist; recipe interfaces absent. |
+| Required frontend/server stack | Responsive recipe views; Server Component reads, actions, and routes | Framework, HeroUI styles, internal recipe services, and a local integration test page exist; product interfaces remain planned. |
 | Relational persistence | Schema/migrations and database-backed recipe workflow | Recipe models/migrations and live Prisma operations verified in a disposable schema; application database adoption remains pending. |
 | Cloud file handling | Real photo upload, record association, authorized delivery | Internal image validation/upload/owner-read services and a live private Blob round trip pass; browser upload and recipe visibility-aware delivery remain planned. |
 | Advanced feature 1 | Session flows and two-user access-control demonstration | Better Auth absent. |
@@ -80,7 +80,7 @@ Do not count Google OAuth separately from authentication to satisfy the second f
 
 ## Sequenced backlog
 
-Items are local planning records, not published GitHub issues. Each implementation item becomes a small feature branch/PR after approval. Owner means lead; both members review integrated behavior.
+The published [GitHub roadmap](https://github.com/rachelrzhu/ece1724project/issues/1) and [milestones](https://github.com/rachelrzhu/ece1724project/milestones) track live issue states, assignees, acceptance criteria, and dependencies. The table below preserves the original delivery sequence. Use small feature branches/PRs with teammate review. Owner means lead; both members review integrated behavior.
 
 | Order / ID | Target | Work and exit condition | Lead | Depends on |
 | --- | --- | --- | --- | --- |
@@ -118,4 +118,4 @@ Final-report target: at most 5,000 words, clear setup and user guide, individual
 
 ## Implementation status
 
-The implementation includes Prisma configuration, mapped legacy models, recipe migration SQL, Zod contracts, internal create/detail services, private-image validation/upload/owner-read services, environment setup, HeroUI styles, a liveness endpoint, and automated checks. Live Prisma CRUD/rollback and private Blob upload/read/delete passed in disposable test resources with verified cleanup. Public application tables and migration history remain unchanged. Authentication, recipe interfaces, browser uploads, recipe visibility-aware media delivery, discovery/bookmark services, and scaling remain planned. Remote CI and deployment verification remain outstanding. See the [architecture](architecture.md) for current boundaries and the next integrated milestone.
+The implementation includes Prisma configuration, mapped legacy models, recipe migration SQL, Zod contracts, internal recipe CRUD services, a local development tester, private-image validation/upload/owner-read services, environment setup, HeroUI styles, a liveness endpoint, automated checks, and shared Postman collections. Live Prisma CRUD/rollback and private Blob upload/read/delete passed in disposable test resources with verified cleanup. Public application tables and migration history remain unchanged. Authentication, product recipe interfaces/uploads, recipe visibility-aware media delivery, discovery/bookmark services, and scaling remain planned. GitHub Actions passed for the foundation; deployment verification remains outstanding. See the [architecture](architecture.md) and [CRUD review](crud-review.md) for current boundaries and verification results.
