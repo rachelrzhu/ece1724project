@@ -31,5 +31,4 @@ Development setup generates the Prisma client and prepares local configuration. 
 
 Rachel leads backend; Grace leads frontend. Rachel independently originated the idea from daily-life needs. The revised proposal and requirements backlog govern feature scope. Integrate authentication and create/view first, then recipe lifecycle/photos/discovery/bookmarks, then scaling and shared state. P1 waits for a stable MVP.
 
-Use the installed guides in node_modules/next/dist/docs/ before implementation. Future schema changes use reviewed Prisma migrations; keep main deployable and verify each complete workflow.
 
