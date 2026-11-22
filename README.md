@@ -1,6 +1,6 @@
 # ECE1724 Project
 
-Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated recipe services, private-image upload/read services, and automated checks. A basic local backend tester is available; the product interface and authentication remain planned.
+Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated recipe services, private-image upload/read services, and automated checks. Better Auth persists sessions in PostgreSQL. A local backend tester exercises recipe and image services.
 
 See the [system architecture](docs/architecture.md), [requirements](docs/requirements.md), and [database workflow](prisma/README.md) for implementation details and status.
 
@@ -55,7 +55,7 @@ Next.js runs the frontend and its server-side code together. **You only need one
 - `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
 - `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. The application has no product sign-in, editor, or scaling interface yet. Setup does not provision cloud services.
 
-An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. Authentication placeholders describe the planned Better Auth integration.
+An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`.
 
 Migrations are explicit. Read the [database workflow](prisma/README.md) before running `npm run db:migrate`, especially against an existing database with `users` and `files` tables. The automated tests use isolated in-memory PostgreSQL and do not access Neon or Blob.
 
@@ -103,7 +103,7 @@ Database credentials are required; image testing also needs the Blob token. To r
 npm run backend-test:cleanup
 ```
 
-The test APIs are `GET/POST/PATCH/DELETE /api/backend-test/recipes` (use `?id=...` for a single recipe) and `GET/POST/DELETE /api/backend-test/images`. Writes require a matching `Origin` header, which the test page sends automatically. Production authentication must be integrated before exposing application APIs.
+The test APIs are `GET/POST/PATCH/DELETE /api/backend-test/recipes` (use `?id=...` for a single recipe) and `GET/POST/DELETE /api/backend-test/images`. Writes require a matching `Origin` header, which the test page sends automatically.
 
 Import the shared [Postman collections](postman/README.md) for repeatable CRUD and production-guard checks. With the development server running, `npm run test:postman` runs recipe/validation checks; append `-- --env-var runImageTests=true` to include image upload/read/cleanup. The Postman CLI must be installed separately. See the [CRUD review](docs/crud-review.md) for verification results.
 

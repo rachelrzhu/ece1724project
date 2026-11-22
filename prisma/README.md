@@ -50,4 +50,4 @@ Recording the baseline writes migration metadata. It does not run the baseline's
 
 Create migrations against an isolated development database, review generated SQL, and commit both the schema and migrations. Retain custom SQL checks that Prisma cannot represent. Never accept a reset prompt against a database containing needed data.
 
-The current `User` is a profile model. Better Auth account/session/verification records and UUID generation configuration must be integrated before exposing recipe mutations. The internal recipe service requires a trusted session reader; it is not a complete sign-in workflow.
+Better Auth uses the existing user UUIDs and stores accounts, sessions, and verifications in PostgreSQL.
