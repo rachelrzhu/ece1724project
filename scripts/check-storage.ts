@@ -75,13 +75,13 @@ async function main() {
       await administrator!.connect();
     });
 
-    await check("database: apply both migrations in a disposable schema", async () => {
+    await check("database: apply migrations in a disposable schema", async () => {
       await administrator!.query(`CREATE SCHEMA "${schemaName}"`);
       schemaCreated = true;
       await administrator!.query("BEGIN");
       try {
         await administrator!.query(`SET LOCAL search_path TO "${schemaName}"`);
-        for (const migration of ["0_baseline", "20261108000000_recipe_domain"]) {
+        for (const migration of ["0_baseline", "20261108000000_recipe_domain", "20261108120000_authentication"]) {
           const sql = readFileSync(new URL(`../prisma/migrations/${migration}/migration.sql`, import.meta.url), "utf8")
             .replace('CREATE SCHEMA IF NOT EXISTS "public";', "");
           assert.ok(!sql.includes('"public"'), "Test migrations must not address the public schema.");

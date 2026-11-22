@@ -115,7 +115,7 @@ With database and Blob credentials configured, run:
 npm run storage:check
 ```
 
-This command writes disposable test data. It creates a uniquely named PostgreSQL schema, applies both migrations there, and tests real Prisma create/read/update/delete operations, transaction rollback, visibility, and bookmarks. It also uploads the sample PNG to private Blob storage, verifies its contents and access restrictions, modifies its file metadata, and removes the object and records. Cleanup removes the temporary schema and verifies that no sample Blob objects remain.
+This command writes disposable test data. It creates a uniquely named PostgreSQL schema, applies the migrations there, and tests real Prisma create/read/update/delete operations, transaction rollback, visibility, and bookmarks. It also uploads the sample PNG to private Blob storage, verifies its contents and access restrictions, modifies its file metadata, and removes the object and records. Cleanup removes the temporary schema and verifies that no sample Blob objects remain.
 
 It does not modify public application tables or their migration history. The database role must be allowed to create a schema. This check is manual and is not part of setup or CI. It writes a credential-free report to [storage-test-results.json](docs/storage-test-results.json). See the [system architecture](docs/architecture.md) for current boundaries and remaining integration work.
 
