@@ -51,7 +51,7 @@ Next.js runs the frontend and its server-side code together. **You only need one
 - The frontend homepage is in `app/page.tsx`.
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
-- `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. These services require a verified session reader before connecting authenticated product interfaces.
+- `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.
 - `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
 - `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. The application has no product sign-in, editor, or scaling interface yet. Setup does not provision cloud services.
 
