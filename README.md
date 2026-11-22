@@ -1,6 +1,6 @@
 # ECE1724 Project
 
-Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated create/read services, private-image upload/read services, and automated checks. Authentication and recipe interfaces are next; the homepage remains a **Hello world** placeholder.
+Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated recipe services, private-image upload/read services, and automated checks. A basic local backend tester is available; the product interface and authentication remain planned.
 
 See the [system architecture](docs/architecture.md), [requirements](docs/requirements.md), and [database workflow](prisma/README.md) for implementation details and status.
 
@@ -51,9 +51,9 @@ Next.js runs the frontend and its server-side code together. **You only need one
 - The frontend homepage is in `app/page.tsx`.
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
-- `lib/recipes/` contains Zod input contracts and internal recipe creation/detail services. These services require a verified session reader before connecting authenticated interfaces.
+- `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. These services require a verified session reader before connecting authenticated product interfaces.
 - `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
-- The app has no sign-in, recipe editor, browser upload workflow, or scaling interface yet. Setup does not provision cloud services.
+- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. The application has no product sign-in, editor, or scaling interface yet. Setup does not provision cloud services.
 
 An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. Authentication placeholders describe the planned Better Auth integration.
 
@@ -84,6 +84,29 @@ npm run build                    # Check that a production build succeeds
 
 The launchers can be run from any working directory. The `npm run ...` commands must be run from the folder containing `package.json`. Setup intentionally does not change your system settings or install Node.js for you.
 
+## Simple local backend tester
+
+Prepare a separate test schema once, then start the development server:
+
+```bash
+npm run backend-test:setup
+npm run dev -- --hostname 127.0.0.1
+```
+
+Open [http://127.0.0.1:3000/backend-test](http://127.0.0.1:3000/backend-test). Use **Add ingredient** to enter more ingredients, or **Remove** beside a row to delete it. Each ingredient has its own quantity, unit, and optional note; leave quantity blank and add a note for entries such as “salt to taste.” The form supports up to 100 ingredients and one editable cooking step; additional saved steps are preserved. Use **Refresh / read**, **Create**, **Update selected**, **Delete selected**, and the image upload controls. Each action shows its HTTP status and JSON response.
+
+This is an integration tool with a fixed test identity, not a sign-in flow. Its APIs use the existing recipe/image services against an isolated PostgreSQL schema. They accept local development requests only and return 404 in production. Existing application tables are unchanged. The test configuration stays in ignored `.backend-test.json`; test records persist between development-server restarts. The product frontend remains separate under `app/page.tsx` for continued frontend work.
+
+Database credentials are required; image testing also needs the Blob token. To remove the tester's database schema, uploaded images, and local configuration:
+
+```bash
+npm run backend-test:cleanup
+```
+
+The test APIs are `GET/POST/PATCH/DELETE /api/backend-test/recipes` (use `?id=...` for a single recipe) and `GET/POST/DELETE /api/backend-test/images`. Writes require a matching `Origin` header, which the test page sends automatically. Production authentication must be integrated before exposing application APIs.
+
+Import the shared [Postman collections](postman/README.md) for repeatable CRUD and production-guard checks. With the development server running, `npm run test:postman` runs recipe/validation checks; append `-- --env-var runImageTests=true` to include image upload/read/cleanup. The Postman CLI must be installed separately. See the [CRUD review](docs/crud-review.md) for verification results.
+
 ## Manual live storage check
 
 With database and Blob credentials configured, run:
@@ -92,7 +115,7 @@ With database and Blob credentials configured, run:
 npm run storage:check
 ```
 
-This command writes disposable test data. It creates a uniquely named PostgreSQL schema, applies both migrations there, and tests real Prisma create/read/update/delete operations, transaction rollback, visibility, and bookmarks. It also uploads the sample PNG to private Blob storage, verifies its contents and access restrictions, modifies its file metadata, and removes the object and records. Cleanup removes the temporary schema and verifies that no sample Blob objects remain.
+This command writes disposable test data. It creates a uniquely named PostgreSQL schema, applies the migrations there, and tests real Prisma create/read/update/delete operations, transaction rollback, visibility, and bookmarks. It also uploads the sample PNG to private Blob storage, verifies its contents and access restrictions, modifies its file metadata, and removes the object and records. Cleanup removes the temporary schema and verifies that no sample Blob objects remain.
 
 It does not modify public application tables or their migration history. The database role must be allowed to create a schema. This check is manual and is not part of setup or CI. It writes a credential-free report to [storage-test-results.json](docs/storage-test-results.json). See the [system architecture](docs/architecture.md) for current boundaries and remaining integration work.
 

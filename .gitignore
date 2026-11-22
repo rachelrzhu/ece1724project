@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Local setup assessment
 /docs/setup-review.md
+
+# Local backend test schema/user configuration
+/.backend-test.json

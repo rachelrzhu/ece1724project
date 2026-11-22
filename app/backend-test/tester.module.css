@@ -1,0 +1,21 @@
+.page { max-width: 680px; margin: 24px auto; padding: 0 16px; }
+.page h1 { font-size: 24px; margin-bottom: 8px; }
+.page h2 { margin-top: 20px; }
+.page p { margin: 8px 0; }
+.page fieldset { border: 1px solid #888; padding: 12px; margin-top: 16px; min-width: 0; }
+.page legend { padding: 0 4px; }
+.page label { display: grid; gap: 4px; margin-bottom: 10px; }
+.page input, .page select, .page textarea, .page button { font: inherit; color: inherit; background: var(--background); border: 1px solid #888; border-radius: 3px; padding: 6px 8px; min-width: 0; max-width: 100%; }
+.page input[type="file"] { width: 100%; }
+.page button { cursor: pointer; }
+.page button:disabled { opacity: .5; cursor: default; }
+.page [role="alert"] { border-left: 3px solid currentColor; padding-left: 10px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.ingredientRow { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; margin: 8px 0; padding: 8px 0; border-bottom: 1px solid #888; }
+.ingredientNote { grid-column: 1 / -1; }
+.removeIngredient { align-self: start; margin-top: 28px; }
+@media (max-width: 540px) {
+  .ingredientRow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .ingredientName { grid-column: 1 / -1; }
+}
+.output { padding: 12px; border: 1px solid #888; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 300px; overflow: auto; font-size: 13px; }

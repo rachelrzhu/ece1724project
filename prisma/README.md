@@ -21,7 +21,7 @@ Use a dedicated development database. Set its URLs in `.env.local`, review the m
 npm run db:migrate
 ```
 
-This explicitly applies the baseline and recipe migration to the selected database. Do not use a production connection for development tests.
+This explicitly applies the baseline, recipe, and authentication migrations to the selected database. Do not use a production connection for development tests.
 
 ## Existing database with users and files
 
@@ -38,7 +38,7 @@ Before adopting this history:
    npx prisma migrate resolve --applied 0_baseline
    ```
 
-5. Review the additive recipe migration and apply it with `npm run db:migrate`.
+5. Review the pending recipe and authentication migrations and apply them with `npm run db:migrate`.
 
 Recording the baseline writes migration metadata. It does not run the baseline's table-creation SQL. Do not run the baseline SQL against tables that already exist. Public application tables and their migration history have not been changed by this implementation.
 
