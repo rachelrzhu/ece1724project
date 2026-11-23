@@ -1,13 +1,18 @@
 "use client";
 
-import { Button, Form, Input, Label, Link, TextField } from "@heroui/react";
+import { Button, Form, Input, Label, TextField } from "@heroui/react";
 import { createAuthClient } from "better-auth/client";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
 
 const auth = createAuthClient();
 
-export default function AccountForm({ signedInEmail }: { signedInEmail?: string }) {
+type AccountFormProps = {
+  signedInEmail?: string;
+  googleEnabled: boolean;
+};
+
+export default function AccountForm({ signedInEmail, googleEnabled }: AccountFormProps) {
   const router = useRouter();
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState("");
@@ -46,11 +51,38 @@ export default function AccountForm({ signedInEmail }: { signedInEmail?: string 
     });
   }
 
+  function continueWithGoogle() {
+    setError("");
+    startTransition(async () => {
+      try {
+        const result = await auth.signIn.social({
+          provider: "google",
+          callbackURL: "/",
+          errorCallbackURL: "/account",
+        });
+        if (result.error) setError("Could not start Google sign-in. Please try again.");
+      } catch {
+        setError("Could not reach the account service. Please try again.");
+      }
+    });
+  }
+
   return (
-    <main>
-      <Link href="/">Home</Link>
-      <h1>Account</h1>
-      <Form onSubmit={submit}>
+    <>
+      {!signedInEmail && (
+        <div className="space-y-1">
+          <Button
+            type="button"
+            variant="secondary"
+            isDisabled={pending || !googleEnabled}
+            onPress={continueWithGoogle}
+          >
+            Continue with Google
+          </Button>
+          {!googleEnabled && <p>Google sign-in is unavailable in this environment.</p>}
+        </div>
+      )}
+      <Form className="max-w-sm space-y-3" onSubmit={submit}>
         {signedInEmail ? (
           <p>Signed in as {signedInEmail}</p>
         ) : (
@@ -85,6 +117,7 @@ export default function AccountForm({ signedInEmail }: { signedInEmail?: string 
       {error && <p role="alert">{error}</p>}
       {!signedInEmail && (
         <Button
+          variant="secondary"
           isDisabled={pending}
           onPress={() => {
             setRegistering(!registering);
@@ -94,6 +127,6 @@ export default function AccountForm({ signedInEmail }: { signedInEmail?: string 
           {registering ? "Use an existing account" : "Register a new account"}
         </Button>
       )}
-    </main>
+    </>
   );
 }
