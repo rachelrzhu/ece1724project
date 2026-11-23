@@ -34,11 +34,11 @@ npm run setup
 
 To open a terminal in the right folder, use your editor's **Open Folder** and then **Terminal → New Terminal**. Alternatively, type `cd ` followed by the project folder's path, putting the path in double quotes if it contains spaces.
 
-Setup checks Node.js and npm, installs the exact packages listed in `package-lock.json`, generates the Prisma client, prepares `.env.local` if missing, and starts the app. An internet connection is needed for installation and the first run, including downloading Google fonts. No Vercel login, PostgreSQL installation, Docker, or credentials are required for the placeholder or automated checks. Setup does not apply database migrations.
+Setup checks Node.js and npm, installs the exact packages listed in `package-lock.json`, generates the Prisma client, prepares `.env.local` if missing, and starts the app. Installation needs an internet connection. The homepage and automated checks work without cloud credentials. Setup does not apply database migrations.
 
 ### 4. Open the app
 
-Wait until the terminal says **Ready**, then open the **Local** address it prints, normally [http://127.0.0.1:3000](http://127.0.0.1:3000). You should see **Hello world**.
+Wait until the terminal says **Ready**, then open the **Local** address it prints, normally [http://127.0.0.1:3000](http://127.0.0.1:3000). The homepage lists public recipes. If a database is unavailable, it shows a connection message.
 
 If another program uses port 3000, Next.js normally chooses the next available port. Always use the address printed in your terminal.
 
@@ -48,12 +48,13 @@ Keep the terminal open while using the app. Press **Ctrl+C** to stop it.
 
 Next.js runs the frontend and its server-side code together. **You only need one command and one terminal**; there is no separate backend server to install or start.
 
-- The frontend homepage is in `app/page.tsx`.
+- The temporary HeroUI screens live in `app/_dummy-frontend/`. The page files for `/`, `/account`, `/recipes/new`, and `/recipes/[id]` each re-export one screen. To replace the wireframe, point those page files at the new screens, then remove `app/_dummy-frontend/`. The recipe server actions live in `app/actions.ts`.
+- The homepage lets you search public recipes. Sign in or register at `/account` to test recipe creation, editing, deletion, cover uploads, and bookmarks.
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
 - `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.
 - `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
-- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. The application has no product sign-in, editor, or scaling interface yet. Setup does not provision cloud services.
+- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. Setup does not provision cloud services.
 
 An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`.
 
@@ -67,7 +68,7 @@ After the first setup, open a terminal in the project folder and run:
 npm run dev
 ```
 
-Edit `app/page.tsx` and save; the browser updates automatically. Stop the server with **Ctrl+C**. If a teammate changes the project's dependencies, stop the server and run `npm run setup` again to reinstall them.
+Edit `app/_dummy-frontend/home.tsx` and save to see changes in the browser. Stop the server with **Ctrl+C**. If a teammate changes the project's dependencies, stop the server and run `npm run setup` again to reinstall them.
 
 Other useful commands:
 
@@ -95,7 +96,7 @@ npm run dev -- --hostname 127.0.0.1
 
 Open [http://127.0.0.1:3000/backend-test](http://127.0.0.1:3000/backend-test). Use **Add ingredient** to enter more ingredients, or **Remove** beside a row to delete it. Each ingredient has its own quantity, unit, and optional note; leave quantity blank and add a note for entries such as “salt to taste.” The form supports up to 100 ingredients and one editable cooking step; additional saved steps are preserved. Use **Refresh / read**, **Create**, **Update selected**, **Delete selected**, and the image upload controls. Each action shows its HTTP status and JSON response.
 
-This is an integration tool with a fixed test identity, not a sign-in flow. Its APIs use the existing recipe/image services against an isolated PostgreSQL schema. They accept local development requests only and return 404 in production. Existing application tables are unchanged. The test configuration stays in ignored `.backend-test.json`; test records persist between development-server restarts. The product frontend remains separate under `app/page.tsx` for continued frontend work.
+This is an integration tool with a fixed test identity, not a sign-in flow. Its APIs use the existing recipe/image services against an isolated PostgreSQL schema. They accept local development requests only and return 404 in production. Existing application tables are unchanged. The test configuration stays in ignored `.backend-test.json`; test records persist between development-server restarts. The product homepage uses the temporary screens in `app/_dummy-frontend/`.
 
 Database credentials are required; image testing also needs the Blob token. To remove the tester's database schema, uploaded images, and local configuration:
 
@@ -130,7 +131,7 @@ It does not modify public application tables or their migration history. The dat
 | Server already running | Use its existing browser page, or press Ctrl+C in that project's running terminal before running setup again. Setup refuses to reinstall packages while it detects an active development server. |
 | Server lock after a crash | Close any running server for this project first. If the problem remains, delete only the generated `.next` folder in this project and rerun setup. Next.js will recreate it. |
 | A specific port is busy | Use the next available port, for example `npm run setup -- --port 3002`. |
-| Package download or font download fails | Check your internet connection, proxy, or VPN, then retry. If it persists, share the error message with a teammate. |
+| Package download fails | Check your internet connection, proxy, or VPN, then retry. If it persists, share the error message with a teammate. |
 | Browser says it cannot connect | Keep the terminal running and use its printed Local address. Check the terminal for errors. |
 
 If setup fails, it stops and prints a next step. It does not overwrite `.env.local` or change the dependency versions to try to fix the error.
