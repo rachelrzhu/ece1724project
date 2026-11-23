@@ -6,6 +6,12 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { getDatabase } from "@/lib/db/client";
 
+export function getGoogleProviderOptions() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (clientId && clientSecret) return { clientId, clientSecret };
+}
+
 function createAuth() {
   const secret = process.env.BETTER_AUTH_SECRET;
   if (!secret || secret.length < 32)
@@ -27,15 +33,8 @@ function createAuth() {
       minPasswordLength: 8,
       maxPasswordLength: 128,
     },
-    socialProviders:
-      process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-        ? {
-            google: {
-              clientId: process.env.GOOGLE_CLIENT_ID,
-              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            },
-          }
-        : {},
+    socialProviders: { google: getGoogleProviderOptions() },
+    onAPIError: { errorURL: "/" },
     session: { expiresIn: 60 * 60 * 24 * 7, cookieCache: { enabled: false } },
     rateLimit: {
       enabled: true,
