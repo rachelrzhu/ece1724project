@@ -38,9 +38,9 @@ Setup checks Node.js and npm, installs the exact packages listed in `package-loc
 
 ### 4. Open the app
 
-Wait until the terminal says **Ready**, then open the **Local** address it prints, normally [http://127.0.0.1:3000](http://127.0.0.1:3000). The homepage lists public recipes. If a database is unavailable, it shows a connection message.
+Wait until the terminal says **Ready**, then open [Savor on localhost](http://localhost:3000). The homepage lists public recipes. If a database is unavailable, it shows a connection message. The homepage and account form offer **Continue with Google** when the provider is configured. [Google sign-in setup](docs/deployment.md#google-sign-in)
 
-If another program uses port 3000, Next.js normally chooses the next available port. Always use the address printed in your terminal.
+If Next.js selects another port, use that port with `localhost` in the browser, in `BETTER_AUTH_URL`, and in the Google client's authorized redirect URI.
 
 Keep the terminal open while using the app. Press **Ctrl+C** to stop it.
 

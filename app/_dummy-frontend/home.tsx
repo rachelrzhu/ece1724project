@@ -1,6 +1,8 @@
 import { ButtonRoot as Button } from "@heroui/react/button";
 import { InputRoot as Input } from "@heroui/react/input";
 import { LinkRoot as Link } from "@heroui/react/link";
+import AccountButton from "@/app/account-button";
+import { getGoogleProviderOptions, readSession } from "@/lib/auth/server";
 import { listRecipes } from "@/lib/product/queries";
 import PageFrame from "./page-frame";
 import RecipeActions from "./recipe-actions";
@@ -13,7 +15,7 @@ const collectionTitles = {
 };
 
 export default async function Home({ searchParams }: PageProps<"/">) {
-  const params = await searchParams;
+  const [params, session] = await Promise.all([searchParams, readSession().catch(() => null)]);
   const query = typeof params.q === "string" ? params.q : "";
   const collection = params.collection === "mine" || params.collection === "saved"
     ? params.collection
@@ -35,7 +37,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         <Link href="/" aria-current={collection === "explore" ? "page" : undefined}>
           Public recipes
         </Link>
-        {result?.signedIn && (
+        {session && (
           <>
             <Link href="/?collection=mine" aria-current={collection === "mine" ? "page" : undefined}>
               My recipes
@@ -45,10 +47,20 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </Link>
           </>
         )}
-        <Link href="/account">{result?.signedIn ? "Account" : "Sign in or register"}</Link>
+        <Link href="/account">{session ? "Account" : "Sign in or register"}</Link>
       </nav>
 
-      {result?.signedIn && (
+      {session && <p>Signed in as {session.user.email}</p>}
+      {(session || getGoogleProviderOptions()) && <AccountButton signedIn={Boolean(session)} />}
+      {params.error && (
+        <p role="alert">
+          {params.error === "access_denied"
+            ? "Google sign-in was canceled. You can try again."
+            : "Google sign-in could not be completed. Please try again."}
+        </p>
+      )}
+
+      {session && (
         <details>
           <summary className="cursor-pointer text-lg font-semibold">Create recipe</summary>
           <div className="mt-3"><RecipeEditor /></div>
