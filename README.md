@@ -34,13 +34,13 @@ npm run setup
 
 To open a terminal in the right folder, use your editor's **Open Folder** and then **Terminal → New Terminal**. Alternatively, type `cd ` followed by the project folder's path, putting the path in double quotes if it contains spaces.
 
-Setup checks Node.js and npm, installs the exact packages listed in `package-lock.json`, generates the Prisma client, prepares `.env.local` if missing, and starts the app. An internet connection is needed for installation and the first run, including downloading Google fonts. No Vercel login, PostgreSQL installation, Docker, or credentials are required for the placeholder or automated checks. Setup does not apply database migrations.
+Setup checks Node.js and npm, installs the exact packages listed in `package-lock.json`, generates the Prisma client, prepares `.env.local` if missing, and starts the app. An internet connection is needed for installation and the first run, including downloading Google fonts. The Savor homepage opens and the automated checks run without cloud credentials. Setup does not apply database migrations.
 
 ### 4. Open the app
 
-Wait until the terminal says **Ready**, then open the **Local** address it prints, normally [http://127.0.0.1:3000](http://127.0.0.1:3000). You should see **Hello world**.
+Wait until the terminal says **Ready**, then open [Savor on localhost](http://localhost:3000). The homepage shows **Continue with Google** when the provider is configured. To enable it, follow the [Google sign-in setup](docs/deployment.md#google-sign-in).
 
-If another program uses port 3000, Next.js normally chooses the next available port. Always use the address printed in your terminal.
+If Next.js selects another port, use that port with `localhost` in the browser, in `BETTER_AUTH_URL`, and in the Google client's authorized redirect URI.
 
 Keep the terminal open while using the app. Press **Ctrl+C** to stop it.
 
@@ -53,7 +53,7 @@ Next.js runs the frontend and its server-side code together. **You only need one
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
 - `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. These services require a verified session reader before connecting authenticated product interfaces.
 - `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
-- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. The application has no product sign-in, editor, or scaling interface yet. Setup does not provision cloud services.
+- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. The homepage handles Google sign-in. The editor and scaling interfaces are planned. Setup does not provision cloud services.
 
 An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`.
 
