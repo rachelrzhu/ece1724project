@@ -104,7 +104,7 @@ Services accept a session reader supplied by the server authentication module. I
 | `RecipeStep` | Recipe, position, and instruction. Each position is unique within a recipe. |
 | `Bookmark` | User-to-recipe reference with a composite primary key preventing duplicate saves. |
 
-Servings use `Decimal(12,4)` and ingredient quantities use `Decimal(16,6)`. Service responses serialize decimals as strings to preserve stored precision. The future scaling adapter will validate conversion to finite JavaScript numbers at its boundary. Display rounding must not be written back to the recipe.
+Servings use `Decimal(12,4)` and ingredient quantities use `Decimal(16,6)`. Service responses serialize decimals as strings to preserve stored precision. The scaling engine converts these strings to finite, positive JavaScript numbers for calculation. Display rounding applies only when formatting the preview.
 
 Input contracts allow 1–100 ingredients and steps, a title of up to 160 characters, positive servings up to 10,000, and nonnegative preparation/cooking times up to 10,080 minutes each. Quantified ingredients require a unit and a positive quantity of at most 1,000,000. Unquantified entries require a descriptive note, such as “to taste.” Database checks reinforce numeric ranges, nonempty content, and valid ingredient measurements.
 
@@ -146,13 +146,9 @@ The owner-scoped image reader checks file ownership before accessing Blob and ke
 
 ## 7. Scaling and workspace state
 
-The scaling engine will be a pure TypeScript module independent of React, Redux, authentication, and persistence. It will always calculate from original quantities:
+The shared TypeScript engine accepts the original recipe detail and a scaling request. The serving control divides the target servings by the original servings. The available-ingredient control converts the original required quantity to the cook’s chosen unit, then divides the available quantity by that requirement. Both modes multiply every measured row by that factor and return the resulting servings, adjusted quantities, and warnings. [Frontend integration guide](recipe-scaling.md)
 
-- **Serving mode:** factor = target servings / original servings.
-- **Ingredient mode:** factor = available quantity / original required quantity after conversion to compatible units.
-- **Output:** original quantity × factor, with implied servings derived from the same factor.
-
-Only documented conversions within mass or volume dimensions will be enabled. Count quantities scale numerically and generate warnings for impractical fractions. Unmeasured ingredients remain unchanged and cannot drive scaling. Unknown units, incompatible dimensions, and nonpositive or nonfinite inputs are rejected as constraints. The engine will not infer mass from volume or adjust cooking time and temperature.
+The engine supports mass, volume, and count units. It reports incompatible units and invalid inputs, preserves unmeasured ingredients, and warns about fractional counts. Cooking steps, times, and temperatures retain their original values.
 
 A Redux store will be created per recipe workspace. State includes mode, target servings, selected ingredient, available quantity/unit, and bounded undo history. Selectors derive quantities and warnings from the same configuration. Switching modes preserves the active factor; undo restores a coherent prior configuration; reset returns to base quantities. A recipe change creates a new workspace and clears stale history. No server-global Redux store is used.
 
