@@ -1,3 +1,5 @@
+import { publishedChineseRecipes } from "./published-chinese-recipes";
+
 // The first two local email addresses also serve as the integration-test logins.
 export const demoAuthors = [
   { slot: 1, name: "Mira Patel", localEmail: "rachel@savor.local" },
@@ -380,4 +382,5 @@ export const demoRecipes: DemoRecipe[] = [
       "Spoon hot rice into bowls and ladle the gumbo around it.",
     ],
   },
+  ...publishedChineseRecipes,
 ];

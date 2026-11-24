@@ -15,7 +15,17 @@ Keep `main` as Vercel's Production Branch. A separate `prod` branch is unnecessa
 3. Open a pull request from **dev to preprod**. Check the changes, let `check`, `release-path`, and `Vercel` pass, and merge it.
 4. Open the **preprod branch deployment** in Vercel. Test the homepage, health endpoint, and any changed authenticated features using preprod data. A passing build does not replace testing the actual page.
 5. Open a pull request from **preprod to main**. Let the required checks pass and merge only after you have tested preprod. This is the deliberate production release step.
-6. After a release, bring `main` back into `dev` (`git switch dev`, `git merge origin/main`, then `git push origin dev`). Before a later dev-to-preprod PR, also merge `origin/preprod` into `dev` if GitHub requests an update. Use merge commits for these long-lived branches; keep them after merging.
+6. After a release, fetch the latest branches and merge the released commit into `dev`.
+
+   ```bash
+   git fetch origin
+   git switch dev
+   git merge --ff-only origin/dev
+   git merge origin/main
+   git push origin dev
+   ```
+
+   If GitHub requests an update on a later dev-to-preprod PR, repeat the sequence with `git merge origin/preprod` in place of `git merge origin/main`. Use merge commits for PRs between these long-lived branches and keep the branches after merging.
 
 Protected `main` and `preprod` require a pull request, an up-to-date branch, passing application checks, the correct source branch, and a successful Vercel build. Admins must follow these rules too. Dev allows direct pushes; all three branches reject force pushes and deletion. The initial setup creates dev and preprod without changing main or publishing unfinished local work.
 
@@ -48,6 +58,12 @@ Use independent database credentials and Blob stores. Separate page URLs do not 
 Leave `NODE_ENV` to Next.js: local `next dev` uses `development`; **both** Preview and Production builds use `production`. `NODE_ENV=preprod` and `.env.preprod` are not supported stage selectors. Vercel supplies `VERCEL_ENV` (`preview` or `production`) and `VERCEL_GIT_COMMIT_REF` to distinguish deployments. `.env.local` is for local development credentials.
 
 Database migrations stay manual and environment-specific. Installation, CI, and Vercel builds generate the Prisma client but never run `prisma migrate deploy`. Review SQL, verify the target database and backup, and follow [the database workflow](../prisma/README.md). Apply additive changes in dev, then preprod, then production; a code rollback cannot undo a database change.
+
+When rotating a nonproduction Neon password or Blob token, update the corresponding Vercel Preview values and any `preprod` branch overrides that reference the rotated credential. These values are copies of the provider credentials. Verify their branch scopes, redeploy each affected preview, and check its homepage and `/api/health` through authenticated preview access.
+
+### Isolation verification on November 8, 2026
+
+Dev and preprod each started with an empty Neon database and a separate private Blob store. The baseline and recipe migrations applied to both databases. All 17 live database and storage checks passed in each environment, and the checks removed their disposable schemas and objects. Both protected previews returned HTTP 200 for the homepage and health endpoint and HTTP 404 for the local-only backend tester. Production retained its existing database, store, and deployment throughout the verification.
 
 ## Google sign-in
 

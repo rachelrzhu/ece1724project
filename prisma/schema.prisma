@@ -18,6 +18,34 @@ enum RecipeDifficulty {
   HARD
 }
 
+enum DietPreference {
+  NONE
+  VEGETARIAN
+  VEGAN
+}
+
+enum Allergen {
+  MILK
+  EGG
+  PEANUT
+  TREE_NUT
+  SESAME
+  SOY
+  WHEAT_TRITICALE
+  FISH
+  CRUSTACEANS_MOLLUSCS
+  MUSTARD
+  SULPHITES
+}
+
+enum IngredientDiet {
+  VEGAN
+  VEGETARIAN
+  NON_VEGETARIAN
+  NON_VEGAN
+  UNKNOWN
+}
+
 // Preserve the existing profile table. Authentication records are added separately.
 model User {
   id        String       @id(map: "users_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -32,8 +60,35 @@ model User {
   files     StoredFile[]
   recipes   Recipe[]
   bookmarks Bookmark[]
+  dietarySettings DietarySettings?
 
   @@map("users")
+}
+
+model DietarySettings {
+  userId   String         @id @map("user_id") @db.Uuid
+  diet     DietPreference @default(NONE)
+  allergens Allergen[]    @default([])
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("dietary_settings")
+}
+
+model IngredientProfile {
+  canonicalName  String               @id @map("canonical_name") @db.VarChar(160)
+  classification IngredientDiet
+  allergens      IngredientAllergen[]
+
+  @@map("ingredient_profiles")
+}
+
+model IngredientAllergen {
+  canonicalName String            @map("canonical_name") @db.VarChar(160)
+  allergen      Allergen
+  ingredient    IngredientProfile @relation(fields: [canonicalName], references: [canonicalName], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([canonicalName, allergen])
+  @@map("ingredient_allergens")
 }
 
 model Session {
@@ -106,6 +161,8 @@ model Recipe {
   cookMinutes  Int                @map("cook_minutes")
   difficulty   RecipeDifficulty
   visibility   RecipeVisibility   @default(PRIVATE)
+  // Historical UUID stays on a copy after the source is deleted.
+  sourceRecipeId String?          @map("source_recipe_id") @db.Uuid
   coverFileId  String?            @unique @map("cover_file_id") @db.Uuid
   createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)

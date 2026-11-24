@@ -39,7 +39,7 @@ P0 is the proposed scope for the demo. It includes cover photos and two scaling 
 
 | ID | Priority | Requirement | Acceptance criteria / boundary |
 | --- | --- | --- | --- |
-| FORK-01 | P1 | Independently editable fork | Signed-in user copies an accessible public recipe into new private recipe/ingredient/step rows in one database transaction. Record parent provenance. Source edits/deletion do not alter fork contents. Proposed first release omits photos with a clear notice; confirm before implementing. |
+| FORK-01 | P1 | Independently editable fork | Signed-in user copies a public recipe into new private recipe, ingredient, and step rows in one database transaction. Record the source ID. Source edits and deletion leave the copy intact. The first release omits the source cover and tells the cook before copying. |
 | PREF-01 | P1 | Structured dietary preferences/allergens | User can maintain preferences and declared allergens. Ingredient-to-allergen joins drive exclusion/flagging. Test at least one multi-allergen ingredient. Unknown/unmapped content remains identified as incomplete. |
 | DISC-02 | P1 | Additional discovery filters | Combine tags, difficulty, and total preparation/cooking-time filters with pagination and visibility rules. Define tag assignment explicitly; a missing allergen link does not prove a dietary tag. |
 | IMG-03 | P1 | Optional step images | Associate ordered steps with validated, authorized image assets; bound individual and aggregate upload sizes. Reordering/deleting steps does not leak or orphan image associations. |

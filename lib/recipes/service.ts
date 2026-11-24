@@ -21,20 +21,24 @@ export class RecipeCoverError extends Error {
   }
 }
 
-const recipeDetailSelect = {
-  id: true,
-  authorId: true,
+const recipeContentSelect = {
   title: true,
   description: true,
   baseServings: true,
   prepMinutes: true,
   cookMinutes: true,
   difficulty: true,
+} as const;
+
+const recipeDetailSelect = {
+  id: true,
+  authorId: true,
+  ...recipeContentSelect,
   visibility: true,
   coverFileId: true,
   ingredients: {
     orderBy: { position: "asc" },
-    select: { id: true, name: true, quantity: true, unit: true, note: true },
+    select: { id: true, name: true, canonicalName: true, quantity: true, unit: true, note: true },
   },
   steps: {
     orderBy: { position: "asc" },
@@ -128,6 +132,44 @@ export function createRecipeService({
           select: { id: true },
         });
       });
+    },
+
+    async copyPublic(sourceId: string) {
+      const authorId = await requireOwner();
+      const sourceRecipeId = recipeIdSchema.parse(sourceId);
+
+      // Prisma may read the recipe and its children in separate statements.
+      // Read one public snapshot even if the author edits or unpublishes it concurrently.
+      return database().$transaction(async (transaction) => {
+        const source = await transaction.recipe.findFirst({
+          where: { id: sourceRecipeId, visibility: "PUBLIC" },
+          select: {
+            ...recipeContentSelect,
+            ingredients: {
+              orderBy: { position: "asc" },
+              select: { position: true, name: true, canonicalName: true, quantity: true, unit: true, note: true },
+            },
+            steps: {
+              orderBy: { position: "asc" },
+              select: { position: true, instruction: true },
+            },
+          },
+        });
+        if (!source) return null;
+        const { ingredients, steps, ...content } = source;
+        return transaction.recipe.create({
+          data: {
+            ...content,
+            authorId,
+            sourceRecipeId,
+            visibility: "PRIVATE",
+            coverFileId: null,
+            ingredients: { create: ingredients },
+            steps: { create: steps },
+          },
+          select: { id: true },
+        });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
     },
 
     async update(id: string, input: unknown) {
