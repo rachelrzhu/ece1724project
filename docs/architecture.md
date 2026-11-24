@@ -6,7 +6,7 @@ The product screens use server-side recipe queries, authenticated Server Actions
 
 ## 1. Purpose and scope
 
-The recipe backend supports public and private recipes, title and ingredient search, bookmarks, and editable private copies of public recipes. The scaling controls adjust ingredient quantities for a different serving count or an ingredient the cook has on hand. Dietary filters and step photos are planned extensions. [Requirements and priorities](requirements.md)
+The recipe backend supports public and private recipes, title and ingredient search, bookmarks, editable private copies, and optional dietary conflict filtering. The scaling controls adjust ingredient quantities for a different serving count or an ingredient the cook has on hand. [Requirements and priorities](requirements.md)
 
 ## 2. Architecture overview
 
@@ -161,9 +161,11 @@ Each recipe workspace creates its own Redux store. State includes mode, target s
 
 A signed-in cook can copy a public recipe into their own collection. One transaction reads the source and creates a private recipe with new ingredient and step rows. Later edits and deletion of either recipe leave the other intact. The copy starts without a cover, and its owner can upload their own photo in the editor.
 
-### Planned dietary discovery
+### Dietary preferences and ingredient matches
 
-Dietary discovery will use structured ingredient-to-allergen relationships and separate user dietary preferences from declared allergies. Missing mappings remain unknown rather than evidence of suitability. These extensions do not change the core scaling calculation.
+Each signed-in cook can save a vegetarian or vegan preference and a separate list of allergens. Settings belong to the session user. Recipe cards and details compare the cook’s settings with a shared catalogue using each ingredient’s stored canonical name. The catalogue records dietary classifications and positive ingredient-to-allergen links. Exact-name matching also works for existing recipes and editable copies. Contributors can extend the catalogue through a reviewed data migration.
+
+Choosing to hide recorded conflicts applies the filter to the database query before counting and paginating. Ingredients without a matching profile remain visible with an incomplete-information notice. A product’s ingredients, preparation, and cross-contact can vary. The supported allergen and sulphite categories follow Canadian labelling terminology. [Canadian Food Inspection Agency consumer guide](https://inspection.canada.ca/en/food-labels/labelling/consumers/food-allergies)
 
 ## 8. Configuration and operational behavior
 

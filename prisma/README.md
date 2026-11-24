@@ -21,7 +21,7 @@ Use a dedicated development database. Set its URLs in `.env.local`, review the m
 npm run db:migrate
 ```
 
-This applies the baseline, recipe, authentication, and recipe-copy migrations to the selected database. Use a development connection for development tests.
+This applies the committed migrations to the selected database, including the dietary settings tables and ingredient catalogue. Use a development connection for development tests.
 
 ## Existing database with users and files
 

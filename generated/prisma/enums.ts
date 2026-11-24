@@ -24,3 +24,40 @@ export const RecipeDifficulty = {
 } as const
 
 export type RecipeDifficulty = (typeof RecipeDifficulty)[keyof typeof RecipeDifficulty]
+
+
+export const DietPreference = {
+  NONE: 'NONE',
+  VEGETARIAN: 'VEGETARIAN',
+  VEGAN: 'VEGAN'
+} as const
+
+export type DietPreference = (typeof DietPreference)[keyof typeof DietPreference]
+
+
+export const Allergen = {
+  MILK: 'MILK',
+  EGG: 'EGG',
+  PEANUT: 'PEANUT',
+  TREE_NUT: 'TREE_NUT',
+  SESAME: 'SESAME',
+  SOY: 'SOY',
+  WHEAT_TRITICALE: 'WHEAT_TRITICALE',
+  FISH: 'FISH',
+  CRUSTACEANS_MOLLUSCS: 'CRUSTACEANS_MOLLUSCS',
+  MUSTARD: 'MUSTARD',
+  SULPHITES: 'SULPHITES'
+} as const
+
+export type Allergen = (typeof Allergen)[keyof typeof Allergen]
+
+
+export const IngredientDiet = {
+  VEGAN: 'VEGAN',
+  VEGETARIAN: 'VEGETARIAN',
+  NON_VEGETARIAN: 'NON_VEGETARIAN',
+  NON_VEGAN: 'NON_VEGAN',
+  UNKNOWN: 'UNKNOWN'
+} as const
+
+export type IngredientDiet = (typeof IngredientDiet)[keyof typeof IngredientDiet]

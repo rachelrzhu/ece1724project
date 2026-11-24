@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright";
+import { checkDietaryPreferences } from "./check-dietary.mjs";
 
 const baseURL = new URL(process.env.SMOKE_ORIGIN || "http://127.0.0.1:3100");
 const { origin } = baseURL;
@@ -235,6 +236,8 @@ try {
   await stale.close();
   await search(reader, title, 1, "saved");
   passed("Two independent save submissions both succeed and produce one saved listing");
+
+  await checkDietaryPreferences({ owner, reader, guest, title, detail, ingredient, passed });
 
   await reader.goto(detail);
   await reader.getByRole("button", { name: "Make an editable copy" }).click();

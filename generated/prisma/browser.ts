@@ -23,6 +23,21 @@ export * from './enums';
  */
 export type User = Prisma.UserModel
 /**
+ * Model DietarySettings
+ * 
+ */
+export type DietarySettings = Prisma.DietarySettingsModel
+/**
+ * Model IngredientProfile
+ * 
+ */
+export type IngredientProfile = Prisma.IngredientProfileModel
+/**
+ * Model IngredientAllergen
+ * 
+ */
+export type IngredientAllergen = Prisma.IngredientAllergenModel
+/**
  * Model Session
  * 
  */
