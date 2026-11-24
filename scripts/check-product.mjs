@@ -182,7 +182,7 @@ try {
   await owner.getByLabel("Title", { exact: true }).fill(title);
   await owner.getByLabel("Description", { exact: true }).fill("Disposable browser verification recipe.");
   await owner.getByLabel("Name", { exact: true }).fill(ingredient);
-  await owner.getByLabel("Quantity (optional)", { exact: true }).fill("400");
+  await owner.getByRole("spinbutton", { name: /^Quantity\b/ }).fill("400");
   await owner.getByLabel("Unit", { exact: true }).fill("g");
   await owner.getByLabel("Step 1", { exact: true }).fill("Stir and serve.");
   await owner.getByLabel("Choose a photo (optional)", { exact: true }).setInputFiles({ name: "smoke-" + runId + ".png", mimeType: "image/png", buffer: fixture });

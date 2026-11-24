@@ -1,11 +1,7 @@
 import type { Metadata } from "next";
 import PageFrame from "@/app/_components/page-frame";
 import { getGoogleProviderOptions, readSession, safeReturnPath } from "@/lib/auth/server";
-<<<<<<< Updated upstream
-=======
-import { readDietaryPreferences } from "@/lib/dietary/server";
 import ProfileForm from "./profile-form";
->>>>>>> Stashed changes
 import AccountForm from "./account-form";
 
 export const metadata: Metadata = { title: "Account" };
