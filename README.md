@@ -42,9 +42,12 @@ Run `npm run dev` to start the app again. After a dependency change, stop the de
 | --- | --- |
 | `npm run check` | Run Prisma validation, lint, TypeScript, and the unit and migration tests. |
 | `npm test` | Run the test suite on its own. |
+| `npm run test:product` | Run the two-account browser check against the seeded local app. |
 | `npm run build` | Check the production build. |
 | `npm run setup -- --install-only` | Install dependencies without starting the app. |
 | `npm run dev -- --port 3002` | Start the dev server on a specific port. |
+
+For the browser check, start the [seeded local app](prisma/README.md#local-database-and-api-tests) with `npm run poc:dev`. In a second terminal, run `npx playwright install chromium` once, then `npm run test:product`. The test creates a recipe and cover, searches by ingredient, bookmarks from two tabs, makes the recipe private, and verifies the reader loses access after refresh. It deletes the test recipe and signs out both accounts. The uploaded file remains eligible for the local cleanup command after 24 hours.
 
 ## Simple local backend tester
 

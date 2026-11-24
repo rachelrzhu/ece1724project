@@ -175,7 +175,7 @@ On November 8, the team tested recipe edits and image upload, preview, and remov
 
 The combined backend has a separate local check for email/password sessions, private and public recipe access, cover images, and bookmarks. It uses a local PostgreSQL cluster and local media files. Unit tests cover validation and service behavior, and PGlite tests apply the migration SQL.
 
-The next integration step is to connect the product screens to the session, recipe, and media code. Verify sign-in, recipe creation, cover upload, and access from a second account in a browser, then test the Google callback and repeat the workflow in preprod. The recipe scaling controls and undo/reset behavior belong to the frontend integration.
+The product screens call the recipe actions and queries. The Playwright check signs in two users and follows a cover and recipe through creation, publication, bookmarking, and revocation. It checks the same detail and media URLs before and after a visibility change. Google consent and the return to a signed-in session require a live browser check on the registered deployment origin. [Run the browser check](../README.md#everyday-use)
 
 ## 10. Design references
 

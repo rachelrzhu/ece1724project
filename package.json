@@ -27,7 +27,8 @@
     "poc:stop-db": "node scripts/local-db.mjs stop",
     "poc:verify": "node scripts/local-db.mjs verify",
     "poc:cleanup-images": "node scripts/local-db.mjs cleanup-images",
-    "poc:start": "node scripts/local-db.mjs start"
+    "poc:start": "node scripts/local-db.mjs start",
+    "test:product": "node scripts/check-product.mjs"
   },
   "engines": {
     "node": "24.x"
@@ -57,6 +58,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
+    "playwright": "1.65.1",
     "prisma": "7.10.1",
     "tailwindcss": "^4",
     "tsx": "4.23.15",
