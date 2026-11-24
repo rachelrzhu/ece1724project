@@ -47,6 +47,36 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model DietarySettings
+ * 
+ */
+export type DietarySettings = Prisma.DietarySettingsModel
+/**
+ * Model IngredientProfile
+ * 
+ */
+export type IngredientProfile = Prisma.IngredientProfileModel
+/**
+ * Model IngredientAllergen
+ * 
+ */
+export type IngredientAllergen = Prisma.IngredientAllergenModel
+/**
+ * Model Session
+ * 
+ */
+export type Session = Prisma.SessionModel
+/**
+ * Model Account
+ * 
+ */
+export type Account = Prisma.AccountModel
+/**
+ * Model Verification
+ * 
+ */
+export type Verification = Prisma.VerificationModel
+/**
  * Model StoredFile
  * 
  */

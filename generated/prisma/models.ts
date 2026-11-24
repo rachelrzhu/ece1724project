@@ -9,6 +9,12 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
+export type * from './models/DietarySettings'
+export type * from './models/IngredientProfile'
+export type * from './models/IngredientAllergen'
+export type * from './models/Session'
+export type * from './models/Account'
+export type * from './models/Verification'
 export type * from './models/StoredFile'
 export type * from './models/Recipe'
 export type * from './models/RecipeIngredient'

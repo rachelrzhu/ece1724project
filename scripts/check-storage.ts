@@ -7,7 +7,7 @@ import { head, list } from "@vercel/blob";
 import pg from "pg";
 import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { readBlobEnvironment, readDatabaseEnvironment } from "../lib/config/env";
-import { createRecipeService } from "../lib/recipes/service";
+import { createRecipeService, RecipeAccessError } from "../lib/recipes/service";
 import { privateImageStore, type PrivateImageStore } from "../lib/storage/blob";
 import { createImageService, ImageAccessError } from "../lib/storage/service";
 
@@ -75,13 +75,13 @@ async function main() {
       await administrator!.connect();
     });
 
-    await check("database: apply both migrations in a disposable schema", async () => {
+    await check("database: apply migrations in a disposable schema", async () => {
       await administrator!.query(`CREATE SCHEMA "${schemaName}"`);
       schemaCreated = true;
       await administrator!.query("BEGIN");
       try {
         await administrator!.query(`SET LOCAL search_path TO "${schemaName}"`);
-        for (const migration of ["0_baseline", "20261108000000_recipe_domain"]) {
+        for (const migration of ["0_baseline", "20261108000000_recipe_domain", "20261108120000_authentication", "20261123000000_recipe_copy_source", "20261123010000_dietary_preferences", "20261123020000_usernames"]) {
           const sql = readFileSync(new URL(`../prisma/migrations/${migration}/migration.sql`, import.meta.url), "utf8")
             .replace('CREATE SCHEMA IF NOT EXISTS "public";', "");
           assert.ok(!sql.includes('"public"'), "Test migrations must not address the public schema.");
@@ -108,6 +108,12 @@ async function main() {
     const ownerRecipes = createRecipeService({ database: () => client, readSession: ownerSession });
     const otherRecipes = createRecipeService({ database: () => client, readSession: readerSession });
     const publicRecipes = createRecipeService({ database: () => client, readSession: async () => null });
+    const updatedRecipe = {
+      title: "Updated storage test bread", description: "Disposable integration test recipe.",
+      baseServings: 6, prepMinutes: 10, cookMinutes: 30, difficulty: "EASY",
+      ingredients: [{ name: "Flour", quantity: 600.123456, unit: "g" }],
+      steps: [{ instruction: "Mix the ingredients." }, { instruction: "Bake and cool." }],
+    };
     let recipeId = "";
 
     await check("database: add and read users, recipe, ingredients, and steps", async () => {
@@ -130,24 +136,46 @@ async function main() {
     });
 
     await check("database: modify and reread recipe, ingredient, and profile", async () => {
-      await client.$transaction(async (transaction) => {
-        await transaction.recipe.update({ where: { id: recipeId, authorId: ownerId }, data: { title: "Updated storage test bread", baseServings: new Prisma.Decimal("6") } });
-        await transaction.recipeIngredient.updateMany({ where: { recipeId }, data: { quantity: new Prisma.Decimal("600.123456") } });
-        await transaction.user.update({ where: { id: ownerId }, data: { name: "Updated test owner" } });
-      });
+      assert.deepEqual(await ownerRecipes.update(recipeId, updatedRecipe), { id: recipeId });
+      await client.user.update({ where: { id: ownerId }, data: { name: "Updated test owner" } });
       const stored = await ownerRecipes.getById(recipeId);
       assert.equal(stored?.title, "Updated storage test bread");
       assert.equal(stored?.baseServings, "6");
       assert.equal(stored?.ingredients[0].quantity, "600.123456");
+      assert.deepEqual(stored?.steps.map((step) => step.instruction), ["Mix the ingredients.", "Bake and cool."]);
       assert.equal((await client.user.findUnique({ where: { id: ownerId }, select: { name: true } }))?.name, "Updated test owner");
+    });
+
+    await check("database: isolate owned listing and reject non-owner or anonymous mutations", async () => {
+      assert.equal((await ownerRecipes.listOwn())[0].id, recipeId);
+      assert.equal((await ownerRecipes.listOwn())[0].baseServings, "6");
+      assert.deepEqual(await otherRecipes.listOwn(), []);
+      assert.equal(await otherRecipes.update(recipeId, updatedRecipe), null);
+      assert.equal(await otherRecipes.remove(recipeId), false);
+      await assert.rejects(publicRecipes.update(recipeId, updatedRecipe), RecipeAccessError);
+      await assert.rejects(publicRecipes.remove(recipeId), RecipeAccessError);
+      assert.equal((await ownerRecipes.getById(recipeId))?.title, updatedRecipe.title);
+    });
+
+    await check("database: roll back an entire service update when a replacement child fails", async () => {
+      // Fault injection stays inside this disposable schema and forces failure after nested deletes.
+      await administrator!.query(`ALTER TABLE "${schemaName}".recipe_steps ADD CONSTRAINT review_update_rollback CHECK (instruction <> 'Review fault injection')`);
+      const before = await ownerRecipes.getById(recipeId);
+      await assert.rejects(ownerRecipes.update(recipeId, {
+        ...updatedRecipe, title: "Must not persist", ingredients: [{ name: "Water", quantity: 1, unit: "mL" }],
+        steps: [{ instruction: "Review fault injection" }],
+      }));
+      assert.deepEqual(await ownerRecipes.getById(recipeId), before);
     });
 
     await check("database: enforce private/public reads with two test identities", async () => {
       assert.equal(await otherRecipes.getById(recipeId), null);
       assert.equal(await publicRecipes.getById(recipeId), null);
-      await client.recipe.update({ where: { id: recipeId }, data: { visibility: "PUBLIC" } });
+      await ownerRecipes.update(recipeId, { ...updatedRecipe, visibility: "PUBLIC" });
       assert.equal((await publicRecipes.getById(recipeId))?.id, recipeId);
-      await client.recipe.update({ where: { id: recipeId }, data: { visibility: "PRIVATE" } });
+      assert.equal(await otherRecipes.update(recipeId, updatedRecipe), null);
+      assert.equal(await otherRecipes.remove(recipeId), false);
+      await ownerRecipes.update(recipeId, { ...updatedRecipe, visibility: "PRIVATE" });
       assert.equal(await otherRecipes.getById(recipeId), null);
     });
 
@@ -173,7 +201,8 @@ async function main() {
     });
 
     await check("database: delete a recipe and verify cascading child deletion", async () => {
-      await client.recipe.delete({ where: { id: recipeId, authorId: ownerId } });
+      assert.equal(await ownerRecipes.remove(recipeId), true);
+      assert.equal(await ownerRecipes.remove(recipeId), false);
       assert.equal(await client.recipe.findUnique({ where: { id: recipeId } }), null);
       assert.equal(await client.recipeIngredient.count({ where: { recipeId } }), 0);
       assert.equal(await client.recipeStep.count({ where: { recipeId } }), 0);

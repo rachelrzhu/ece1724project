@@ -1,16 +1,10 @@
-# Requirements and sequenced backlog
-
-
-
-Related documents: [proposal](proposal.md), [architecture](architecture.md), [database workflow](../prisma/README.md).
+# Requirements and project backlog
 
 ## Product goal and ownership
 
-Help cooks create, discover, save, and adapt recipes to their portions and available ingredients. Personalized dietary discovery and independent forks are the next delivery priorities. Rachel originated the idea from daily-life needs and leads backend work; Grace leads frontend work. Both review and integrate each workflow.
+Cooks should be able to save a recipe and adjust it to the number of servings they need or the amount of an ingredient they have. Rachel proposed the idea and leads the backend. Grace leads the frontend. Both review each workflow together. [Project proposal](proposal.md)
 
-P0 is the committed working baseline. P1 is planned after P0 stabilizes. P2 is outside the committed schedule. These are proposed planning priorities pending approval.
-
-Two deliberate refinements to the brief: make coordinated reset/undo state part of P0 to substantiate the second advanced feature; move optional step photographs to P1 so cover-image integration is completed first. Forks and dietary discovery retain their P1 status. If either becomes essential to the presentation, explicitly promote it and remove equivalent work elsewhere.
+P0 is the proposed scope for the demo. It includes cover photos and two scaling controls with shared undo and reset. Editable copies and dietary filters are the first P1 priorities. Step photos can wait until cover uploads work end to end. Promoting a P1 feature means choosing which other work to defer. P2 falls outside the current schedule.
 
 ## P0 functional requirements
 
@@ -19,7 +13,7 @@ Two deliberate refinements to the brief: make coordinated reset/undo state part 
 | AUTH-01 | Register, sign in, sign out using Better Auth | Email/password and Google flows resolve a stable application user; session survives refresh; logout invalidates access. Errors do not expose credentials or provider internals. |
 | AUTH-02 | Enforce permissions on the server | An unauthenticated request cannot mutate data. A second account cannot edit/delete another user's recipe or attach its files. Private recipes are absent from public queries and inaccessible by guessed IDs. |
 | REC-01 | Create/edit a recipe | Persist title, description, positive base servings, nonnegative prep/cook minutes, difficulty, ordered ingredients, and ordered steps. Validation rejects incomplete required fields; a failed write leaves no partial child rows. |
-| REC-02 | Control visibility/delete | A recipe defaults to private until explicitly published. Only its author can change visibility/delete it. Related records are handled intentionally; public-to-private changes remove access from discovery, bookmarks, direct reads, and media delivery. |
+| REC-02 | Control visibility/delete | A recipe defaults to private until explicitly published. Only its author can change visibility/delete it. Deleting a recipe removes its ingredients, steps, and bookmarks and retains its independently owned file record. Making it private removes access for other users from discovery, bookmarks, direct reads, and media delivery. |
 | IMG-01 | Upload and display a cover photo | Signed-in owner uploads a supported image, bounded to 3 MiB. Inspect actual image contents and reject unsupported/empty/oversized files. Persist metadata and a recipe association; another user's upload cannot be attached. Display a placeholder when no cover exists. |
 | IMG-02 | Apply recipe visibility to photos | Visitors can view public recipe images. Only the owner can view private images. Blob credentials remain server-only. A failed metadata write triggers cleanup; unattached/deleted images have a documented cleanup path. |
 | DISC-01 | Browse/search public recipes | Paginated results contain only public recipes. Search supports title and canonical ingredient names; query parameters survive refresh. Show loading, empty, and failure states. Parameterize queries and bound page size. |
@@ -45,7 +39,7 @@ Two deliberate refinements to the brief: make coordinated reset/undo state part 
 
 | ID | Priority | Requirement | Acceptance criteria / boundary |
 | --- | --- | --- | --- |
-| FORK-01 | P1 | Independently editable fork | Signed-in user copies an accessible public recipe into new private recipe/ingredient/step rows in one database transaction. Record parent provenance. Source edits/deletion do not alter fork contents. Proposed first release omits photos with a clear notice; confirm before implementing. |
+| FORK-01 | P1 | Independently editable fork | Signed-in user copies a public recipe into new private recipe, ingredient, and step rows in one database transaction. Record the source ID. Source edits and deletion leave the copy intact. The first release omits the source cover and tells the cook before copying. |
 | PREF-01 | P1 | Structured dietary preferences/allergens | User can maintain preferences and declared allergens. Ingredient-to-allergen joins drive exclusion/flagging. Test at least one multi-allergen ingredient. Unknown/unmapped content remains identified as incomplete. |
 | DISC-02 | P1 | Additional discovery filters | Combine tags, difficulty, and total preparation/cooking-time filters with pagination and visibility rules. Define tag assignment explicitly; a missing allergen link does not prove a dietary tag. |
 | IMG-03 | P1 | Optional step images | Associate ordered steps with validated, authorized image assets; bound individual and aggregate upload sizes. Reordering/deleting steps does not leak or orphan image associations. |
@@ -56,31 +50,31 @@ Personalization must describe detected conflicts and data limitations. Do not la
 ## Engineering constraints
 
 - Keep server and browser application code in TypeScript. Reuse Tailwind/HeroUI and existing root-level application conventions.
-- Use one selected ORM and migration owner. Database records come from generated/inferred ORM types; server inputs use Zod schemas.
+- Use Prisma for database types and migrations. Validate incoming recipe data with Zod.
 - Authenticate and authorize at every service boundary. Derive user identity from verified sessions; ignore client-supplied owner IDs.
-- Keep secrets out of Git, client bundles, URLs, logs, and screenshots. Commit a blank `.env.example` after architecture determines the required variables.
+- Keep secrets out of Git, client bundles, URLs, logs, and screenshots. List the required variable names in `.env.example` with any secret values blank.
 - Create/update related recipe rows atomically. Blob operations use compensating cleanup and cannot be part of a PostgreSQL transaction.
-- Keep Preview/development resources distinct from Production before mutation-heavy testing. The current dashboard connects the same stores to Preview and Production; actual branch/credential isolation has not been established.
+- Use separate database and Blob resources for development, preprod, and production. Check the selected credentials before running tests that write data. See the [deployment guide](deployment.md).
 - Bound form lengths, ingredient/step counts, image sizes, pagination, and scaling inputs. Avoid shared caching of private records/media.
 - Do not add a separate Express/FastAPI service, Redis, queues, or microservices without a concrete requirement.
 
 ## Course alignment and evidence
 
-The [official handout](https://www.eecg.utoronto.ca/~cying/courses/ece1724-web/project/handout/) accepts the selected technology categories and lists both proposed advanced-feature categories. Qualification depends on implemented depth; library installation is not evidence. Basic uploads do not count as an advanced feature.
+The [course handout](https://www.eecg.utoronto.ca/~cying/courses/ece1724-web/project/handout/) lists authentication and coordinated application state as advanced-feature categories. The demo needs to show each feature working. Google sign-in belongs to authentication. Basic uploads meet the file-handling requirement.
 
-| Area | Planned evidence | Current status |
+The [architecture](architecture.md) describes how the product screens, recipe services, and data model fit together.
+
+| Area | Implementation and local evidence | Evidence still needed for the demo |
 | --- | --- | --- |
-| Required frontend/server stack | Responsive recipe views; Server Component reads, actions, and routes | Framework, HeroUI styles, and internal recipe services exist; recipe interfaces absent. |
-| Relational persistence | Schema/migrations and database-backed recipe workflow | Recipe models/migrations and live Prisma operations verified in a disposable schema; application database adoption remains pending. |
-| Cloud file handling | Real photo upload, record association, authorized delivery | Internal image validation/upload/owner-read services and a live private Blob round trip pass; browser upload and recipe visibility-aware delivery remain planned. |
-| Advanced feature 1 | Session flows and two-user access-control demonstration | Better Auth absent. |
-| Advanced feature 2 | Shared scaling controls, selectors, mode changes, reset/undo, state tests | Engine/store absent. |
-
-Do not count Google OAuth separately from authentication to satisfy the second feature. Image transformation could be a later additional feature, but is not needed for the proposed two-feature plan.
+| Frontend and server | Responsive recipe and account screens use Server Component reads, Server Actions, and authentication and image routes. Local browser checks cover desktop and mobile layouts. | Run the recipe workflow on the deployed app. |
+| Relational persistence | Prisma migrations cover users, authentication, recipes, ingredients, steps, bookmarks, and file metadata. The November 8 review checked CRUD and rollback in a disposable PostgreSQL schema. | Check the target database’s migration history and run the deployed workflow. |
+| Cloud files | The November 8 review tested private Blob upload, read, and deletion. Local browser checks cover image upload and visibility changes with the local media adapter. | Verify a cover upload and access from a second browser account on preprod. |
+| Advanced feature 1 — authentication | Better Auth handles email/password accounts and database sessions. Tests cover Google callbacks, and local checks exercise two-account permissions and sign-out. | Verify Google consent and session restoration on the preprod origin. |
+| Advanced feature 2 — scaling state | The recipe-scoped Redux workspace shares serving and ingredient settings, warnings, undo, and reset. Unit tests cover calculations and state transitions. | Demonstrate both modes and their shared history with the deployed demo recipes. |
 
 ## Sequenced backlog
 
-Items are local planning records, not published GitHub issues. Each implementation item becomes a small feature branch/PR after approval. Owner means lead; both members review integrated behavior.
+The table records the original November delivery plan. The lead coordinates each item and both teammates review the integrated result. Current issue states and owners are on the [GitHub roadmap](https://github.com/rachelrzhu/ece1724project/issues/1) and [milestones](https://github.com/rachelrzhu/ece1724project/milestones).
 
 | Order / ID | Target | Work and exit condition | Lead | Depends on |
 | --- | --- | --- | --- | --- |
@@ -118,4 +112,6 @@ Final-report target: at most 5,000 words, clear setup and user guide, individual
 
 ## Implementation status
 
-The implementation includes Prisma configuration, mapped legacy models, recipe migration SQL, Zod contracts, internal create/detail services, private-image validation/upload/owner-read services, environment setup, HeroUI styles, a liveness endpoint, and automated checks. Live Prisma CRUD/rollback and private Blob upload/read/delete passed in disposable test resources with verified cleanup. Public application tables and migration history remain unchanged. Authentication, recipe interfaces, browser uploads, recipe visibility-aware media delivery, discovery/bookmark services, and scaling remain planned. Remote CI and deployment verification remain outstanding. See the [architecture](architecture.md) for current boundaries and the next integrated milestone.
+Chrome checks against disposable PostgreSQL cover search and pagination, registration and sign-out, recipe editing and deletion, saved recipes, cover uploads and visibility changes, scaling controls, and layouts down to 350 px. The browser checks use the repository’s local media adapter. The standalone real Blob round trip and automated Google callback tests provide separate evidence for those service boundaries.
+
+The integrated preprod smoke test with Google OAuth and Vercel Blob remains open. Release through the [deployment workflow](deployment.md) and verify against preprod resources before promoting to production.

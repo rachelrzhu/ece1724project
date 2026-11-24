@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Local setup assessment
 /docs/setup-review.md
+
+# Local backend test schema/user configuration
+/.backend-test.json
+
+# Worktree-local POC database, media, runtime logs and browser evidence
+/.local-poc/

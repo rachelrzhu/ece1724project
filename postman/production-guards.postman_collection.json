@@ -1,0 +1,258 @@
+{
+  "info": {
+    "name": "ECE1724 · Production tester guards",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Run against a local npm run build / npm start instance, not the development server. Every tester API must return 404 without accessing database or Blob. No sandbox setup or cloud credentials are required."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3001",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const base=pm.variables.get(\"baseUrl\");",
+          "if (!/^http:\\/\\/(localhost|127\\.0\\.0\\.1|\\[::1\\])(:\\d+)?$/.test(base)) throw new Error(\"baseUrl must be a loopback HTTP origin with no trailing slash.\");"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test(\"Responses are not shared-cached\", () => pm.expect(pm.response.headers.get(\"Cache-Control\")).to.include(\"no-store\"));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "GET /api/backend-test/recipes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{baseUrl}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/backend-test/recipes"
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/backend-test/recipes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{baseUrl}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/backend-test/recipes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "PATCH /api/backend-test/recipes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{baseUrl}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/backend-test/recipes",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/backend-test/recipes",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{baseUrl}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/backend-test/recipes"
+      },
+      "response": []
+    },
+    {
+      "name": "GET /api/backend-test/images",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{baseUrl}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/backend-test/images"
+      },
+      "response": []
+    },
+    {
+      "name": "POST /api/backend-test/images",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{baseUrl}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/backend-test/images",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Postman bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 4,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 400,\n      \"unit\": \"g\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1,\n      \"unit\": \"count\"\n    },\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Mix the ingredients.\"\n    },\n    {\n      \"instruction\": \"Bake the bread.\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "DELETE /api/backend-test/images",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Error has a readable message\", () => pm.expect(pm.response.json().error).to.be.a(\"string\").and.not.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Origin",
+            "value": "{{baseUrl}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/backend-test/images"
+      },
+      "response": []
+    }
+  ]
+}

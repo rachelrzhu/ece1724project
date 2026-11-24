@@ -48,6 +48,7 @@ export type RecipeMinAggregateOutputType = {
   cookMinutes: number | null
   difficulty: $Enums.RecipeDifficulty | null
   visibility: $Enums.RecipeVisibility | null
+  sourceRecipeId: string | null
   coverFileId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -63,6 +64,7 @@ export type RecipeMaxAggregateOutputType = {
   cookMinutes: number | null
   difficulty: $Enums.RecipeDifficulty | null
   visibility: $Enums.RecipeVisibility | null
+  sourceRecipeId: string | null
   coverFileId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -78,6 +80,7 @@ export type RecipeCountAggregateOutputType = {
   cookMinutes: number
   difficulty: number
   visibility: number
+  sourceRecipeId: number
   coverFileId: number
   createdAt: number
   updatedAt: number
@@ -107,6 +110,7 @@ export type RecipeMinAggregateInputType = {
   cookMinutes?: true
   difficulty?: true
   visibility?: true
+  sourceRecipeId?: true
   coverFileId?: true
   createdAt?: true
   updatedAt?: true
@@ -122,6 +126,7 @@ export type RecipeMaxAggregateInputType = {
   cookMinutes?: true
   difficulty?: true
   visibility?: true
+  sourceRecipeId?: true
   coverFileId?: true
   createdAt?: true
   updatedAt?: true
@@ -137,6 +142,7 @@ export type RecipeCountAggregateInputType = {
   cookMinutes?: true
   difficulty?: true
   visibility?: true
+  sourceRecipeId?: true
   coverFileId?: true
   createdAt?: true
   updatedAt?: true
@@ -239,6 +245,7 @@ export type RecipeGroupByOutputType = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility: $Enums.RecipeVisibility
+  sourceRecipeId: string | null
   coverFileId: string | null
   createdAt: Date
   updatedAt: Date
@@ -277,6 +284,7 @@ export type RecipeWhereInput = {
   cookMinutes?: Prisma.IntFilter<"Recipe"> | number
   difficulty?: Prisma.EnumRecipeDifficultyFilter<"Recipe"> | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFilter<"Recipe"> | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.UuidNullableFilter<"Recipe"> | string | null
   coverFileId?: Prisma.UuidNullableFilter<"Recipe"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
@@ -297,6 +305,7 @@ export type RecipeOrderByWithRelationInput = {
   cookMinutes?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  sourceRecipeId?: Prisma.SortOrderInput | Prisma.SortOrder
   coverFileId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -321,6 +330,7 @@ export type RecipeWhereUniqueInput = Prisma.AtLeast<{
   cookMinutes?: Prisma.IntFilter<"Recipe"> | number
   difficulty?: Prisma.EnumRecipeDifficultyFilter<"Recipe"> | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFilter<"Recipe"> | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.UuidNullableFilter<"Recipe"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
@@ -340,6 +350,7 @@ export type RecipeOrderByWithAggregationInput = {
   cookMinutes?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  sourceRecipeId?: Prisma.SortOrderInput | Prisma.SortOrder
   coverFileId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -363,6 +374,7 @@ export type RecipeScalarWhereWithAggregatesInput = {
   cookMinutes?: Prisma.IntWithAggregatesFilter<"Recipe"> | number
   difficulty?: Prisma.EnumRecipeDifficultyWithAggregatesFilter<"Recipe"> | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityWithAggregatesFilter<"Recipe"> | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.UuidNullableWithAggregatesFilter<"Recipe"> | string | null
   coverFileId?: Prisma.UuidNullableWithAggregatesFilter<"Recipe"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Recipe"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Recipe"> | Date | string
@@ -377,6 +389,7 @@ export type RecipeCreateInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutRecipesInput
@@ -396,6 +409,7 @@ export type RecipeUncheckedCreateInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   coverFileId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -413,6 +427,7 @@ export type RecipeUpdateInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutRecipesNestedInput
@@ -432,6 +447,7 @@ export type RecipeUncheckedUpdateInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coverFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -450,6 +466,7 @@ export type RecipeCreateManyInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   coverFileId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -464,6 +481,7 @@ export type RecipeUpdateManyMutationInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -478,6 +496,7 @@ export type RecipeUncheckedUpdateManyInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coverFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -508,6 +527,7 @@ export type RecipeCountOrderByAggregateInput = {
   cookMinutes?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  sourceRecipeId?: Prisma.SortOrder
   coverFileId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -529,6 +549,7 @@ export type RecipeMaxOrderByAggregateInput = {
   cookMinutes?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  sourceRecipeId?: Prisma.SortOrder
   coverFileId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -544,6 +565,7 @@ export type RecipeMinOrderByAggregateInput = {
   cookMinutes?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   visibility?: Prisma.SortOrder
+  sourceRecipeId?: Prisma.SortOrder
   coverFileId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -701,6 +723,7 @@ export type RecipeCreateWithoutAuthorInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   cover?: Prisma.StoredFileCreateNestedOneWithoutCoverOfInput
@@ -718,6 +741,7 @@ export type RecipeUncheckedCreateWithoutAuthorInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   coverFileId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -765,6 +789,7 @@ export type RecipeScalarWhereInput = {
   cookMinutes?: Prisma.IntFilter<"Recipe"> | number
   difficulty?: Prisma.EnumRecipeDifficultyFilter<"Recipe"> | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFilter<"Recipe"> | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.UuidNullableFilter<"Recipe"> | string | null
   coverFileId?: Prisma.UuidNullableFilter<"Recipe"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Recipe"> | Date | string
@@ -779,6 +804,7 @@ export type RecipeCreateWithoutCoverInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutRecipesInput
@@ -797,6 +823,7 @@ export type RecipeUncheckedCreateWithoutCoverInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   ingredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutRecipeInput
@@ -829,6 +856,7 @@ export type RecipeUpdateWithoutCoverInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutRecipesNestedInput
@@ -847,6 +875,7 @@ export type RecipeUncheckedUpdateWithoutCoverInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ingredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput
@@ -863,6 +892,7 @@ export type RecipeCreateWithoutIngredientsInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutRecipesInput
@@ -881,6 +911,7 @@ export type RecipeUncheckedCreateWithoutIngredientsInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   coverFileId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -913,6 +944,7 @@ export type RecipeUpdateWithoutIngredientsInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutRecipesNestedInput
@@ -931,6 +963,7 @@ export type RecipeUncheckedUpdateWithoutIngredientsInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coverFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -947,6 +980,7 @@ export type RecipeCreateWithoutStepsInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutRecipesInput
@@ -965,6 +999,7 @@ export type RecipeUncheckedCreateWithoutStepsInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   coverFileId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -997,6 +1032,7 @@ export type RecipeUpdateWithoutStepsInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutRecipesNestedInput
@@ -1015,6 +1051,7 @@ export type RecipeUncheckedUpdateWithoutStepsInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coverFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1031,6 +1068,7 @@ export type RecipeCreateWithoutBookmarksInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   author: Prisma.UserCreateNestedOneWithoutRecipesInput
@@ -1049,6 +1087,7 @@ export type RecipeUncheckedCreateWithoutBookmarksInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   coverFileId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1081,6 +1120,7 @@ export type RecipeUpdateWithoutBookmarksInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   author?: Prisma.UserUpdateOneRequiredWithoutRecipesNestedInput
@@ -1099,6 +1139,7 @@ export type RecipeUncheckedUpdateWithoutBookmarksInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coverFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1115,6 +1156,7 @@ export type RecipeCreateManyAuthorInput = {
   cookMinutes: number
   difficulty: $Enums.RecipeDifficulty
   visibility?: $Enums.RecipeVisibility
+  sourceRecipeId?: string | null
   coverFileId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1129,6 +1171,7 @@ export type RecipeUpdateWithoutAuthorInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   cover?: Prisma.StoredFileUpdateOneWithoutCoverOfNestedInput
@@ -1146,6 +1189,7 @@ export type RecipeUncheckedUpdateWithoutAuthorInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coverFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1163,6 +1207,7 @@ export type RecipeUncheckedUpdateManyWithoutAuthorInput = {
   cookMinutes?: Prisma.IntFieldUpdateOperationsInput | number
   difficulty?: Prisma.EnumRecipeDifficultyFieldUpdateOperationsInput | $Enums.RecipeDifficulty
   visibility?: Prisma.EnumRecipeVisibilityFieldUpdateOperationsInput | $Enums.RecipeVisibility
+  sourceRecipeId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   coverFileId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1227,6 +1272,7 @@ export type RecipeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   cookMinutes?: boolean
   difficulty?: boolean
   visibility?: boolean
+  sourceRecipeId?: boolean
   coverFileId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1248,6 +1294,7 @@ export type RecipeSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   cookMinutes?: boolean
   difficulty?: boolean
   visibility?: boolean
+  sourceRecipeId?: boolean
   coverFileId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1265,6 +1312,7 @@ export type RecipeSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   cookMinutes?: boolean
   difficulty?: boolean
   visibility?: boolean
+  sourceRecipeId?: boolean
   coverFileId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1282,12 +1330,13 @@ export type RecipeSelectScalar = {
   cookMinutes?: boolean
   difficulty?: boolean
   visibility?: boolean
+  sourceRecipeId?: boolean
   coverFileId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type RecipeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "authorId" | "title" | "description" | "baseServings" | "prepMinutes" | "cookMinutes" | "difficulty" | "visibility" | "coverFileId" | "createdAt" | "updatedAt", ExtArgs["result"]["recipe"]>
+export type RecipeOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "authorId" | "title" | "description" | "baseServings" | "prepMinutes" | "cookMinutes" | "difficulty" | "visibility" | "sourceRecipeId" | "coverFileId" | "createdAt" | "updatedAt", ExtArgs["result"]["recipe"]>
 export type RecipeInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   cover?: boolean | Prisma.Recipe$coverArgs<ExtArgs>
@@ -1324,6 +1373,7 @@ export type $RecipePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     cookMinutes: number
     difficulty: $Enums.RecipeDifficulty
     visibility: $Enums.RecipeVisibility
+    sourceRecipeId: string | null
     coverFileId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1764,6 +1814,7 @@ export interface RecipeFieldRefs {
   readonly cookMinutes: Prisma.FieldRef<"Recipe", 'Int'>
   readonly difficulty: Prisma.FieldRef<"Recipe", 'RecipeDifficulty'>
   readonly visibility: Prisma.FieldRef<"Recipe", 'RecipeVisibility'>
+  readonly sourceRecipeId: Prisma.FieldRef<"Recipe", 'String'>
   readonly coverFileId: Prisma.FieldRef<"Recipe", 'String'>
   readonly createdAt: Prisma.FieldRef<"Recipe", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Recipe", 'DateTime'>
