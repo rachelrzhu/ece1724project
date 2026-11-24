@@ -178,14 +178,17 @@ async function deleteFixture(page, path) {
 async function clearOwnedFixtures(page) {
   // Navigation can fail after creation committed but before we received the new ID.
   await page.goto("/?collection=mine&q=" + runId);
+  let removed = false;
   for (const fixtureTitle of [title, copyTitle]) {
     const paths = await page.getByRole("link", { name: fixtureTitle, exact: true })
       .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
     for (const path of paths) {
       assert.match(path, /^\/recipes\/[\da-f-]{36}$/);
       await deleteFixture(page, path);
+      removed = true;
     }
   }
+  return removed;
 }
 
 try {
@@ -283,8 +286,8 @@ try {
 } finally {
   try {
     const cleanup = [];
-    if (!deleted) cleanup.push(clearOwnedFixtures(owner));
-    if (!copyDeleted) cleanup.push(clearOwnedFixtures(reader));
+    if (!deleted) cleanup.push(clearOwnedFixtures(owner).then((removed) => { deleted = removed; }));
+    if (!copyDeleted) cleanup.push(clearOwnedFixtures(reader).then((removed) => { copyDeleted = removed; }));
     for (const result of await Promise.allSettled(cleanup)) {
       if (result.status === "rejected") reportFailure(result.reason);
     }
