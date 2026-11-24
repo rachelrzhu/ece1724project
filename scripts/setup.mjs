@@ -2,9 +2,10 @@
 
 // Uses only Node built-ins so this works before npm packages are installed.
 import { spawn, spawnSync } from "node:child_process";
-import { constants, copyFileSync, existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkExistingServer, parseOptions, prepareEnvironment } from "./setup-lib.mjs";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const nodeDownload = "https://nodejs.org/en/download";
@@ -14,6 +15,7 @@ let interrupted = false;
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
     interrupted = true;
+    process.exitCode = signal === "SIGINT" ? 130 : 143;
     activeChild?.kill(signal);
   });
 }
@@ -33,48 +35,6 @@ function run(command, args = [], options = {}) {
   });
 }
 
-function parseOptions(args) {
-  const options = { installOnly: false, port: undefined, help: false };
-  for (let index = 0; index < args.length; index++) {
-    const arg = args[index];
-    if (arg === "--install-only") options.installOnly = true;
-    else if (arg === "--help" || arg === "-h") options.help = true;
-    else if (arg === "--port") {
-      const value = args[++index];
-      if (!/^\d{1,5}$/.test(value ?? "") || Number(value) < 1024 || Number(value) > 65535) {
-        throw new Error("Use --port followed by a number from 1024 to 65535. Example: npm run setup -- --port 3002");
-      }
-      options.port = value;
-    } else {
-      throw new Error(`Unknown option: ${arg}. Run npm run setup -- --help for available options.`);
-    }
-  }
-  return options;
-}
-
-function checkExistingServer() {
-  const lockPath = join(projectRoot, ".next", "dev", "lock");
-  if (!existsSync(lockPath)) return;
-
-  let pid;
-  try {
-    pid = JSON.parse(readFileSync(lockPath, "utf8")).pid;
-  } catch {
-    throw new Error("A Next.js server lock exists. Stop this project's running server with Ctrl+C before setup. See README.md if a previous server crashed.");
-  }
-  if (!Number.isInteger(pid) || pid <= 0) {
-    throw new Error("A Next.js server lock exists. See the 'Server already running' instructions in README.md.");
-  }
-
-  try {
-    process.kill(pid, 0); // Check only; do not stop another process.
-  } catch (error) {
-    if (error.code === "ESRCH") return; // Stale metadata; Next.js can reacquire its lock.
-    throw new Error("Cannot check the existing development server. Stop it before running setup.");
-  }
-  throw new Error("This project's server is already running. Use its browser page, or press Ctrl+C in its terminal before running setup again.");
-}
-
 async function main() {
   const options = parseOptions(process.argv.slice(2));
   if (options.help) {
@@ -85,7 +45,7 @@ npm run setup -- --install-only      Install packages without starting
 npm run setup -- --port 3002         Start on a specific port
 
 Requires Node.js 24 with npm. No cloud credentials are needed for the homepage or tests.
-Generates Prisma client and prepares .env.local if missing. Never applies migrations.
+Generates the Prisma client, fills missing .env.local settings, and checks the configuration.
 Next.js serves the frontend and server-side code together in one process tree.`);
     return;
   }
@@ -95,7 +55,7 @@ Next.js serves the frontend and server-side code together in one process tree.`)
     throw new Error(`This project uses Node.js 24. You have ${process.version}. Install version 24 from ${nodeDownload}, then reopen your terminal and try again.`);
   }
 
-  for (const file of ["package.json", "package-lock.json"]) {
+  for (const file of ["package.json", "package-lock.json", ".env.example", "prisma/schema.prisma"]) {
     if (!existsSync(join(projectRoot, file))) {
       throw new Error(`Missing ${file}. Download and extract the complete project folder before running setup.`);
     }
@@ -110,10 +70,10 @@ Next.js serves the frontend and server-side code together in one process tree.`)
     throw new Error(`npm was not found. Reinstall Node.js 24 with npm from ${nodeDownload} and reopen your terminal.`);
   }
 
-  checkExistingServer();
-  console.log(`1/2  Installing the project's packages with Node ${process.version} and npm ${npmVersion.stdout.trim()}.`);
+  checkExistingServer(projectRoot);
+  console.log(`1/3  Installing the project's packages with Node ${process.version} and npm ${npmVersion.stdout.trim()}.`);
   console.log("Internet is required. This may take a few minutes on the first run.");
-  console.log("Existing .env.local credentials will be left untouched.\n");
+  console.log("Setup keeps your existing .env.local settings.\n");
 
   const installCode = windows
     ? await run("npm ci --include=dev --no-fund --no-audit", [], { shell: true })
@@ -123,10 +83,17 @@ Next.js serves the frontend and server-side code together in one process tree.`)
     throw new Error("Package installation failed. Check your internet connection and the error above, then run setup again. If it still fails, share that error with your teammate.");
   }
 
-  const environmentPath = join(projectRoot, ".env.local");
-  if (!existsSync(environmentPath)) {
-    copyFileSync(join(projectRoot, ".env.example"), environmentPath, constants.COPYFILE_EXCL);
-    console.log("\nCreated .env.local from the environment template. Add development credentials when needed.");
+  console.log("\n2/3  Preparing and checking the local environment.");
+  const environment = prepareEnvironment(projectRoot, options.port);
+  if (environment.created) {
+    console.log("Created .env.local with a local authentication secret.");
+  } else if (environment.added.length) {
+    console.log(`Added missing settings to .env.local: ${environment.added.join(", ")}.`);
+  }
+  const checkCode = await run(process.execPath, ["--import", "tsx", "scripts/check-env.ts"]);
+  if (interrupted) return;
+  if (checkCode !== 0) {
+    throw new Error("Check the environment settings listed above and run setup again.");
   }
 
   if (options.installOnly) {
@@ -134,7 +101,7 @@ Next.js serves the frontend and server-side code together in one process tree.`)
     return;
   }
 
-  console.log("\n2/2  Starting the app (frontend and Next.js server together).");
+  console.log("\n3/3  Starting the app (frontend and Next.js server together).");
   console.log("When Next.js is ready, open localhost in your browser using the port shown in its Local URL.");
   console.log("You should see From My Kitchen. Keep this terminal open; press Ctrl+C to stop.\n");
 
