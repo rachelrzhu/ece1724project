@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import PageFrame from "@/app/_components/page-frame";
 import { getGoogleProviderOptions, readSession, safeReturnPath } from "@/lib/auth/server";
 import { readDietaryPreferences } from "@/lib/dietary/server";
@@ -15,6 +16,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const returnTo = safeReturnPath(params.returnTo, "/");
   return (
     <PageFrame title="Your account" back={{ href: "/", label: "Explore recipes" }} narrow>
+      {session && <Link href={`/users/${session.user.id}`} className="site-button-outline">View my public recipes</Link>}
       {session && <ProfileForm name={session.user.name ?? ""} username={session.user.username} image={session.user.image ?? null} />}
       <div className="site-panel space-y-5">
         {params.error && (

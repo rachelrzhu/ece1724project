@@ -132,7 +132,8 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
       setPreview(null);
       return;
     }
-    if (file.size === 0 || file.size > maxPhotoBytes || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    const knownType = file.type && file.type !== "application/octet-stream";
+    if (file.size === 0 || file.size > maxPhotoBytes || (knownType && !["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
       clearSelection();
       setFeedback({ message: "Choose a still JPEG, PNG, or WebP image up to 3 MiB." });
       return;

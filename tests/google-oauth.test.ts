@@ -1,22 +1,29 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { PGlite } from "@electric-sql/pglite";
+import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import { GET, POST } from "@/app/api/auth/[...all]/route";
 import { getAuth } from "@/lib/auth/server";
+import { getDatabase } from "@/lib/db/client";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/db/client", () => ({ getDatabase: () => ({}) }));
-vi.mock("better-auth/adapters/prisma", async () => {
-  const { memoryAdapter } = await import("better-auth/adapters/memory");
-  return {
-    prismaAdapter: () =>
-      memoryAdapter({ user: [], account: [], session: [], verification: [] }),
-  };
-});
 
 const origin = "https://savor.example.test";
 const clientId = "savor-test.apps.googleusercontent.com";
 const callbackURL = origin + "/api/auth/callback/google";
+let database: PGlite;
+let socket: PGLiteSocketServer;
 
-beforeAll(() => {
+beforeAll(async () => {
+  database = await PGlite.create();
+  const migrations = readdirSync("prisma/migrations", { withFileTypes: true })
+    .filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
+  for (const name of migrations) {
+    await database.exec(readFileSync(`prisma/migrations/${name}/migration.sql`, "utf8"));
+  }
+  socket = new PGLiteSocketServer({ db: database, host: "127.0.0.1", port: 0 });
+  await socket.start();
+  vi.stubEnv("DATABASE_URL", `postgresql://postgres@${socket.getServerConn()}/postgres`);
   vi.stubEnv("BETTER_AUTH_URL", origin);
   vi.stubEnv(
     "BETTER_AUTH_SECRET",
@@ -25,7 +32,14 @@ beforeAll(() => {
   vi.stubEnv("GOOGLE_CLIENT_ID", clientId);
   vi.stubEnv("GOOGLE_CLIENT_SECRET", "test-only-google-secret");
 });
-afterAll(() => vi.unstubAllEnvs());
+afterAll(async () => {
+  if (socket) {
+    await getDatabase().$disconnect();
+    await socket.stop();
+  }
+  await database?.close();
+  vi.unstubAllEnvs();
+});
 afterEach(() => vi.restoreAllMocks());
 
 function cookies(response: Response) {
@@ -57,6 +71,34 @@ async function beginSignIn() {
   const callback = new URL(callbackURL);
   callback.searchParams.set("state", state!);
   return { callback, headers: { Cookie: cookies(response) } };
+}
+
+it("registers an email account with a generated username and signs it back in", async () => {
+  const credentials = { email: "email-cook@example.test", password: "A test password" };
+  const request = (path: string, body: object) => POST(new Request(origin + "/api/auth/" + path, {
+    method: "POST",
+    headers: { Origin: origin, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  }));
+  const registered = await request("sign-up/email", { ...credentials, name: "Email Cook" });
+  expect(registered.status).toBe(200);
+  const { user } = await registered.json();
+  expect(user.username).toMatch(/^cook_[0-9a-f]{20}$/);
+  expect((await readUserSession(cookies(registered))).user.id).toBe(user.id);
+  const signedIn = await request("sign-in/email", credentials);
+  expect(signedIn.status).toBe(200);
+  expect((await readUserSession(cookies(signedIn))).user).toMatchObject({
+    id: user.id, username: user.username,
+  });
+});
+
+async function readUserSession(sessionCookie: string) {
+  const response = await GET(
+    new Request(origin + "/api/auth/get-session", {
+      headers: { Cookie: sessionCookie },
+    }),
+  );
+  return response.json();
 }
 
 it("returns a user who cancels Google sign-in to the app without a session", async () => {
@@ -110,17 +152,10 @@ it("imports the Google profile once and keeps local edits on later sign-ins", as
       redirectURI: callbackURL,
     }),
   );
-  async function readUserSession(sessionCookie: string) {
-    const response = await GET(
-      new Request(origin + "/api/auth/get-session", {
-        headers: { Cookie: sessionCookie },
-      }),
-    );
-    return response.json();
-  }
   const { user } = await readUserSession(cookie);
   expect(user).toMatchObject({
     email: profile.email, emailVerified: true, name: profile.name, image: profile.picture,
+    username: expect.stringMatching(/^cook_[0-9a-f]{20}$/),
   });
   const linkedAccounts = await getAuth().api.listUserAccounts({ headers: { Cookie: cookie } });
   expect(linkedAccounts).toEqual([
