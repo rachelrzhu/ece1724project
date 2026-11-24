@@ -136,7 +136,7 @@ Next.js serves the frontend and server-side code together in one process tree.`)
 
   console.log("\n2/2  Starting the app (frontend and Next.js server together).");
   console.log("When Ready, open http://localhost:3000 in your browser. If Next.js selects another port, use that port with localhost.");
-  console.log("You should see Savor. Keep this terminal open; press Ctrl+C to stop.\n");
+  console.log("You should see From My Kitchen. Keep this terminal open; press Ctrl+C to stop.\n");
 
   const args = [join(projectRoot, "node_modules", "next", "dist", "bin", "next"), "dev", "--hostname", "127.0.0.1"];
   // Without an explicit port, Next.js selects the next free port if 3000 is busy.

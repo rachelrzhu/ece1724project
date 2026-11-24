@@ -1,4 +1,4 @@
-# Recipe sharing and ingredient scaling
+# From My Kitchen
 
 Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated recipe services, private-image upload/read services, and automated checks. Better Auth persists sessions in PostgreSQL. A local backend tester exercises recipe and image services.
 
@@ -7,9 +7,9 @@ Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeS
 1. Install **Node.js 24** with npm, then reopen your terminal. [Node.js downloads](https://nodejs.org/en/download)
 2. Clone the repo or extract the GitHub ZIP. Open the folder containing `package.json`.
 3. Run `npm run setup`. On macOS you can also double-click `setup.command`, and on Windows you can double-click `setup.cmd`.
-4. Open [http://localhost:3000](http://localhost:3000) to see the Savor homepage. For Google sign-in, use the hostname and port registered for the OAuth callback. The homepage also links to the backend tester in development. Press **Ctrl+C** to stop the server.
+4. When the terminal says **Ready**, open [From My Kitchen on localhost](http://localhost:3000). If Next.js selects another port, use the address printed in the terminal and match that origin in your Google OAuth configuration. Press **Ctrl+C** to stop the server.
 
-Setup installs the locked dependencies, generates the Prisma client, and creates `.env.local` if it's missing. You'll need internet access on the first run. You can open the homepage and run the unit tests without cloud credentials. To try the API with seeded accounts and recipes, start in a fresh checkout and follow the [local database instructions](prisma/README.md#local-database-and-api-tests).
+Setup installs the locked dependencies, generates the Prisma client, and creates `.env.local` if it's missing. You'll need internet access on the first run. You can open the homepage and run the unit tests without cloud credentials. If the database is unavailable, the homepage offers to reload the recipes. To try the API with seeded accounts and recipes, start in a fresh checkout and follow the [local database instructions](prisma/README.md#local-database-and-api-tests).
 
 ## Project docs
 
@@ -21,13 +21,14 @@ Setup installs the locked dependencies, generates the Prisma client, and creates
 
 Next.js serves the pages and API routes from the same process.
 
-- The temporary HeroUI screens live in `app/_dummy-frontend/`. The page files for `/`, `/account`, `/recipes/new`, and `/recipes/[id]` each re-export one screen. To replace the wireframe, point those page files at the new screens, then remove `app/_dummy-frontend/`. The recipe server actions live in `app/actions.ts`.
-- The homepage lets you search public recipes. Sign in or register at `/account` to test recipe creation, editing, deletion, cover uploads, and bookmarks.
+- The Next.js App Router serves discovery at `/`, sign-in and registration at `/account`, the editor at `/recipes/new`, and recipe details at `/recipes/[id]`. Shared UI lives in `app/_components/`. Recipe mutations run through `app/actions.ts`.
+- Explore searches public recipes by title or ingredient. Sign in to create and manage recipes under **My recipes** and revisit bookmarks under **Saved**. New recipes are private until you publish them.
+- On a recipe page, scale the ingredient list by target servings or by the amount of one ingredient you have. Use **Undo** to recover the previous settings or **Reset** to return to the base recipe. The cooking instructions stay as written. See the [scaling workspace](docs/recipe-scaling.md).
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
 - `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.
 - `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
-- The homepage offers **Continue with Google** when the provider is configured and shows the signed-in account after the callback. [Google sign-in setup](docs/deployment.md#google-sign-in)
+- The homepage and account form offer **Continue with Google** when the provider is configured. Use **Account** to see the signed-in email after the callback. [Google sign-in setup](docs/deployment.md#google-sign-in)
 - `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads.
 
 An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`.
@@ -60,7 +61,7 @@ npm run dev -- --hostname 127.0.0.1
 
 Open `/backend-test` on the local address printed by Next.js. You can create a recipe, edit its ingredients and first cooking step, upload a cover, and inspect each HTTP response. For an ingredient like “salt to taste,” leave the quantity blank and enter “to taste” in the note.
 
-The tester uses a fixed user in a separate PostgreSQL schema. Its recipes survive server restarts. When you're done with **all** the test data in that schema, remove it and the tester's uploaded images with:
+The tester uses a fixed user in a separate PostgreSQL schema and stores its local configuration in the Git-ignored `.backend-test.json`. Its APIs accept loopback development requests and return 404 in production. Test recipes survive server restarts. When you finish with all the test data in that schema, run the following command to remove the schema, uploaded images, and local configuration.
 
 ```bash
 npm run backend-test:cleanup
