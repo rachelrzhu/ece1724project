@@ -65,10 +65,9 @@ export async function setBookmark(id: string, saved: boolean) {
     });
     if (!accessible) return { error: "This recipe is no longer available." };
     if (saved)
-      await db.bookmark.upsert({
-        where: { userId_recipeId: { userId: session.user.id, recipeId: id } },
-        create: { userId: session.user.id, recipeId: id },
-        update: {},
+      await db.bookmark.createMany({
+        data: { userId: session.user.id, recipeId: id },
+        skipDuplicates: true,
       });
     else
       await db.bookmark.deleteMany({

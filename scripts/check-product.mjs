@@ -98,7 +98,8 @@ async function signIn(page, email, password) {
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/");
   await page.reload();
-  await page.getByText("Signed in as " + email, { exact: true }).waitFor();
+  await page.getByRole("link", { name: "Account", exact: true }).click();
+  await page.getByText(email, { exact: true }).waitFor();
 }
 
 async function signOut(page) {
@@ -106,20 +107,22 @@ async function signOut(page) {
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/");
   await page.reload();
-  await page.getByRole("link", { name: "Sign in or register" }).waitFor();
+  await page.getByRole("link", { name: "Sign in", exact: true }).waitFor();
   const response = await get(page.context(), "/api/auth/get-session");
   assert.equal(response.status(), 200);
   assert.equal(await response.json(), null);
 }
 
 async function search(page, term, count, collection = "explore") {
-  await page.goto("/?collection=" + collection);
+  await page.goto(collection === "explore" ? "/" : "/?collection=" + collection);
   await page.getByRole("searchbox").fill(term);
   await page.getByRole("button", { name: "Search", exact: true }).click();
-  await page.waitForURL((url) => url.searchParams.get("q") === term && url.searchParams.get("collection") === collection);
+  await page.waitForURL((url) =>
+    url.searchParams.get("q") === term && (url.searchParams.get("collection") ?? "explore") === collection
+  );
   await page.reload();
   if (count === 0) {
-    await page.getByText("No recipes found.", { exact: true }).waitFor();
+    await page.getByText(`No recipes match “${term}”.`, { exact: true }).waitFor();
   } else {
     await page.getByRole("link", { name: title, exact: true }).waitFor();
   }
@@ -134,7 +137,7 @@ async function expectDetail(page, visible, url = detail) {
   } else {
     // A streamed App Router response can render the 404 boundary after sending 200.
     assert([404, 200].includes(response.status()));
-    await page.getByRole("heading", { name: "404", exact: true }).waitFor();
+    await page.getByRole("heading", { name: "Recipe unavailable", exact: true }).waitFor();
     assert.equal(await page.getByRole("heading", { name: title, exact: true }).count(), 0);
   }
 }
@@ -156,10 +159,10 @@ async function saveVisibility(visibility) {
   await owner.goto(detail + "?edit=1");
   const choice = owner.getByRole("radiogroup", { name: "Visibility", exact: true });
   await choice.getByText(visibility, { exact: true }).click();
-  assert(await choice.getByRole("radio", { name: visibility, exact: true }).isChecked());
+  assert(await choice.getByRole("radio", { name: new RegExp("^" + visibility + "\\b") }).isChecked());
   await owner.getByRole("button", { name: "Save recipe", exact: true }).click();
   await owner.waitForURL((url) => url.pathname === detail && !url.search);
-  await owner.getByText(new RegExp(" · " + visibility.toLowerCase() + "$")).waitFor();
+  await owner.getByText(visibility.toLowerCase(), { exact: true }).waitFor();
 }
 
 async function deleteFixture() {
@@ -182,12 +185,12 @@ try {
   await owner.getByLabel("Quantity (optional)", { exact: true }).fill("400");
   await owner.getByLabel("Unit", { exact: true }).fill("g");
   await owner.getByLabel("Step 1", { exact: true }).fill("Stir and serve.");
-  await owner.getByLabel(/Cover image/).setInputFiles({ name: "smoke-" + runId + ".png", mimeType: "image/png", buffer: fixture });
-  assert(await owner.getByRole("radio", { name: "Private", exact: true }).isChecked());
+  await owner.getByLabel("Choose a photo (optional)", { exact: true }).setInputFiles({ name: "smoke-" + runId + ".png", mimeType: "image/png", buffer: fixture });
+  assert(await owner.getByRole("radio", { name: /^Private\b/ }).isChecked());
   await owner.getByRole("button", { name: "Save recipe", exact: true }).click();
   await owner.waitForURL((url) => /^\/recipes\/[\da-f-]{36}$/.test(url.pathname));
   detail = new URL(owner.url()).pathname;
-  cover = await owner.getByRole("link", { name: "View cover photo" }).getAttribute("href");
+  cover = await owner.locator('main img[src^="/api/images/"]').getAttribute("src");
   assert.match(cover, /^\/api\/images\/[\da-f-]{36}$/);
   console.log("Fixture", JSON.stringify({ title, detail, cover }));
   await Promise.all([expectDetail(owner, true), expectDetail(reader, false), expectDetail(guest, false)]);

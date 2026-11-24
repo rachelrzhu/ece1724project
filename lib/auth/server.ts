@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { appName } from "@/lib/brand";
 import { getDatabase } from "@/lib/db/client";
 
 export function getGoogleProviderOptions() {
@@ -17,7 +18,7 @@ function createAuth() {
   if (!secret || secret.length < 32)
     throw new Error("Configure BETTER_AUTH_SECRET (at least 32 characters).");
   return betterAuth({
-    appName: "Savor",
+    appName,
     baseURL: process.env.BETTER_AUTH_URL,
     secret,
     database: prismaAdapter(getDatabase(), {
@@ -26,6 +27,7 @@ function createAuth() {
     }),
     advanced: {
       database: { generateId: () => crypto.randomUUID() },
+      // Retain the session cookie namespace across display-name changes.
       cookiePrefix: "savor",
     },
     emailAndPassword: {

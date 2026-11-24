@@ -22,6 +22,8 @@ const cardSelect = {
   author: { select: { name: true } },
   _count: { select: { ingredients: true } },
 } as const;
+export const recipePageSize = 6;
+
 export async function listRecipes({
   query = "",
   page = 1,
@@ -87,12 +89,12 @@ export async function listRecipes({
       where,
       select: cardSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (pageNumber - 1) * 6,
-      take: 6,
+      skip: (pageNumber - 1) * recipePageSize,
+      take: recipePageSize,
     }),
     db.recipe.count({ where }),
   ]);
-  const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / 6)));
+  const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / recipePageSize)));
   const rows =
     boundedPage === pageNumber
       ? initialRows
@@ -100,8 +102,8 @@ export async function listRecipes({
           where,
           select: cardSelect,
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          skip: (boundedPage - 1) * 6,
-          take: 6,
+          skip: (boundedPage - 1) * recipePageSize,
+          take: recipePageSize,
         });
   const saved =
     viewer && rows.length
@@ -121,6 +123,7 @@ export async function listRecipes({
       const minutes = r.prepMinutes + r.cookMinutes;
       return {
         ...r,
+        source,
         baseServings: r.baseServings.toString(),
         durationLabel: source && minutes === 0 ? source.time : `${minutes} min`,
         saved: saved.some((b) => b.recipeId === r.id),
@@ -151,8 +154,8 @@ export const getRecipe = cache(async (id: string) => {
   ]);
   return {
     ...recipe,
-    source: getPublishedSource(id),
-    authorName: author?.name ?? "Savor cook",
+    source: getPublishedSource(recipe.id),
+    authorName: author?.name ?? "a home cook",
     saved: !!bookmark,
     isOwner: session?.user.id === recipe.authorId,
     signedIn: !!session,
