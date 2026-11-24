@@ -52,6 +52,9 @@ beforeAll(async () => {
   await database.exec(
     readFileSync("prisma/migrations/20261124010000_allergen_ingredient_names/migration.sql", "utf8"),
   );
+  await database.exec(
+    readFileSync("prisma/migrations/20261124020000_name_based_usernames/migration.sql", "utf8"),
+  );
   const migrated = await database.query<{ username: string }>(
     "SELECT username FROM users WHERE id IN ($1, $2)", [ownerId, otherUserId],
   );
@@ -256,7 +259,28 @@ describe("editable usernames", () => {
     );
     const usernames = [...migratedUsernames, added.rows[0].username];
     expect(new Set(usernames).size).toBe(3);
-    for (const username of usernames) expect(username).toMatch(/^cook_[a-f0-9]{20}$/);
+    for (const username of migratedUsernames) expect(username).toMatch(/^cook_[a-f0-9]{20}$/);
+    expect(added.rows[0].username).toMatch(/^cook\d*$/);
+  });
+
+  it("derives handles from Unicode names and preserves the first rename for the user", async () => {
+    const { rows } = await database.query<{ username: string; username_change_available_at: Date | null }>(`
+      INSERT INTO users (email, name) VALUES
+        ('name-1@example.test', '  Émilie   王! '),
+        ('name-2@example.test', 'ÉMILIE 王'),
+        ('name-3@example.test', '李'),
+        ('name-4@example.test', repeat('A', 40)),
+        ('name-5@example.test', repeat('a', 40)),
+        ('name-6@example.test', '🍲')
+      RETURNING username, username_change_available_at`);
+    expect(rows.map(r => r.username)).toEqual([
+      "émilie_王", expect.stringMatching(/^émilie_王\d+$/), "李",
+      "a".repeat(32), expect.stringMatching(/^a{28}\d{4}$/), expect.stringMatching(/^cook\d*$/),
+    ]);
+    expect(rows.every(row => row.username_change_available_at === null)).toBe(true);
+    await database.query("UPDATE users SET name='Another Name' WHERE email='name-1@example.test'");
+    expect((await database.query("SELECT username FROM users WHERE email='name-1@example.test'")).rows)
+      .toEqual([{ username: "émilie_王" }]);
   });
 
   it("preserves session and recipe ownership after a rename and enforces uniqueness", async () => {
@@ -276,7 +300,7 @@ describe("editable usernames", () => {
   });
 
   it("enforces the allowed characters and length in the database", async () => {
-    for (const username of ["ab", "a".repeat(33), "Soup", "two cooks", "jalapeño", "a-b", "abc\n"]) {
+    for (const username of ["", "a".repeat(33), "Soup", "two cooks", "🐟", "a-b", "abc\n"]) {
       await expect(database.query("UPDATE users SET username = $1 WHERE id = $2", [username, otherUserId]))
         .rejects.toThrow(/users_username_format/);
     }
