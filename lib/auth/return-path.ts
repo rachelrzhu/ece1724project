@@ -8,9 +8,10 @@ export function safeReturnPath(value: unknown, fallback = "/my-recipes") {
       /[\r\n]/.test(decoded)
     )
       return fallback;
-    const url = new URL(value, "https://savor.local");
+    const url = new URL(value, "https://app.local");
     if (
-      url.origin !== "https://savor.local" ||
+      url.origin !== "https://app.local" ||
+      url.pathname.startsWith("//") ||
       /^\/sign-(in|up)(\/|$)/.test(url.pathname)
     )
       return fallback;

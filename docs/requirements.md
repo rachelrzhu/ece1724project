@@ -62,15 +62,15 @@ Personalization must describe detected conflicts and data limitations. Do not la
 
 The [course handout](https://www.eecg.utoronto.ca/~cying/courses/ece1724-web/project/handout/) lists authentication and coordinated application state as advanced-feature categories. The demo needs to show each feature working. Google sign-in belongs to authentication. Basic uploads meet the file-handling requirement.
 
-The backend column describes the four changes together. Each branch reaches `dev` through its own PR. See the [architecture](architecture.md) for the routes, queries, and data model.
+The [architecture](architecture.md) describes how the product screens, recipe services, and data model fit together.
 
-| Area | Backend work | Evidence still needed for the demo |
+| Area | Implementation and local evidence | Evidence still needed for the demo |
 | --- | --- | --- |
-| Frontend and server | Next.js serves the local tester, recipe actions, and authentication and image routes. | Connect the product screens and run the recipe workflow on desktop and mobile. |
+| Frontend and server | Responsive recipe and account screens use Server Component reads, Server Actions, and authentication and image routes. Local browser checks cover desktop and mobile layouts. | Run the recipe workflow on the deployed app. |
 | Relational persistence | Prisma migrations cover users, authentication, recipes, ingredients, steps, bookmarks, and file metadata. The November 8 review checked CRUD and rollback in a disposable PostgreSQL schema. | Check the target database’s migration history and run the deployed workflow. |
-| Cloud files | The November 8 review tested private Blob upload, read, and deletion. The combined backend checks recipe visibility before returning a cover image. | Verify a cover upload and access from a second browser account on preprod. |
-| Advanced feature 1 — authentication | Better Auth handles email/password accounts and database sessions. The local integration check covers registration, sign-in, access from a second account, and sign-out. | Complete the browser flow and verify Google’s callback with the deployment credentials. |
-| Advanced feature 2 — scaling state | Recipe queries return the original quantities and serving count. | Connect the recipe-scoped scaling workspace and demonstrate both modes, warnings, undo, and reset. |
+| Cloud files | The November 8 review tested private Blob upload, read, and deletion. Local browser checks cover image upload and visibility changes with the local media adapter. | Verify a cover upload and access from a second browser account on preprod. |
+| Advanced feature 1 — authentication | Better Auth handles email/password accounts and database sessions. Tests cover Google callbacks, and local checks exercise two-account permissions and sign-out. | Verify Google consent and session restoration on the preprod origin. |
+| Advanced feature 2 — scaling state | The recipe-scoped Redux workspace shares serving and ingredient settings, warnings, undo, and reset. Unit tests cover calculations and state transitions. | Demonstrate both modes and their shared history with the deployed demo recipes. |
 
 ## Sequenced backlog
 
@@ -109,3 +109,9 @@ Verified against the [course overview](https://www.eecg.utoronto.ca/~cying/cours
 | December 6 | Repository submission with source, README final report, AI record, demo video, and deployment link if applicable. |
 
 Final-report target: at most 5,000 words, clear setup and user guide, individual contributions, verification/AI evaluation, and a `Video Demo` link. Keep 2–4 representative AI interactions in `ai-session.md`, including decisions and verification. Record the project origin and assistance accurately: Rachel originated the idea; AI helped draft/review; the architecture document records the selected design and implementation status. Preserve the November 26 presentation snapshot independently of later improvements. Ensure graders can access a private repository.
+
+## Implementation status
+
+Chrome checks against disposable PostgreSQL cover search and pagination, registration and sign-out, recipe editing and deletion, saved recipes, cover uploads and visibility changes, scaling controls, and layouts down to 350 px. The browser checks use the repository’s local media adapter. The standalone real Blob round trip and automated Google callback tests provide separate evidence for those service boundaries.
+
+The integrated preprod smoke test with Google OAuth and Vercel Blob remains open. Release through the [deployment workflow](deployment.md) and verify against preprod resources before promoting to production.

@@ -42,29 +42,27 @@ export default function RecipeActions({ id, title, saved, canCopy, isOwner, afte
   return (
     <>
       {saved !== undefined && (
-        <Button variant="secondary" isDisabled={pending} onPress={() => submit("bookmark")}>
+        <Button variant="secondary" className="site-button-outline" isDisabled={pending} onPress={() => submit("bookmark")}>
           {saved ? "Remove bookmark" : "Bookmark recipe"}
         </Button>
       )}
       {canCopy && (
-        <div className="space-y-1">
-          <Button variant="secondary" aria-describedby="copy-details" isDisabled={pending} onPress={() => submit("copy")}>
-            Make an editable copy
-          </Button>
-          <p id="copy-details" className="text-sm">You’ll get a private copy you can edit independently. The cover photo stays with the original.</p>
-        </div>
+        <Button variant="secondary" className="site-button-outline" aria-describedby="copy-details" isDisabled={pending} onPress={() => submit("copy")}>
+          Make an editable copy
+        </Button>
       )}
       {isOwner && (
         <Button
           aria-label={`Delete recipe: ${title}`}
           variant="danger-soft"
+          className="min-h-11"
           isDisabled={pending}
           onPress={() => submit("delete")}
         >
           Delete recipe
         </Button>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert" className="basis-full text-sm text-rust">{error}</p>}
     </>
   );
 }

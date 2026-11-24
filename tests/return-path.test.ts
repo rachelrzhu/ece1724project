@@ -5,6 +5,7 @@ it("keeps local deep links", () =>
 it.each([
   "https://example.com",
   "//example.com",
+  "/recipes/..//",
   "/\\example.com",
   "/%5cexample.com",
   "/%2fexample.com",

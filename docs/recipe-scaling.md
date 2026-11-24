@@ -1,32 +1,29 @@
 # Ingredient scaling in the recipe detail view
 
-`scaleRecipe(original, request)` runs synchronously in a Client Component or a Redux selector. Fetch the recipe in the detail Server Component with `getRecipe(id)` or the recipe service’s `getById(id)`. After the existing visibility check, pass the returned recipe to the client as a prop. Its decimal strings, ordered ingredient IDs, units, and notes already fit `ScalingRecipe`. [Engine](../lib/recipes/scaling.ts) · [Recipe detail service](../lib/recipes/service.ts)
+`scaleRecipe(original, request)` runs synchronously in a Client Component or a Redux selector. The detail Server Component calls `getRecipe(id)`, which enforces recipe visibility, then passes the original serving count and ordered ingredients to the client. Decimal strings, ingredient IDs, units, and notes fit `ScalingRecipe` directly. [Engine](../lib/recipes/scaling.ts) · [Recipe queries](../lib/product/queries.ts)
 
-## Connect the controls
+## Workspace state
 
-For a four-serving recipe with 400 g of flour, the first request below produces six servings and 600 g. The second produces two servings and 200 g when the cook has 0.2 kg. Use the selected row’s ID because a recipe can list the same ingredient twice.
+The recipe detail route passes its authorized recipe snapshot to the [scaling workspace](../app/recipes/_components/scaling-workspace.tsx). The workspace creates a dedicated [Redux store](../lib/recipes/scaling-workspace.ts) for that recipe. Opening a different recipe creates a new store initialized with its base servings.
+
+The selector runs the engine against the original quantities after each input change. Switching to serving mode uses the current result’s implied servings. Switching to ingredient mode uses the selected row’s unrounded amount and a compatible unit. Changing a unit converts the available amount to keep the current batch size. The selected row’s ID distinguishes duplicate ingredient names.
+
+Undo restores the previous settings across the controls and preview. A continuous edit within one quantity field contributes one undo step. Reset restores the original servings and can itself be undone. Invalid input shows its error and the original quantities until the input is corrected.
+
+## Example requests
+
+For a four-serving recipe with 400 g of flour, these requests show how each mode uses the original recipe. Pass the flour row’s ID to select it even if the same ingredient appears twice.
 
 ```ts
-import { getScalingUnits, scaleRecipe, type ScalingRecipe, type ScalingRequest } from "@/lib/recipes/scaling";
-
-export function selectPreview(original: ScalingRecipe, request: ScalingRequest) {
-  return scaleRecipe(original, request);
-}
-
-export const forSix: ScalingRequest = { mode: "servings", targetServings: 6 };
-
-export function forAvailableFlour(flourId: string): ScalingRequest {
-  return { mode: "ingredient", ingredientId: flourId, availableQuantity: 0.2, availableUnit: "kg" };
-}
-
-export function ingredientOptions(original: ScalingRecipe) {
-  return original.ingredients
-    .map(row => ({ id: row.id, label: row.name, units: getScalingUnits(row) }))
-    .filter(option => option.units.length > 0);
-}
+const forSix = scaleRecipe(original, { mode: "servings", targetServings: 6 });
+// Six servings, 600 g of flour.
+const fromFlour = scaleRecipe(original, {
+  mode: "ingredient", ingredientId: flourId, availableQuantity: 0.2, availableUnit: "kg",
+});
+// Two servings, 200 g of flour.
 ```
 
-Keep the original recipe as the selector input. Keep the current request and its history in the recipe workspace. Undo restores the previous request. Reset uses `{ mode: "servings", targetServings: original.baseServings }`. To preserve the batch size when switching to serving mode, use the current result’s `servings`. When switching to ingredient mode, take an eligible row’s unrounded `scaledQuantity` and use `getScalingUnits(row)[0]` as the available unit. This first choice is the canonical spelling of the recipe unit, so a row stored in `ml` starts with `mL` selected. Clear the history when opening a different recipe.
+`getScalingUnits(row)` returns compatible units with the recipe unit first, using its canonical spelling (for example, `mL` for a row stored in `ml`).
 
 ## Render the result
 
