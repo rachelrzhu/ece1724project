@@ -97,7 +97,7 @@ npm run dev -- --hostname 127.0.0.1
 
 Open [http://127.0.0.1:3000/backend-test](http://127.0.0.1:3000/backend-test). Use **Add ingredient** to enter more ingredients, or **Remove** beside a row to delete it. Each ingredient has its own quantity, unit, and optional note; leave quantity blank and add a note for entries such as “salt to taste.” The form supports up to 100 ingredients and one editable cooking step; additional saved steps are preserved. Use **Refresh / read**, **Create**, **Update selected**, **Delete selected**, and the image upload controls. Each action shows its HTTP status and JSON response.
 
-This is an integration tool with a fixed test identity, not a sign-in flow. Its APIs use the existing recipe/image services against an isolated PostgreSQL schema. They accept local development requests only and return 404 in production. Existing application tables are unchanged. The test configuration stays in ignored `.backend-test.json`; test records persist between development-server restarts. The product homepage uses the temporary screens in `app/_dummy-frontend/`.
+This is an integration tool with a fixed test identity, not a sign-in flow. Its APIs use the existing recipe/image services against an isolated PostgreSQL schema. They accept local development requests only and return 404 in production. Existing application tables are unchanged. The test configuration stays in ignored `.backend-test.json`; test records persist between development-server restarts.
 
 Database credentials are required; image testing also needs the Blob token. To remove the tester's database schema, uploaded images, and local configuration:
 

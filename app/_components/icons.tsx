@@ -4,10 +4,8 @@ const paths = {
   brand: <><path d="M12 6v13M12 6C9 4 6 4 3 5v13c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z" /><path d="M6 8.5c1-.1 2 0 3 .4m-3 3c1-.1 2 0 3 .4m6-3.4c1-.4 2-.5 3-.4m-3 3.8c1-.4 2-.5 3-.4" /></>,
   search: <><circle cx="10.5" cy="10.5" r="5.5" /><path d="m15 15 4 4" /></>,
   plus: <path d="M12 5v14M5 12h14" />,
-  arrow: <path d="M4 12h15m-6-6 6 6-6 6" />,
   back: <path d="M20 12H5m6-6-6 6 6 6" />,
   clock: <><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></>,
-  people: <><circle cx="9" cy="8" r="3" /><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2m2-14a3 3 0 0 1 0 6m4 8v-2a4 4 0 0 0-3-4" /></>,
   bookmark: <path d="M6 4h12v16l-6-4-6 4V4Z" />,
   account: <><circle cx="12" cy="8" r="3" /><path d="M5 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1" /></>,
 } satisfies Record<string, ReactNode>;

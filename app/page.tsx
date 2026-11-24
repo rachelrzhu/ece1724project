@@ -7,7 +7,7 @@ import { RecipeCover } from "@/app/_components/recipe-cover";
 import { collections, SiteHeader, type Collection } from "@/app/_components/site-header";
 import { getGoogleProviderOptions, readSession } from "@/lib/auth/server";
 import { listRecipes, recipePageSize, type RecipeCardData } from "@/lib/product/queries";
-import AccountButton from "./account-button";
+import GoogleSignInButton from "./account/google-sign-in-button";
 import RecipeActions from "./recipes/_components/recipe-actions";
 
 function collectionHref(collection: Collection, query = "", page = 1) {
@@ -33,7 +33,7 @@ function RecipeSearch({ collection, query }: { collection: Collection; query: st
   );
 }
 
-function RecipeCard({ recipe, collection }: { recipe: RecipeCardData; collection: Collection }) {
+function RecipeListItem({ recipe, collection }: { recipe: RecipeCardData; collection: Collection }) {
   const href = `/recipes/${recipe.id}`;
   return (
     <article className="recipe-entry">
@@ -103,8 +103,8 @@ async function RecipeResults({ collection, query, page, signedIn }: {
   if (!result) {
     return (
       <div className="site-panel space-y-3">
-        <p role="alert" className="font-semibold">Recipes couldn’t be loaded.</p>
-        <p className="text-sm text-subtle">Try refreshing the page in a moment.</p>
+        <p role="alert" className="font-semibold">Couldn’t load recipes.</p>
+        <a className="site-button-outline" href={collectionHref(collection, query, page)}>Reload recipes</a>
       </div>
     );
   }
@@ -127,7 +127,7 @@ async function RecipeResults({ collection, query, page, signedIn }: {
     <div className="space-y-5">
       <p className="text-sm text-subtle" aria-live="polite">{result.total} {result.total === 1 ? "recipe" : "recipes"}</p>
       <ul aria-label={collections[collection].heading} className="divide-y divide-line border-y border-line">
-        {result.rows.map((recipe) => <li key={recipe.id}><RecipeCard recipe={recipe} collection={collection} /></li>)}
+        {result.rows.map((recipe) => <li key={recipe.id}><RecipeListItem recipe={recipe} collection={collection} /></li>)}
       </ul>
       {pageCount > 1 && (
         <nav aria-label="Recipe pages" className="flex flex-wrap items-center gap-3">
@@ -161,7 +161,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             <h1 className="site-heading text-3xl sm:text-4xl">
               {collection === "explore" ? "Explore recipes" : collections[collection].heading}
             </h1>
-            {collection === "explore" && !signedIn && getGoogleProviderOptions() && <AccountButton signedIn={false} />}
+            {collection === "explore" && !signedIn && getGoogleProviderOptions() && <GoogleSignInButton />}
           </div>
           {(collection === "explore" || signedIn) && (
             <RecipeSearch key={`${collection}:${query}`} collection={collection} query={query} />

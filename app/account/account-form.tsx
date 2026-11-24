@@ -17,6 +17,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   const submitLabel = signedInEmail ? "Sign out" : registering ? "Create account" : "Sign in";
+  const pendingLabel = signedInEmail ? "Signing out…" : registering ? "Creating account…" : "Signing in…";
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -74,7 +75,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
           <p className="text-subtle wrap-anywhere">Signed in as <strong className="text-ink">{signedInEmail}</strong></p>
         ) : (
           <>
-            <h2 className="site-heading text-xl">{registering ? "Create your account" : "Sign in to your account"}</h2>
+            <h2 className="site-heading text-xl">{registering ? "Create an account" : "Sign in with email"}</h2>
             {registering && (
               <TextField name="name" autoComplete="name" fullWidth isRequired>
                 <Label>Name</Label>
@@ -93,7 +94,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
           </>
         )}
         <Button type="submit" className="site-button justify-self-start" isDisabled={pending}>
-          {pending ? "Please wait…" : submitLabel}
+          {pending ? pendingLabel : submitLabel}
         </Button>
       </Form>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-rust">{error}</p>}
@@ -108,7 +109,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
             setRegistering(!registering);
             setError("");
           }}>
-            {registering ? "Use an existing account" : "Register a new account"}
+            {registering ? "Use an existing account" : "Create an account"}
           </Button>
         </div>
       )}
