@@ -22,7 +22,8 @@ Setup installs the locked dependencies, generates the Prisma client, prepares `.
 Next.js serves the pages and API routes from the same process.
 
 - The Next.js App Router serves discovery at `/`, sign-in and registration at `/account`, the editor at `/recipes/new`, and recipe details at `/recipes/[id]`. Shared UI lives in `app/_components/`. Recipe mutations run through `app/actions.ts`.
-- Explore searches public recipes by title or ingredient. Sign in to create and manage recipes under **My recipes** and revisit bookmarks under **Saved**. New recipes are private until you publish them.
+- Explore searches everyone’s public recipes by title or ingredient. Select a cook’s name on a recipe or in the results to browse that cook’s public recipes. Open **View my public recipes** in **Account** to see your own public page.
+- Sign in to create and manage recipes under **My recipes** and revisit bookmarks under **Saved**. New recipes are private until you publish them.
 - On a recipe page, scale the ingredient list by target servings or by the amount of one ingredient you have. Use **Undo** to recover the previous settings or **Reset** to return to the base recipe. The cooking instructions stay as written. See the [scaling workspace](docs/recipe-scaling.md).
 - Open a public recipe while signed in to make an editable private copy. It includes the original quantities, units, and ordered steps. You can edit it and upload your own cover from the recipe editor.
 - Set dietary preferences and allergens in **Account** to see ingredient matches when browsing recipes. You can hide recipes with recorded conflicts. Ingredients outside the catalogue stay visible and are marked as unreviewed.
@@ -90,4 +91,5 @@ With development database and Blob credentials configured, run `npm run storage:
 | npm can't find `package.json` | Open a terminal in the extracted project folder. |
 | Server already running | Use the URL in the existing terminal, or stop that server with **Ctrl+C** before running setup. If a crash left a stale lock, confirm the server has stopped before removing `.next` and restarting. |
 | The page won't open | Check the **Local** URL in the terminal. Next.js can choose a different port if 3000 is busy. |
+| Email registration and Google sign-in both fail | Run `npm run db:status` against the app’s database. Both flows read the profile username and require the `20261123020000_usernames` migration. Review and apply pending migrations using the [database workflow](prisma/README.md). |
 | Package or font download fails | Check your connection or proxy, then rerun the command. |

@@ -54,6 +54,6 @@ export function ScalingPreview({ result }: { result: ScalingResult }) {
 }
 ```
 
-Use `result.error.field` to place validation feedback beside the relevant control. Rows keep their original `quantity` and unit. Use `scaledQuantity` for the preview and the original recipe for edits. The engine uses JavaScript numbers for calculations. `formatScaledQuantity` rounds displayed numbers to at most six significant digits.
+Use `result.error.field` to place validation feedback beside the relevant control. Rows keep their original `quantity` and unit. Use `scaledQuantity` for the preview and the original recipe for edits. The engine uses JavaScript numbers for calculations. The preview rounds scaled quantities, servings, and batch factors to at most one decimal place. A positive value that would round to zero appears as `<0.1`. At the original serving count, the preview shows the recipe's stored quantities.
 
 The unit menu groups compatible measurements. A kilogram is 1,000 g, a litre is 1,000 mL, a metric teaspoon is 5 mL, and a metric tablespoon is 15 mL. Counts scale numerically and fractional counts generate a warning. An unmeasured row such as “salt to taste” keeps its note. An unfamiliar unit still scales by a numeric factor, while its empty unit menu keeps it out of the available-ingredient selector.

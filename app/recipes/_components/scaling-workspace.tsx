@@ -75,7 +75,7 @@ function ScalingControls() {
             <select id={`${id}-ingredient`} className="site-field w-full min-w-0 truncate" value={settings.ingredientId}
               onChange={(event) => dispatch(scalingActions.chooseIngredient(event.target.value))}
               {...invalidProps("ingredientId", showIngredientHelp ? ingredientHelpId : undefined)}>
-              {eligible.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+              {eligible.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </div>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-2">
@@ -108,18 +108,19 @@ function ScalingControls() {
 function IngredientPreview() {
   const original = useScalingSelector((state) => state.recipe);
   const preview = useScalingSelector(selectPreview);
-  const amounts = preview.ok
+  const scaled = preview.ok && preview.factor !== 1;
+  const amounts = scaled
     ? preview.ingredients.map(({ scaledQuantity, ...item }) => ({
       ...item, quantity: scaledQuantity === null ? null : formatScaledQuantity(scaledQuantity),
     }))
     : original.ingredients;
-  const servings = preview.ok ? formatScaledQuantity(preview.servings) : String(original.baseServings);
+  const servings = scaled ? formatScaledQuantity(preview.servings) : String(original.baseServings);
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-y border-line bg-canvas px-3 py-2 text-sm text-ink" role="status">
         <p className="font-semibold wrap-anywhere">Serves {servings}</p>
-        {preview.ok && preview.factor !== 1 && <p className="wrap-anywhere">×{formatScaledQuantity(preview.factor)} batch</p>}
+        {scaled && <p className="wrap-anywhere">×{formatScaledQuantity(preview.factor)} batch</p>}
       </div>
       <ul className="mt-2 divide-y divide-line" aria-label="Ingredient quantities">
         {amounts.map((item) => (

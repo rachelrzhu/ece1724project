@@ -174,9 +174,11 @@ describe("recipe scaling", () => {
     );
   });
 
-  it("rounds only for display, retaining six significant digits even below one", () => {
-    expect(formatScaledQuantity(1 / 3)).toBe("0.333333");
-    expect(formatScaledQuantity(0.000001234567)).toBe("0.00000123457");
-    expect(formatScaledQuantity(1234.5)).toBe("1234.5");
+  it("shows at most one decimal place and identifies positive quantities below display precision", () => {
+    expect(formatScaledQuantity(1 / 3)).toBe("0.3");
+    expect(formatScaledQuantity(0.000001234567)).toBe("<0.1");
+    expect(formatScaledQuantity(0.05)).toBe("0.1");
+    expect(formatScaledQuantity(1234.56)).toBe("1234.6");
+    expect(formatScaledQuantity(125)).toBe("125");
   });
 });
