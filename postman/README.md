@@ -2,6 +2,8 @@
 
 The development collection exercises recipe and image endpoints using a fixed account. It runs against an isolated schema and removes the records it creates. Keep an existing tester schema if you want to reuse it.
 
+Before running either collection from a fresh checkout, install Node.js 24 with npm and run `npm ci` from the repository root.
+
 ## Start the tester
 
 Set `DATABASE_URL` in `.env.local`. From the repository root, run

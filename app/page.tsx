@@ -41,6 +41,7 @@ function RecipeSearch({ collection, query, hideDietaryConflicts }: {
 
 function RecipeListItem({ recipe, collection }: { recipe: RecipeCardData; collection: Collection }) {
   const href = `/recipes/${recipe.id}`;
+  const difficulty = recipe.source ? recipe.source.difficulty : recipe.difficulty.toLowerCase();
   const dietary = recipe.dietary;
   return (
     <article className="recipe-entry">
@@ -49,7 +50,11 @@ function RecipeListItem({ recipe, collection }: { recipe: RecipeCardData; collec
           <h2 className="site-heading text-base sm:text-lg">
             <Link href={href} data-recipe-title className="after:absolute after:inset-0">{recipe.title}</Link>
           </h2>
-          {recipe.author.name && collection !== "mine" && (
+          {recipe.source ? (
+            <p className="mt-1 text-sm text-subtle wrap-anywhere">
+              <a href={recipe.source.url} className="relative z-10 underline">Original recipe by {recipe.source.contributor} on HowToCook</a>
+            </p>
+          ) : recipe.author.name && collection !== "mine" && (
             <p className="mt-1 text-sm text-subtle wrap-anywhere">By {recipe.author.name}</p>
           )}
           <p className="mt-1 line-clamp-2 max-w-[65ch] text-sm text-subtle wrap-anywhere">{recipe.description}</p>
@@ -72,16 +77,14 @@ function RecipeListItem({ recipe, collection }: { recipe: RecipeCardData; collec
           )}
         </div>
         <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle md:max-w-60 md:justify-end">
-          <li className="inline-flex items-center gap-1"><Icon name="clock" className="size-4" />{recipe.prepMinutes + recipe.cookMinutes} min</li>
+          {recipe.durationLabel && <li className="inline-flex items-center gap-1"><Icon name="clock" className="size-4" />{recipe.durationLabel}</li>}
           <li>Serves {recipe.baseServings}</li>
-          <li className="capitalize">{recipe.difficulty.toLowerCase()}</li>
+          {difficulty && <li className="capitalize">{recipe.source && "Source difficulty "}{difficulty}</li>}
           {collection === "mine" && <li className="capitalize">{recipe.visibility.toLowerCase()}</li>}
           {recipe.saved && <li className="inline-flex items-center gap-1"><Icon name="bookmark" className="size-4" />Saved</li>}
         </ul>
       </div>
-      {recipe.coverFileId && (
-        <RecipeCover fileId={recipe.coverFileId} className="size-16 rounded-md border border-line sm:size-20" />
-      )}
+      <RecipeCover fileId={recipe.coverFileId} className="size-16 rounded-md border border-line sm:size-20" />
       {collection === "mine" && (
         <div className="relative z-10 col-span-full flex w-fit flex-wrap items-center gap-2 pt-2">
           <Link href={`${href}?edit=1`} className="site-button-outline" aria-label={`Edit ${recipe.title}`}>Edit</Link>
@@ -190,7 +193,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <>
-      <SiteHeader signedIn={signedIn} active={collection} />
+      <SiteHeader user={session?.user} active={collection} />
       <main id="main-content" tabIndex={-1} className="site-container space-y-6 py-7 sm:space-y-8 sm:py-10">
         {params.error && (
           <p role="alert" className="site-panel text-sm text-rust">

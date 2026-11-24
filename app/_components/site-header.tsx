@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { appName } from "@/lib/brand";
 import { Icon } from "./icons";
@@ -10,7 +11,8 @@ export const collections = {
 
 export type Collection = keyof typeof collections;
 
-export function SiteHeader({ signedIn, active }: { signedIn: boolean; active?: Collection }) {
+export function SiteHeader({ user, active }: { user?: { name?: string | null; image?: string | null }; active?: Collection }) {
+  const signedIn = Boolean(user);
   return (
     <header className={`border-b border-line bg-paper ${signedIn ? "" : "site-header-guest"}`}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-paper focus:p-3">Skip to content</a>
@@ -28,7 +30,9 @@ export function SiteHeader({ signedIn, active }: { signedIn: boolean; active?: C
           ))}
         </nav>
         <Link href="/account" className="site-nav-link masthead-account">
-          <Icon name="account" className="size-4" />
+          {user?.image ? <Image src={user.image} unoptimized width={24} height={24} alt="" className="size-6 rounded-full object-cover" />
+            : user?.name ? <span aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-brand text-xs text-white">{user.name.trim().charAt(0).toUpperCase()}</span>
+              : <Icon name="account" className="size-4" />}
           {signedIn ? "Account" : "Sign in"}
         </Link>
         {signedIn && (

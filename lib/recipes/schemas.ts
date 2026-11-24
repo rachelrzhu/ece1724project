@@ -1,13 +1,13 @@
 import { z } from "zod";
 
 export const recipeIdSchema = z.uuid();
-export const visibilitySchema = z.enum(["PRIVATE", "PUBLIC"]);
-export const difficultySchema = z.enum(["EASY", "MEDIUM", "HARD"]);
+const visibilitySchema = z.enum(["PRIVATE", "PUBLIC"]);
+const difficultySchema = z.enum(["EASY", "MEDIUM", "HARD"]);
 
 const optionalText = (limit: number) => z.string().trim().min(1).max(limit).nullable().default(null);
 const quantitySchema = z.number().finite().positive().max(1_000_000).multipleOf(0.000001);
 
-export const ingredientInputSchema = z.strictObject({
+const ingredientInputSchema = z.strictObject({
   name: z.string().trim().min(1).max(160),
   quantity: quantitySchema.nullable(),
   unit: optionalText(32),

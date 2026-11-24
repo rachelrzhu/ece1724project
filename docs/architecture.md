@@ -101,13 +101,15 @@ Product mutations get the user ID from the Better Auth session. The development 
 
 | Model | Responsibility and constraints |
 | --- | --- |
-| `User` | Existing profile in `users`, with a UUID and unique email address. |
+| `User` | Stores a stable UUID, unique email, unique editable username, display name, and optional profile photo. Recipes and sessions reference the UUID. |
 | `Account`, `Session`, `Verification` | Better Auth stores credentials or provider links, expiring sessions, and verification records in separate tables. |
 | `StoredFile` | File owner, private pathname, media type, positive byte count, and creation time. The image bytes live in private Blob storage or the local test directory. |
 | `Recipe` | Author, title, description, original serving count, preparation and cooking times, difficulty, visibility, timestamps, and optional unique cover association. Visibility defaults to private. |
 | `RecipeIngredient` | Recipe, position, display name, normalized search name, original decimal quantity, unit, and note. Each position is unique within a recipe. |
 | `RecipeStep` | Recipe, position, and instruction. Each position is unique within a recipe. |
 | `Bookmark` | User-to-recipe reference with a composite primary key preventing duplicate saves. |
+
+PostgreSQL assigns a starter username to existing and new profiles. Users can change it under Account → Profile. Recipe bylines use the display name. Email registration takes that name from the sign-up form. For a new Google registration, Better Auth uses the Google profile name and photo when supplied and links the Google subject ID to the local UUID. Later Google sign-ins preserve local profile edits.
 
 Servings use `Decimal(12,4)` and ingredient quantities use `Decimal(16,6)`. Service responses serialize decimals as strings to preserve stored precision. The scaling engine converts these strings to finite, positive JavaScript numbers for calculation. Display rounding applies only when formatting the preview.
 

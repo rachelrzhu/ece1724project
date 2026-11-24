@@ -4,6 +4,7 @@ import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
 import { readDietaryContext } from "@/lib/dietary/server";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
+import { getPublishedSource } from "@/lib/recipes/published-sources";
 import { createRecipeService } from "@/lib/recipes/service";
 import { z } from "zod";
 export const recipes = () =>
@@ -18,9 +19,7 @@ const cardSelect = {
   difficulty: true,
   visibility: true,
   coverFileId: true,
-  authorId: true,
   author: { select: { name: true } },
-  _count: { select: { ingredients: true } },
 } as const;
 export const recipePageSize = 6;
 
@@ -96,27 +95,21 @@ export async function listRecipes({
       select: { name: true, canonicalName: true },
     } : false as const,
   };
-  const [initialRows, total] = await Promise.all([
-    db.recipe.findMany({
+  function readPage(page: number) {
+    return db.recipe.findMany({
       where,
       select,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (pageNumber - 1) * recipePageSize,
+      skip: (page - 1) * recipePageSize,
       take: recipePageSize,
-    }),
+    });
+  }
+  const [initialRows, total] = await Promise.all([
+    readPage(pageNumber),
     db.recipe.count({ where }),
   ]);
   const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / recipePageSize)));
-  const rows =
-    boundedPage === pageNumber
-      ? initialRows
-      : await db.recipe.findMany({
-          where,
-          select,
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          skip: (boundedPage - 1) * recipePageSize,
-          take: recipePageSize,
-        });
+  const rows = boundedPage === pageNumber ? initialRows : await readPage(boundedPage);
   const saved =
     viewer && rows.length
       ? await db.bookmark.findMany({
@@ -130,12 +123,18 @@ export async function listRecipes({
   return {
     total,
     page: boundedPage,
-    rows: rows.map(({ ingredients, ...recipe }) => ({
-      ...recipe,
-      baseServings: recipe.baseServings.toString(),
-      saved: saved.some((b) => b.recipeId === recipe.id),
-      dietary: dietary?.summarize(ingredients) ?? null,
-    })),
+    rows: rows.map(({ ingredients, ...recipe }) => {
+      const source = getPublishedSource(recipe.id);
+      const minutes = recipe.prepMinutes + recipe.cookMinutes;
+      return {
+        ...recipe,
+        source,
+        baseServings: recipe.baseServings.toString(),
+        durationLabel: source && minutes === 0 ? source.time : `${minutes} min`,
+        saved: saved.some((b) => b.recipeId === recipe.id),
+        dietary: dietary?.summarize(ingredients) ?? null,
+      };
+    }),
     signedIn: !!viewer,
     hasDietaryPreferences: Boolean(dietary),
   };
@@ -163,6 +162,7 @@ export const getRecipe = cache(async (id: string) => {
   ]);
   return {
     ...recipe,
+    source: getPublishedSource(recipe.id),
     ingredients: recipe.ingredients.map(({ id, name, quantity, unit, note }) => ({ id, name, quantity, unit, note })),
     dietary: dietary?.summarize(recipe.ingredients) ?? null,
     authorName: author?.name ?? "a home cook",

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageFrame from "@/app/_components/page-frame";
 import { RecipeCover } from "@/app/_components/recipe-cover";
-import { getRecipe } from "@/lib/product/queries";
+import { getRecipe, type RecipeDetailData } from "@/lib/product/queries";
 import RecipeActions from "../_components/recipe-actions";
 import RecipeEditor from "../_components/recipe-editor";
 import ScalingWorkspace from "../_components/scaling-workspace";
@@ -13,6 +13,18 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/rec
   const recipe = await getRecipe(id).catch(() => null);
   if (recipe?.visibility !== "PUBLIC") return { title: "Recipe", robots: { index: false, follow: false } };
   return { title: options.edit === "1" ? "Edit recipe" : recipe.title };
+}
+
+function recipeFacts(recipe: RecipeDetailData) {
+  const facts = [["Base servings", recipe.baseServings]];
+  if (recipe.source && recipe.prepMinutes + recipe.cookMinutes === 0) {
+    if (recipe.source.time) facts.push(["Total time", recipe.source.time]);
+  } else {
+    facts.push(["Prep", `${recipe.prepMinutes} min`], ["Cook", `${recipe.cookMinutes} min`]);
+  }
+  const difficulty = recipe.source ? recipe.source.difficulty : recipe.difficulty.toLowerCase();
+  if (difficulty) facts.push([recipe.source ? "Source difficulty" : "Difficulty", difficulty]);
+  return facts;
 }
 
 export default async function RecipePage({ params, searchParams }: PageProps<"/recipes/[id]">) {
@@ -34,20 +46,18 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
   const dietary = recipe.dietary;
   return (
     <PageFrame title={recipe.title} back={{ href: "/", label: "Explore recipes" }}>
-      <div className={`grid items-start gap-6 ${recipe.coverFileId ? "md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8" : ""}`}>
+      <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8">
         <div className="flex max-w-3xl flex-col gap-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle">
-            <span className="wrap-anywhere">By {recipe.authorName}</span>
+            {recipe.source && (
+              <a href={recipe.source.url} className="underline wrap-anywhere">Original recipe by {recipe.source.contributor} on HowToCook</a>
+            )}
+            <span className="wrap-anywhere">{recipe.source ? "Shared by" : "By"} {recipe.authorName}</span>
             <span className="border-s border-line ps-3 font-medium capitalize">{recipe.visibility.toLowerCase()}</span>
           </div>
           <p className="max-w-[65ch] whitespace-pre-line text-base leading-relaxed text-subtle wrap-anywhere">{recipe.description}</p>
           <dl className="grid grid-cols-2 gap-x-3 gap-y-3 border-y border-line py-3 sm:grid-cols-4">
-            {[
-              ["Base servings", recipe.baseServings],
-              ["Prep", `${recipe.prepMinutes} min`],
-              ["Cook", `${recipe.cookMinutes} min`],
-              ["Difficulty", recipe.difficulty.toLowerCase()],
-            ].map(([label, value]) => (
+            {recipeFacts(recipe).map(([label, value]) => (
               <div key={label}>
                 <dt className="text-xs font-semibold text-subtle">{label}</dt>
                 <dd className={`mt-1 text-base font-semibold ${label === "Difficulty" ? "capitalize" : ""}`}>{value}</dd>
@@ -61,17 +71,12 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
             ) : (
               <Link className="site-button-outline" href={`/account?${new URLSearchParams({ returnTo: href })}`}>Sign in to bookmark</Link>
             )}
-            {!recipe.coverFileId && (
-              <span className="px-2 text-sm text-subtle">No cover photo</span>
-            )}
           </div>
           {canCopy && (
             <p id="copy-details" className="text-sm text-subtle">You’ll get a private copy you can edit independently. The cover photo stays with the original.</p>
           )}
         </div>
-        {recipe.coverFileId && (
-          <RecipeCover fileId={recipe.coverFileId} className="aspect-[4/3] rounded-md border border-line" />
-        )}
+        <RecipeCover fileId={recipe.coverFileId} showPlaceholderLabel className="aspect-[4/3] rounded-md border border-line" />
       </div>
       {dietary && (
         <section aria-labelledby="dietary-flags" className="site-panel space-y-3">

@@ -204,7 +204,7 @@ try {
   await owner.getByLabel("Title", { exact: true }).fill(title);
   await owner.getByLabel("Description", { exact: true }).fill("Disposable browser verification recipe.");
   await owner.getByLabel("Name", { exact: true }).fill(ingredient);
-  await owner.getByLabel("Quantity (optional)", { exact: true }).fill("400");
+  await owner.getByLabel(/^Quantity \(optional\b/).fill("400");
   await owner.getByLabel("Unit", { exact: true }).fill("g");
   await owner.getByLabel("Step 1", { exact: true }).fill("Stir and serve.");
   await owner.getByLabel("Choose a photo (optional)", { exact: true }).setInputFiles({ name: "smoke-" + runId + ".png", mimeType: "image/png", buffer: fixture });
@@ -246,13 +246,13 @@ try {
   copyDetail = new URL(reader.url()).pathname;
   assert.equal(await reader.getByLabel("Title", { exact: true }).inputValue(), title);
   assert.equal(await reader.getByLabel("Name", { exact: true }).inputValue(), ingredient);
-  assert.equal(await reader.getByLabel("Quantity (optional)").inputValue(), "400");
+  assert.equal(await reader.getByLabel(/^Quantity \(optional\b/).inputValue(), "400");
   assert.equal(await reader.getByLabel("Step 1", { exact: true }).inputValue(), "Stir and serve.");
   assert(await reader.getByRole("radio", { name: /^Private\b/ }).isChecked());
   assert.equal(await reader.getByRole("button", { name: "Remove cover photo" }).count(), 0);
 
   await reader.getByLabel("Title", { exact: true }).fill(copyTitle);
-  await reader.getByLabel("Quantity (optional)").fill("200");
+  await reader.getByLabel(/^Quantity \(optional\b/).fill("200");
   await reader.getByLabel("Step 1", { exact: true }).fill("Chill the copy.");
   await reader.getByRole("button", { name: "Save recipe", exact: true }).click();
   await reader.waitForURL((url) => url.pathname === copyDetail && !url.search);
@@ -303,6 +303,10 @@ try {
     reportFailure(error);
   } finally {
     console.log("Fixture teardown", JSON.stringify({ detail, deleted, copyDetail, copyDeleted, retainedCover: cover, passed: passedChecks }));
-    await browser.close();
+    try {
+      await Promise.all(browser.contexts().map((context) => context.unrouteAll({ behavior: "wait" })));
+    } finally {
+      await browser.close();
+    }
   }
 }

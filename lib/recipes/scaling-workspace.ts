@@ -161,10 +161,23 @@ export const selectPreview = createSelector(
 
 export const selectEligibleIngredients = createSelector(
   [(state: Workspace) => state.recipe.ingredients],
-  (ingredients) => ingredients.flatMap((item) => {
-    const units = getScalingUnits(item);
-    return units.length ? [{ id: item.id, name: item.name, units }] : [];
-  }),
+  (ingredients) => {
+    const labelCounts = new Map<string, number>();
+    const options = ingredients.flatMap((item, index) => {
+      const units = getScalingUnits(item);
+      if (units.length === 0) return [];
+
+      const label = [item.name, `${item.quantity} ${item.unit}`, item.note].filter(Boolean).join(" · ");
+      labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
+      return [{ id: item.id, label, units, position: index + 1 }];
+    });
+
+    return options.map(({ id, label, units, position }) => ({
+      id,
+      label: labelCounts.get(label) === 1 ? label : `Ingredient ${position} · ${label}`,
+      units,
+    }));
+  },
 );
 
 export const selectCanReset = createSelector(

@@ -70,30 +70,39 @@ it("returns a user who cancels Google sign-in to the app without a session", asy
   expect(cookies(response)).not.toContain("savor.session_token");
 });
 
-it("sets an app session after a successful Google callback and revokes it on sign-out", async () => {
-  const { callback, headers } = await beginSignIn();
-  // Simulate the external provider's code exchange and returned identity.
-  const { socialProviders } = await getAuth().$context;
+it("imports the Google profile once and keeps local edits on later sign-ins", async () => {
+  const profile = {
+    sub: "test-google-subject",
+    email: "cook@example.test",
+    email_verified: true,
+    name: "Robin Lee",
+    given_name: "Robin",
+    family_name: "Lee",
+    picture: "https://example.test/robin.jpg",
+  };
+  // Only the external code exchange is mocked. The provider maps the claims.
+  const idToken = [
+    Buffer.from(JSON.stringify({ alg: "none" })).toString("base64url"),
+    Buffer.from(JSON.stringify(profile)).toString("base64url"),
+    "",
+  ].join(".");
+  const { adapter, socialProviders } = await getAuth().$context;
   const google = socialProviders.find((provider) => provider.id === "google")!;
   const exchange = vi
     .spyOn(google, "validateAuthorizationCode")
-    .mockResolvedValue({ accessToken: "test-access-token" });
-  const user = {
-    email: "cook@example.test",
-    name: "Test Cook",
-    emailVerified: true,
-  };
-  vi.spyOn(google, "getUserInfo").mockResolvedValue({
-    user,
-    data: { sub: "test-google-subject" },
-  });
+    .mockResolvedValue({ accessToken: "test-access-token", idToken });
 
-  callback.searchParams.set("code", "test-auth-code");
-  const response = await GET(new Request(callback, { headers }));
-  expect(response.status).toBe(302);
-  expect(new URL(response.headers.get("Location")!, origin).href).toBe(
-    origin + "/",
-  );
+  async function signInWithGoogle() {
+    const { callback, headers } = await beginSignIn();
+    callback.searchParams.set("code", "test-auth-code");
+    const response = await GET(new Request(callback, { headers }));
+    expect(response.status).toBe(302);
+    expect(new URL(response.headers.get("Location")!, origin).href).toBe(
+      origin + "/",
+    );
+    return cookies(response);
+  }
+  const cookie = await signInWithGoogle();
   expect(exchange).toHaveBeenCalledWith(
     expect.objectContaining({
       code: "test-auth-code",
@@ -101,14 +110,28 @@ it("sets an app session after a successful Google callback and revokes it on sig
       redirectURI: callbackURL,
     }),
   );
-  const cookie = cookies(response);
-  const sessionRequest = () =>
-    GET(
+  async function readUserSession(sessionCookie: string) {
+    const response = await GET(
       new Request(origin + "/api/auth/get-session", {
-        headers: { Cookie: cookie },
+        headers: { Cookie: sessionCookie },
       }),
     );
-  expect(await (await sessionRequest()).json()).toMatchObject({ user });
+    return response.json();
+  }
+  const { user } = await readUserSession(cookie);
+  expect(user).toMatchObject({
+    email: profile.email, emailVerified: true, name: profile.name, image: profile.picture,
+  });
+  const linkedAccounts = await getAuth().api.listUserAccounts({ headers: { Cookie: cookie } });
+  expect(linkedAccounts).toEqual([
+    expect.objectContaining({ providerId: "google", accountId: profile.sub, userId: user.id }),
+  ]);
+  const localProfile = { name: "Chef Robin", username: "chef_robin", image: "/images/toast.jpg" };
+  await adapter.update({
+    model: "user",
+    where: [{ field: "id", value: user.id }],
+    update: localProfile,
+  });
 
   const signOut = await POST(
     new Request(origin + "/api/auth/sign-out", {
@@ -122,5 +145,7 @@ it("sets an app session after a successful Google callback and revokes it on sig
     }),
   );
   expect(signOut.status).toBe(200);
-  expect(await (await sessionRequest()).json()).toBeNull();
+  expect(await readUserSession(cookie)).toBeNull();
+  const nextSession = await readUserSession(await signInWithGoogle());
+  expect(nextSession.user).toMatchObject({ id: user.id, ...localProfile });
 });

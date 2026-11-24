@@ -96,4 +96,28 @@ describe("recipe scaling workspace", () => {
     expect(other.getState().history).toHaveLength(0);
     expect(selectPreview(original.getState())).toMatchObject({ ok: true, servings: 6 });
   });
+
+  it("labels pantry options with original amounts and distinguishes otherwise identical rows", () => {
+    const flour = recipe.ingredients[0];
+    const store = makeScalingStore({
+      ...recipe,
+      ingredients: [
+        flour,
+        { ...flour, id: "dusting", quantity: "25", note: "For dusting" },
+        { ...flour, id: "second-dough" },
+      ],
+    });
+    store.dispatch(scalingActions.editQuantity({ field: "targetServings", value: "6" }));
+    store.dispatch(scalingActions.changeMode("ingredient"));
+
+    expect(selectEligibleIngredients(store.getState())).toEqual([
+      { id: "flour", label: "Ingredient 1 · Flour · 400 g", units: ["g", "kg"] },
+      { id: "dusting", label: "Flour · 25 g · For dusting", units: ["g", "kg"] },
+      { id: "second-dough", label: "Ingredient 3 · Flour · 400 g", units: ["g", "kg"] },
+    ]);
+
+    store.dispatch(scalingActions.chooseIngredient("dusting"));
+    expect(store.getState().current.availableQuantity).toBe("37.5");
+    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 6 });
+  });
 });
