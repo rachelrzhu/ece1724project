@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
+import { getPublishedSource } from "@/lib/recipes/published-sources";
 import { createRecipeService } from "@/lib/recipes/service";
 import { z } from "zod";
 export const recipes = () =>
@@ -115,11 +116,16 @@ export async function listRecipes({
   return {
     total,
     page: boundedPage,
-    rows: rows.map((r) => ({
-      ...r,
-      baseServings: r.baseServings.toString(),
-      saved: saved.some((b) => b.recipeId === r.id),
-    })),
+    rows: rows.map((r) => {
+      const source = getPublishedSource(r.id);
+      const minutes = r.prepMinutes + r.cookMinutes;
+      return {
+        ...r,
+        baseServings: r.baseServings.toString(),
+        durationLabel: source && minutes === 0 ? source.time : `${minutes} min`,
+        saved: saved.some((b) => b.recipeId === r.id),
+      };
+    }),
     signedIn: !!viewer,
   };
 }
@@ -145,6 +151,7 @@ export const getRecipe = cache(async (id: string) => {
   ]);
   return {
     ...recipe,
+    source: getPublishedSource(id),
     authorName: author?.name ?? "Savor cook",
     saved: !!bookmark,
     isOwner: session?.user.id === recipe.authorId,

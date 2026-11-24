@@ -44,7 +44,7 @@ Recording the baseline writes migration metadata. Do not run the baseline SQL ag
 
 ## Cloud development fixtures
 
-The development Neon database contains 13 public demo recipes by eight fictional cooks. Each recipe has ordered ingredients, steps, and a cover in the development private Blob store. The [demo catalog](../scripts/demo-recipes.ts) assigns stable IDs to cooks, recipes, and covers. [Recipe and photo sources](../public/images/SOURCES.md) are listed with the assets. The cloud demo profiles have no login credentials. The local seed also creates two password-based logins and a private recipe for testing on loopback.
+The development Neon database contains 16 public demo recipes shared by eight fictional cooks. Three are English translations from the Chinese cookbook HowToCook. Their detail pages credit the original contributors and link to the Chinese editions. Each recipe has ordered ingredients, steps, and a cover in the development private Blob store. The [demo catalog](../scripts/demo-recipes.ts) assigns stable IDs to cooks, recipes, and covers. [Recipe and photo sources](../public/images/SOURCES.md) are listed with the assets. The cloud demo profiles have no login credentials. The local seed also creates two password-based logins and a private recipe for testing on loopback.
 
 On a deployment that includes the image route, request `/api/images/30000000-0000-4000-8000-000000000001` to read the first demo cover. A successful response reads the file metadata from PostgreSQL and streams the JPEG from Blob. The separate `/api/health` endpoint checks application liveness.
 

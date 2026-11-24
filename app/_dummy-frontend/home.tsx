@@ -98,7 +98,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
                   <div className="min-w-0">
                     <Link className="wrap-anywhere" href={`/recipes/${recipe.id}`}>{recipe.title}</Link>
                     <p className="text-sm">
-                      Serves {recipe.baseServings} · {recipe.prepMinutes + recipe.cookMinutes} min
+                      Serves {recipe.baseServings}{recipe.durationLabel && ` · ${recipe.durationLabel}`}
                       {collection === "mine" && ` · ${recipe.visibility.toLowerCase()}`}
                     </p>
                   </div>

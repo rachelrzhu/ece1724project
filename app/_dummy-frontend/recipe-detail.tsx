@@ -23,9 +23,21 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
     <PageFrame title={recipe.title} back={{ href: "/", label: "Back to recipes" }}>
       <p className="whitespace-pre-line wrap-anywhere">{recipe.description}</p>
       <div>
-        <p>By {recipe.authorName} · {recipe.visibility.toLowerCase()}</p>
-        <p>Serves {recipe.baseServings} · {recipe.difficulty.toLowerCase()}</p>
-        <p>Prep {recipe.prepMinutes} min · Cook {recipe.cookMinutes} min</p>
+        {recipe.source && (
+          <p><Link href={recipe.source.url}>Original Chinese recipe by {recipe.source.contributor} on HowToCook</Link></p>
+        )}
+        <p>{recipe.source ? "Shared by" : "By"} {recipe.authorName} · {recipe.visibility.toLowerCase()}</p>
+        <p>
+          Serves {recipe.baseServings}
+          {recipe.source
+            ? recipe.source.difficulty && ` · Source difficulty ${recipe.source.difficulty}`
+            : ` · ${recipe.difficulty.toLowerCase()}`}
+        </p>
+        {recipe.source && recipe.prepMinutes + recipe.cookMinutes === 0 ? (
+          recipe.source.time && <p>Total time {recipe.source.time}</p>
+        ) : (
+          <p>Prep {recipe.prepMinutes} min · Cook {recipe.cookMinutes} min</p>
+        )}
         {recipe.coverFileId && <Link href={`/api/images/${recipe.coverFileId}`}>View cover photo</Link>}
       </div>
       <section>
