@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
+import { readDietaryContext } from "@/lib/dietary/server";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
 import { getPublishedSource } from "@/lib/recipes/published-sources";
 import { createRecipeService } from "@/lib/recipes/service";
@@ -29,13 +30,15 @@ export async function listRecipes({
   page = 1,
   collection = "explore",
   difficulty = "",
+  hideDietaryConflicts = false,
 }: {
   query?: string;
   page?: number;
   collection?: string;
   difficulty?: string;
+  hideDietaryConflicts?: boolean;
 }) {
-  const session = await readSession();
+  const [session, dietary] = await Promise.all([readSession(), readDietaryContext()]);
   const viewer = session?.user.id ?? null;
   const q = query.trim().slice(0, 160);
   const pageNumber = Number.isFinite(page)
@@ -43,6 +46,9 @@ export async function listRecipes({
     : 1;
   const where = {
     AND: [
+      ...(hideDietaryConflicts && dietary?.conflictNames.length
+        ? [{ ingredients: { none: { canonicalName: { in: dietary.conflictNames } } } }]
+        : []),
       {
         ...(collection === "mine"
           ? { authorId: viewer ?? "00000000-0000-4000-8000-000000000000" }
@@ -84,10 +90,17 @@ export async function listRecipes({
     ],
   };
   const db = getDatabase();
+  const select = {
+    ...cardSelect,
+    ingredients: dietary ? {
+      orderBy: { position: "asc" as const },
+      select: { name: true, canonicalName: true },
+    } : false as const,
+  };
   const [initialRows, total] = await Promise.all([
     db.recipe.findMany({
       where,
-      select: cardSelect,
+      select,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (pageNumber - 1) * recipePageSize,
       take: recipePageSize,
@@ -100,7 +113,7 @@ export async function listRecipes({
       ? initialRows
       : await db.recipe.findMany({
           where,
-          select: cardSelect,
+          select,
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
           skip: (boundedPage - 1) * recipePageSize,
           take: recipePageSize,
@@ -118,18 +131,20 @@ export async function listRecipes({
   return {
     total,
     page: boundedPage,
-    rows: rows.map((r) => {
-      const source = getPublishedSource(r.id);
-      const minutes = r.prepMinutes + r.cookMinutes;
+    rows: rows.map(({ ingredients, ...recipe }) => {
+      const source = getPublishedSource(recipe.id);
+      const minutes = recipe.prepMinutes + recipe.cookMinutes;
       return {
-        ...r,
+        ...recipe,
         source,
-        baseServings: r.baseServings.toString(),
+        baseServings: recipe.baseServings.toString(),
         durationLabel: source && minutes === 0 ? source.time : `${minutes} min`,
-        saved: saved.some((b) => b.recipeId === r.id),
+        saved: saved.some((b) => b.recipeId === recipe.id),
+        dietary: dietary?.summarize(ingredients) ?? null,
       };
     }),
     signedIn: !!viewer,
+    hasDietaryPreferences: Boolean(dietary),
   };
 }
 export type RecipeCardData = Awaited<
@@ -140,7 +155,7 @@ export const getRecipe = cache(async (id: string) => {
   const recipe = await recipes().getById(id);
   if (!recipe) return null;
   const session = await readSession();
-  const [author, bookmark] = await Promise.all([
+  const [author, bookmark, dietary] = await Promise.all([
     getDatabase().user.findUnique({
       where: { id: recipe.authorId },
       select: { name: true },
@@ -151,10 +166,13 @@ export const getRecipe = cache(async (id: string) => {
           select: { recipeId: true },
         })
       : null,
+    readDietaryContext(),
   ]);
   return {
     ...recipe,
     source: getPublishedSource(recipe.id),
+    ingredients: recipe.ingredients.map(({ id, name, quantity, unit, note }) => ({ id, name, quantity, unit, note })),
+    dietary: dietary?.summarize(recipe.ingredients) ?? null,
     authorName: author?.name ?? "a home cook",
     saved: !!bookmark,
     isOwner: session?.user.id === recipe.authorId,

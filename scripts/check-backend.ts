@@ -18,6 +18,7 @@ const checks: string[] = [];
 const accountEmail = `qa-${randomUUID()}@savor.local`;
 let qaId: string | undefined,
   recipeId: string | undefined,
+  copyId: string | undefined,
   fileId: string | undefined,
   pathname: string | undefined;
 const check = (name: string) => {
@@ -128,6 +129,7 @@ try {
     "Prisma persists ordered ingredients, notes, steps and cover association",
   );
   assert.equal(await qaService.getById(recipeId), null);
+  assert.equal(await qaService.copyPublic(recipeId), null);
   assert.equal(await anonymous.getById(recipeId), null);
   assert.equal(await qaService.update(recipeId, input), null);
   assert.equal(await qaService.remove(recipeId), false);
@@ -150,6 +152,26 @@ try {
   assert(await anonymous.getById(recipeId));
   assert.equal((await media(file.id)).status, 200);
   check("Publication opens the recipe and photo to visitors");
+  await assert.rejects(() => anonymous.copyPublic(recipeId!));
+  const createdCopy = await qaService.copyPublic(recipeId);
+  assert(createdCopy);
+  copyId = createdCopy.id;
+  const copy = await qaService.getById(copyId);
+  assert(copy && recipe);
+  assert.equal(copy.visibility, "PRIVATE");
+  assert.equal(copy.authorId, qaId);
+  assert.equal(copy.coverFileId, null);
+  assert.equal(await ownerService.getById(copyId), null);
+  assert.equal(copy.baseServings, recipe.baseServings);
+  assert.equal(copy.ingredients.length, recipe.ingredients.length);
+  for (const [index, row] of recipe.ingredients.entries()) {
+    const copied: (typeof recipe.ingredients)[number] = copy.ingredients[index];
+    assert.notEqual(copied.id, row.id);
+    assert.deepEqual({ ...copied, id: row.id }, row);
+  }
+  assert.deepEqual(copy.steps.map(step => step.instruction), recipe.steps.map(step => step.instruction));
+  assert(copy.steps.every((step, index) => step.id !== recipe.steps[index].id));
+  check("A reader can independently copy the ordered rows of a public recipe into a private recipe");
   await db.bookmark.upsert({
     where: { userId_recipeId: { userId: qaId!, recipeId } },
     create: { userId: qaId!, recipeId },
@@ -178,6 +200,12 @@ try {
   assert.equal(await db.recipeStep.count({ where: { recipeId } }), 0);
   assert.equal(await db.bookmark.count({ where: { recipeId } }), 0);
   check("Deletion removes recipe children and saved references");
+  assert.deepEqual(await qaService.getById(copyId), copy);
+  const provenance = await db.recipe.findUniqueOrThrow({
+    where: { id: copyId }, select: { sourceRecipeId: true },
+  });
+  assert.equal(provenance.sourceRecipeId, recipeId);
+  check("The private copy and its source ID survive deletion of the original");
   recipeId = undefined;
   const logout = await auth("sign-out", {}, qaCookie);
   assert.equal(logout.status, 200);
@@ -192,6 +220,7 @@ try {
     "All verification used the loopback PostgreSQL database and local media",
   );
 } finally {
+  if (copyId) await db.recipe.deleteMany({ where: { id: copyId } });
   if (recipeId) await db.recipe.deleteMany({ where: { id: recipeId } });
   if (fileId) await db.storedFile.deleteMany({ where: { id: fileId } });
   if (pathname) await productImageStore().remove(pathname);

@@ -10,17 +10,23 @@ import { listRecipes, recipePageSize, type RecipeCardData } from "@/lib/product/
 import GoogleSignInButton from "./account/google-sign-in-button";
 import RecipeActions from "./recipes/_components/recipe-actions";
 
-function collectionHref(collection: Collection, query = "", page = 1) {
+function collectionHref(collection: Collection, query = "", page = 1, hideDietaryConflicts = false) {
   const params = new URLSearchParams();
   if (collection !== "explore") params.set("collection", collection);
   if (query) params.set("q", query);
   if (page > 1) params.set("page", String(page));
+  if (hideDietaryConflicts) params.set("dietary", "1");
   return params.size ? `/?${params}` : "/";
 }
 
-function RecipeSearch({ collection, query }: { collection: Collection; query: string }) {
+function RecipeSearch({ collection, query, hideDietaryConflicts }: {
+  collection: Collection;
+  query: string;
+  hideDietaryConflicts: boolean;
+}) {
   return (
     <form action="/#recipes" method="get" role="search" className="flex w-full max-w-2xl gap-2">
+      {hideDietaryConflicts && <input type="hidden" name="dietary" value="1" />}
       {collection !== "explore" && <input type="hidden" name="collection" value={collection} />}
       <div className="relative min-w-0 flex-1">
         <label htmlFor="recipe-query" className="sr-only">Find a recipe</label>
@@ -36,6 +42,7 @@ function RecipeSearch({ collection, query }: { collection: Collection; query: st
 function RecipeListItem({ recipe, collection }: { recipe: RecipeCardData; collection: Collection }) {
   const href = `/recipes/${recipe.id}`;
   const difficulty = recipe.source ? recipe.source.difficulty : recipe.difficulty.toLowerCase();
+  const dietary = recipe.dietary;
   return (
     <article className="recipe-entry">
       <div className="grid min-w-0 items-center gap-2 md:grid-cols-[minmax(0,1fr)_auto] md:gap-5">
@@ -51,6 +58,23 @@ function RecipeListItem({ recipe, collection }: { recipe: RecipeCardData; collec
             <p className="mt-1 text-sm text-subtle wrap-anywhere">By {recipe.author.name}</p>
           )}
           <p className="mt-1 line-clamp-2 max-w-[65ch] text-sm text-subtle wrap-anywhere">{recipe.description}</p>
+          {dietary && (
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm">
+              {dietary.conflicts.length > 0 && (
+                <span className="font-semibold text-rust">
+                  {dietary.conflicts.length} {dietary.conflicts.length === 1 ? "ingredient" : "ingredients"} with known conflicts
+                </span>
+              )}
+              {dietary.unknownIngredients.length > 0 && (
+                <span className="text-subtle">
+                  {dietary.unknownIngredients.length} {dietary.unknownIngredients.length === 1 ? "ingredient" : "ingredients"} with incomplete information
+                </span>
+              )}
+              {!dietary.conflicts.length && !dietary.unknownIngredients.length && (
+                <span className="text-subtle">No known conflicts in mapped ingredients.</span>
+              )}
+            </div>
+          )}
         </div>
         <ul className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle md:max-w-60 md:justify-end">
           {recipe.durationLabel && <li className="inline-flex items-center gap-1"><Icon name="clock" className="size-4" />{recipe.durationLabel}</li>}
@@ -89,11 +113,12 @@ function ResultsLoading() {
   );
 }
 
-async function RecipeResults({ collection, query, page, signedIn }: {
+async function RecipeResults({ collection, query, page, signedIn, hideDietaryConflicts }: {
   collection: Collection;
   query: string;
   page: number;
   signedIn: boolean;
+  hideDietaryConflicts: boolean;
 }) {
   if (!signedIn && collection !== "explore") {
     return (
@@ -104,25 +129,39 @@ async function RecipeResults({ collection, query, page, signedIn }: {
     );
   }
 
-  const result = await listRecipes({ collection, query, page }).catch(() => null);
+  const result = await listRecipes({ collection, query, page, hideDietaryConflicts }).catch(() => null);
   if (!result) {
     return (
       <div className="site-panel space-y-3">
         <p role="alert" className="font-semibold">Couldn’t load recipes.</p>
-        <a className="site-button-outline" href={collectionHref(collection, query, page)}>Reload recipes</a>
+        <a className="site-button-outline" href={collectionHref(collection, query, page, hideDietaryConflicts)}>Reload recipes</a>
       </div>
     );
   }
 
+  const filtering = result.hasDietaryPreferences && hideDietaryConflicts;
+  const dietaryFilter = result.hasDietaryPreferences && (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <Link className="site-button-outline" href={collectionHref(collection, query, result.page, !filtering) + "#recipes"}
+        aria-describedby="dietary-filter-help">{filtering ? "Show all recipes" : "Hide known conflicts"}</Link>
+      <p id="dietary-filter-help" className="text-sm text-subtle">
+        {filtering ? "Known conflicts with your preferences are hidden." : "Filter by your dietary preferences."}
+        {" "}Recipes with incomplete records stay visible unless they have a known conflict.
+      </p>
+    </div>
+  );
+
   if (result.total === 0) {
-    const emptyMessage = collection === "mine" ? "You haven’t created any recipes yet."
+    const emptyMessage = filtering ? "No recipes match the current dietary filter."
+      : collection === "mine" ? "You haven’t created any recipes yet."
       : collection === "saved" ? "You haven’t saved any recipes yet." : "No public recipes have been shared yet.";
     return (
       <div className="site-panel space-y-3">
+        {dietaryFilter}
         <p className="font-semibold wrap-anywhere">{query ? `No recipes match “${query}”.` : emptyMessage}</p>
-        {query && <Link className="site-button-outline" href={collectionHref(collection)}>Clear search</Link>}
-        {!query && collection === "mine" && <Link className="site-button" href="/recipes/new">Create a recipe</Link>}
-        {!query && collection === "saved" && <Link className="site-button-outline" href="/">Explore recipes</Link>}
+        {query && <Link className="site-button-outline" href={collectionHref(collection, "", 1, filtering)}>Clear search</Link>}
+        {!query && !filtering && collection === "mine" && <Link className="site-button" href="/recipes/new">Create a recipe</Link>}
+        {!query && !filtering && collection === "saved" && <Link className="site-button-outline" href="/">Explore recipes</Link>}
       </div>
     );
   }
@@ -130,15 +169,16 @@ async function RecipeResults({ collection, query, page, signedIn }: {
   const pageCount = Math.ceil(result.total / recipePageSize);
   return (
     <div className="space-y-5">
+      {dietaryFilter}
       <p className="text-sm text-subtle" aria-live="polite">{result.total} {result.total === 1 ? "recipe" : "recipes"}</p>
       <ul aria-label={collections[collection].heading} className="divide-y divide-line border-y border-line">
         {result.rows.map((recipe) => <li key={recipe.id}><RecipeListItem recipe={recipe} collection={collection} /></li>)}
       </ul>
       {pageCount > 1 && (
         <nav aria-label="Recipe pages" className="flex flex-wrap items-center gap-3">
-          {result.page > 1 && <Link className="site-button-outline" href={`${collectionHref(collection, query, result.page - 1)}#recipes`}>Previous</Link>}
+          {result.page > 1 && <Link className="site-button-outline" href={`${collectionHref(collection, query, result.page - 1, filtering)}#recipes`}>Previous</Link>}
           <span className="text-sm text-subtle">Page {result.page} of {pageCount}</span>
-          {result.page < pageCount && <Link className="site-button-outline" href={`${collectionHref(collection, query, result.page + 1)}#recipes`}>Next</Link>}
+          {result.page < pageCount && <Link className="site-button-outline" href={`${collectionHref(collection, query, result.page + 1, filtering)}#recipes`}>Next</Link>}
         </nav>
       )}
     </div>
@@ -151,6 +191,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const collection = params.collection === "mine" || params.collection === "saved" ? params.collection : "explore";
   const page = typeof params.page === "string" ? Number(params.page) : 1;
   const signedIn = Boolean(session);
+  const hideDietaryConflicts = signedIn && params.dietary === "1";
 
   return (
     <>
@@ -169,12 +210,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             {collection === "explore" && !signedIn && getGoogleProviderOptions() && <GoogleSignInButton />}
           </div>
           {(collection === "explore" || signedIn) && (
-            <RecipeSearch key={`${collection}:${query}`} collection={collection} query={query} />
+            <RecipeSearch key={`${collection}:${query}`} collection={collection} query={query} hideDietaryConflicts={hideDietaryConflicts} />
           )}
         </header>
         <section id="recipes" aria-label={collections[collection].heading} className="scroll-mt-5">
-          <Suspense key={`${collection}:${query}:${page}`} fallback={<ResultsLoading />}>
-            <RecipeResults collection={collection} query={query} page={page} signedIn={signedIn} />
+          <Suspense key={`${collection}:${query}:${page}:${hideDietaryConflicts}`} fallback={<ResultsLoading />}>
+            <RecipeResults collection={collection} query={query} page={page} signedIn={signedIn} hideDietaryConflicts={hideDietaryConflicts} />
           </Suspense>
         </section>
       </main>
