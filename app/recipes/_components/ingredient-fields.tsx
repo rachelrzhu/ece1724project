@@ -16,7 +16,9 @@ export default function IngredientFields({
   onRemove: () => void;
 }) {
   const quantityId = useId();
-  const [hasQuantity, setHasQuantity] = useState(ingredient.quantity !== null);
+  const [quantity, setQuantity] = useState(ingredient.quantity ?? "");
+  const hasQuantity = quantity !== "";
+  const preservePrecision = quantity === ingredient.quantity && Number(quantity) * 10 % 1 !== 0;
   const prefix = `ingredient-${ingredient.id}`;
 
   return (
@@ -28,18 +30,19 @@ export default function IngredientFields({
           <Input className="site-field" maxLength={160} />
         </TextField>
         <div className="grid gap-1">
-          <Label htmlFor={quantityId}>Quantity (optional)</Label>
+          <Label htmlFor={quantityId}>Quantity (optional, up to 1 decimal place)</Label>
           <Input
             id={quantityId}
             name={`${prefix}-quantity`}
             type="number"
+            inputMode="decimal"
             className="site-field"
             fullWidth
-            min="0.000001"
+            min={preservePrecision ? "0.000001" : "0.1"}
             max="1000000"
-            step="0.000001"
+            step={preservePrecision ? "0.000001" : "0.1"}
             defaultValue={ingredient.quantity ?? ""}
-            onChange={(event) => setHasQuantity(event.currentTarget.value !== "")}
+            onChange={(event) => setQuantity(event.currentTarget.value)}
           />
         </div>
         <TextField

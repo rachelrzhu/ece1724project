@@ -147,7 +147,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
 
   return (
     <>
-      <SiteHeader signedIn={signedIn} active={collection} />
+      <SiteHeader user={session?.user} active={collection} />
       <main id="main-content" tabIndex={-1} className="site-container space-y-6 py-7 sm:space-y-8 sm:py-10">
         {params.error && (
           <p role="alert" className="site-panel text-sm text-rust">
