@@ -39,6 +39,9 @@ beforeAll(async () => {
     "SELECT id, source_recipe_id FROM recipes WHERE id = $1", [recipeId],
   );
   [originalBeforeCopies] = rows;
+  await database.exec(
+    readFileSync("prisma/migrations/20261123010000_dietary_preferences/migration.sql", "utf8"),
+  );
 });
 
 afterAll(async () => {
@@ -229,5 +232,52 @@ describe("additive Better Auth migration", () => {
       (await database.query("SELECT id FROM sessions WHERE user_id=$1", [id]))
         .rows,
     ).toHaveLength(0);
+  });
+});
+
+describe("dietary settings and ingredient catalogue", () => {
+  it("keeps preferences optional, unique to the account, and removable with the account", async () => {
+    const profileId = "40000000-0000-4000-8000-000000000100";
+    await database.query("INSERT INTO users (id, email) VALUES ($1, 'dietary@example.test')", [profileId]);
+    const stored = () => database.query(
+      "SELECT diet::text, allergens::text[] FROM dietary_settings WHERE user_id = $1", [profileId],
+    );
+    expect((await stored()).rows).toEqual([]);
+    await database.query("INSERT INTO dietary_settings (user_id) VALUES ($1)", [profileId]);
+    expect((await stored()).rows).toEqual([{ diet: "NONE", allergens: [] }]);
+    await expect(database.query("INSERT INTO dietary_settings (user_id) VALUES ($1)", [profileId]))
+      .rejects.toThrow(/dietary_settings_pkey/);
+    await database.query("DELETE FROM users WHERE id = $1", [profileId]);
+    expect((await stored()).rows).toEqual([]);
+  });
+
+  it("relates a compound ingredient to two confirmed allergens and leaves generic ingredients unmapped", async () => {
+    const { rows } = await database.query(
+      "SELECT allergen::text FROM ingredient_allergens WHERE canonical_name = $1 ORDER BY allergen::text",
+      ["milk chocolate with peanuts"],
+    );
+    expect(rows).toEqual([{ allergen: "MILK" }, { allergen: "PEANUT" }]);
+    await expect(database.query(
+      "INSERT INTO ingredient_allergens (canonical_name, allergen) VALUES ('milk chocolate with peanuts', 'MILK')",
+    )).rejects.toThrow(/ingredient_allergens_pkey/);
+    await expect(database.query(
+      "INSERT INTO ingredient_allergens (canonical_name, allergen) VALUES ('unmapped pantry mix', 'MILK')",
+    )).rejects.toThrow(/foreign key/);
+    expect((await database.query(
+      "SELECT canonical_name FROM ingredient_profiles WHERE canonical_name IN ('plain flour', 'pasta', 'breadcrumbs')",
+    )).rows).toEqual([]);
+  });
+
+  it("matches existing canonical names directly without requiring every recipe ingredient to have a profile", async () => {
+    await database.query(
+      `INSERT INTO recipe_ingredients (recipe_id, position, name, canonical_name, quantity, unit)
+       VALUES ($1, 0, 'Eggs', 'eggs', 2, 'count'), ($1, 1, 'My seasoning', 'my seasoning', 1, 'g')`, [recipeId],
+    );
+    const { rows } = await database.query(
+      `SELECT i.name, a.allergen::text FROM recipe_ingredients i
+       LEFT JOIN ingredient_allergens a ON a.canonical_name = i.canonical_name
+       WHERE i.recipe_id = $1 ORDER BY i.position`, [recipeId],
+    );
+    expect(rows).toEqual([{ name: "Eggs", allergen: "EGG" }, { name: "My seasoning", allergen: null }]);
   });
 });

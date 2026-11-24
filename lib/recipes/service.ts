@@ -38,7 +38,7 @@ const recipeDetailSelect = {
   coverFileId: true,
   ingredients: {
     orderBy: { position: "asc" },
-    select: { id: true, name: true, quantity: true, unit: true, note: true },
+    select: { id: true, name: true, canonicalName: true, quantity: true, unit: true, note: true },
   },
   steps: {
     orderBy: { position: "asc" },
