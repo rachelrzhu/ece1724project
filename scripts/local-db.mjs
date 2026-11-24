@@ -18,12 +18,12 @@ const localSettings = {
   BETTER_AUTH_URL: `http://127.0.0.1:${appPort}`,
 };
 const command = process.argv[2] ?? "setup";
-mkdirSync(state, { recursive: true, mode: 0o700 });
-function run(command, args, options = {}) {
-  return execFileSync(command, args, {
+if (!["setup", "stop", "dev", "start", "verify", "cleanup-images"].includes(command))
+  throw new Error("Unknown local database command.");
+function run(command, args) {
+  execFileSync(command, args, {
     cwd: root,
     stdio: "inherit",
-    ...options,
   });
 }
 if (command === "stop") {
@@ -68,7 +68,7 @@ if (command === "verify" || command === "cleanup-images") {
   run(process.execPath, ["--conditions=react-server", "--import", "tsx", `scripts/${script}`]);
   process.exit(0);
 }
-if (command !== "setup") throw new Error("Unknown local database command.");
+mkdirSync(state, { recursive: true, mode: 0o700 });
 if (!existsSync(path.join(data, "PG_VERSION")))
   run("initdb", [
     "-D",

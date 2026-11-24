@@ -15,7 +15,17 @@ Keep `main` as Vercel's Production Branch. A separate `prod` branch is unnecessa
 3. Open a pull request from **dev to preprod**. Check the changes, let `check`, `release-path`, and `Vercel` pass, and merge it.
 4. Open the **preprod branch deployment** in Vercel. Test the homepage, health endpoint, and any changed authenticated features using preprod data. A passing build does not replace testing the actual page.
 5. Open a pull request from **preprod to main**. Let the required checks pass and merge only after you have tested preprod. This is the deliberate production release step.
-6. After a release, bring `main` back into `dev` (`git switch dev`, `git merge origin/main`, then `git push origin dev`). Before a later dev-to-preprod PR, also merge `origin/preprod` into `dev` if GitHub requests an update. Use merge commits for these long-lived branches; keep them after merging.
+6. After a release, fetch the latest branches and merge the released commit into `dev`.
+
+   ```bash
+   git fetch origin
+   git switch dev
+   git merge --ff-only origin/dev
+   git merge origin/main
+   git push origin dev
+   ```
+
+   If GitHub requests an update on a later dev-to-preprod PR, repeat the sequence with `git merge origin/preprod` in place of `git merge origin/main`. Use merge commits for PRs between these long-lived branches and keep the branches after merging.
 
 Protected `main` and `preprod` require a pull request, an up-to-date branch, passing application checks, the correct source branch, and a successful Vercel build. Admins must follow these rules too. Dev allows direct pushes; all three branches reject force pushes and deletion. The initial setup creates dev and preprod without changing main or publishing unfinished local work.
 
