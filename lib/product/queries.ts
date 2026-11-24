@@ -4,6 +4,7 @@ import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
 import { readDietaryContext } from "@/lib/dietary/server";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
+import { getPublishedSource } from "@/lib/recipes/published-sources";
 import { createRecipeService } from "@/lib/recipes/service";
 import { z } from "zod";
 export const recipes = () =>
@@ -130,12 +131,18 @@ export async function listRecipes({
   return {
     total,
     page: boundedPage,
-    rows: rows.map(({ ingredients, ...recipe }) => ({
-      ...recipe,
-      baseServings: recipe.baseServings.toString(),
-      saved: saved.some((b) => b.recipeId === recipe.id),
-      dietary: dietary?.summarize(ingredients) ?? null,
-    })),
+    rows: rows.map(({ ingredients, ...recipe }) => {
+      const source = getPublishedSource(recipe.id);
+      const minutes = recipe.prepMinutes + recipe.cookMinutes;
+      return {
+        ...recipe,
+        source,
+        baseServings: recipe.baseServings.toString(),
+        durationLabel: source && minutes === 0 ? source.time : `${minutes} min`,
+        saved: saved.some((b) => b.recipeId === recipe.id),
+        dietary: dietary?.summarize(ingredients) ?? null,
+      };
+    }),
     signedIn: !!viewer,
     hasDietaryPreferences: Boolean(dietary),
   };
@@ -163,6 +170,7 @@ export const getRecipe = cache(async (id: string) => {
   ]);
   return {
     ...recipe,
+    source: getPublishedSource(recipe.id),
     ingredients: recipe.ingredients.map(({ id, name, quantity, unit, note }) => ({ id, name, quantity, unit, note })),
     dietary: dietary?.summarize(recipe.ingredients) ?? null,
     authorName: author?.name ?? "a home cook",
