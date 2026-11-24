@@ -35,7 +35,7 @@ export default function RecipeActions({ id, title, saved, isOwner, afterDeleteHr
   return (
     <>
       {saved !== undefined && (
-        <Button variant="secondary" isDisabled={pending} onPress={() => submit("bookmark")}>
+        <Button variant="secondary" className="site-button-outline" isDisabled={pending} onPress={() => submit("bookmark")}>
           {saved ? "Remove bookmark" : "Bookmark recipe"}
         </Button>
       )}
@@ -43,13 +43,14 @@ export default function RecipeActions({ id, title, saved, isOwner, afterDeleteHr
         <Button
           aria-label={`Delete recipe: ${title}`}
           variant="danger-soft"
+          className="min-h-11"
           isDisabled={pending}
           onPress={() => submit("delete")}
         >
           Delete recipe
         </Button>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert" className="basis-full text-sm text-rust">{error}</p>}
     </>
   );
 }

@@ -48,8 +48,8 @@ Keep the terminal open while using the app. Press **Ctrl+C** to stop it.
 
 Next.js runs the frontend and its server-side code together. **You only need one command and one terminal**; there is no separate backend server to install or start.
 
-- The temporary HeroUI screens live in `app/_dummy-frontend/`. The page files for `/`, `/account`, `/recipes/new`, and `/recipes/[id]` each re-export one screen. To replace the wireframe, point those page files at the new screens, then remove `app/_dummy-frontend/`. The recipe server actions live in `app/actions.ts`.
-- The homepage lets you search public recipes. Sign in or register at `/account` to test recipe creation, editing, deletion, cover uploads, and bookmarks.
+- The Next.js App Router serves discovery at `/`, sign-in and registration at `/account`, the editor at `/recipes/new`, and recipe details at `/recipes/[id]`. Shared UI lives in `app/_components/`. Recipe mutations run through `app/actions.ts`.
+- Explore searches public recipes by title or ingredient. Sign in to create and manage recipes under **My recipes** and revisit bookmarks under **Saved**. New recipes are private until you publish them.
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
 - `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.
@@ -68,7 +68,7 @@ After the first setup, open a terminal in the project folder and run:
 npm run dev
 ```
 
-Edit `app/_dummy-frontend/home.tsx` and save to see changes in the browser. Stop the server with **Ctrl+C**. If a teammate changes the project's dependencies, stop the server and run `npm run setup` again to reinstall them.
+Edit `app/page.tsx` and save to see changes in the browser. Stop the server with **Ctrl+C**. If a teammate changes the project's dependencies, stop the server and run `npm run setup` again to reinstall them.
 
 Other useful commands:
 

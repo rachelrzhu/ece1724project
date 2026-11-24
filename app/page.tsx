@@ -9,7 +9,7 @@ import { collections, SiteHeader, type Collection } from "@/app/_components/site
 import { getGoogleProviderOptions, readSession } from "@/lib/auth/server";
 import { listRecipes, recipePageSize, type RecipeCardData } from "@/lib/product/queries";
 import AccountButton from "./account-button";
-import RecipeActions from "./_dummy-frontend/recipe-actions";
+import RecipeActions from "./recipes/_components/recipe-actions";
 
 function collectionHref(collection: Collection, query = "", page = 1) {
   const params = new URLSearchParams();
@@ -164,7 +164,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </div>
             <div className="relative aspect-[2/1] md:aspect-auto md:min-h-96">
               <Image src="/savor-discovery.webp" fill alt="" sizes="(min-width: 1248px) 625px, (min-width: 768px) 50vw, 100vw"
-                fetchPriority="high" className="object-cover" />
+                loading="eager" fetchPriority="high" className="object-cover" />
             </div>
           </section>
         )}

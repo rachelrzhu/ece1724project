@@ -20,12 +20,12 @@ export default function IngredientFields({
   const prefix = `ingredient-${ingredient.id}`;
 
   return (
-    <Fieldset>
-      <Fieldset.Legend>Ingredient {number}</Fieldset.Legend>
-      <div className="grid gap-3 sm:grid-cols-2">
+    <Fieldset className="min-w-0 rounded-xl border border-line bg-canvas p-3 sm:p-4">
+      <Fieldset.Legend className="px-1 font-semibold">Ingredient {number}</Fieldset.Legend>
+      <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         <TextField name={`${prefix}-name`} defaultValue={ingredient.name} fullWidth isRequired>
           <Label>Name</Label>
-          <Input maxLength={160} />
+          <Input className="site-field" maxLength={160} />
         </TextField>
         <div className="grid gap-1">
           <Label htmlFor={quantityId}>Quantity (optional)</Label>
@@ -33,6 +33,7 @@ export default function IngredientFields({
             id={quantityId}
             name={`${prefix}-quantity`}
             type="number"
+            className="site-field"
             fullWidth
             min="0.000001"
             max="1000000"
@@ -48,7 +49,7 @@ export default function IngredientFields({
           isRequired={hasQuantity}
         >
           <Label>Unit</Label>
-          <Input maxLength={32} placeholder="e.g. cup or count" />
+          <Input className="site-field" maxLength={32} placeholder="e.g. cup or count" />
         </TextField>
         <TextField
           name={`${prefix}-note`}
@@ -57,13 +58,13 @@ export default function IngredientFields({
           isRequired={!hasQuantity}
         >
           <Label>Note</Label>
-          <Input maxLength={300} placeholder="e.g. to taste" />
+          <Input className="site-field" maxLength={300} placeholder="e.g. to taste" />
         </TextField>
       </div>
       <div>
         <Button
           type="button"
-          variant="secondary"
+          variant="ghost"
           size="sm"
           isDisabled={!canRemove}
           aria-label={`Remove ingredient ${number}`}
