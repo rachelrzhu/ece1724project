@@ -4,6 +4,7 @@ import { getGoogleProviderOptions, readSession, safeReturnPath } from "@/lib/aut
 import { readDietaryPreferences } from "@/lib/dietary/server";
 import AccountForm from "./account-form";
 import DietaryPreferencesForm from "./dietary-preferences-form";
+import ProfileForm from "./profile-form";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -14,6 +15,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const returnTo = safeReturnPath(params.returnTo, "/");
   return (
     <PageFrame title="Your account" back={{ href: "/", label: "Explore recipes" }} narrow>
+      {session && <ProfileForm name={session.user.name ?? ""} image={session.user.image ?? null} />}
       <div className="site-panel space-y-5">
         {params.error && (
           <p role="alert" className="text-sm text-rust">

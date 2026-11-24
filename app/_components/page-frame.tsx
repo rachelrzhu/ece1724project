@@ -14,7 +14,7 @@ export default async function PageFrame({ title, back, children, narrow = false 
 
   return (
     <>
-      <SiteHeader signedIn={Boolean(session)} />
+      <SiteHeader user={session?.user} />
       <main id="main-content" tabIndex={-1} className={`site-container space-y-6 py-6 sm:space-y-8 sm:py-9 ${narrow ? "max-w-xl!" : ""}`}>
         <header className="space-y-2">
           {back && (
