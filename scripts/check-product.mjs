@@ -303,6 +303,10 @@ try {
     reportFailure(error);
   } finally {
     console.log("Fixture teardown", JSON.stringify({ detail, deleted, copyDetail, copyDeleted, retainedCover: cover, passed: passedChecks }));
-    await browser.close();
+    try {
+      await Promise.all(browser.contexts().map((context) => context.unrouteAll({ behavior: "wait" })));
+    } finally {
+      await browser.close();
+    }
   }
 }
