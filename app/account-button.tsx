@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@heroui/react/button";
 import { createAuthClient } from "better-auth/client";
 import { useState, useTransition } from "react";
 
@@ -33,14 +34,9 @@ export default function AccountButton({ signedIn }: { signedIn: boolean }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={submit}
-        disabled={pending}
-        className="cursor-pointer rounded-lg border px-5 py-2.5 font-medium disabled:cursor-wait disabled:opacity-60"
-      >
+      <Button type="button" variant="secondary" onPress={submit} isDisabled={pending}>
         {pending ? "Please wait…" : signedIn ? "Sign out" : "Continue with Google"}
-      </button>
+      </Button>
       {failed && (
         <p role="alert">
           {signedIn

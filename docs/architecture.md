@@ -1,20 +1,16 @@
 # System Architecture
 
-**Project:** Recipe Sharing and Adaptive Ingredient Scaling
+Recipe Sharing and Adaptive Ingredient Scaling · Design recorded November 8, 2026
 
-**Revision:** November 8, 2026
-
-**Scope:** Application structure, persistence, access control, media, and scaling
+This document describes the backend after the `database`, `auth`, `recipes`, and `tests` changes are combined. The scaling section describes the planned frontend integration.
 
 ## 1. Purpose and scope
 
-The application enables users to create, publish, discover, and bookmark recipes, then adapt ingredient quantities to a serving count or the available amount of one ingredient. The minimum viable product includes authentication, recipe ownership and visibility, one cover photograph per recipe, public search, bookmarks, and an interactive scaling workspace.
-
-Editable recipe copies, dietary discovery, additional filters, and step photographs follow the minimum viable product. Shopping lists, meal planning, comments, substitutions, and nutrition estimates are outside the initial scope. Detailed acceptance criteria are maintained in [Requirements](requirements.md).
+The recipe backend supports public and private recipes, title and ingredient search, and bookmarks. The planned scaling controls adjust ingredient quantities for a different serving count or an ingredient the cook has on hand. Editable copies, dietary filters, and step photos come later. [Requirements and priorities](requirements.md)
 
 ## 2. Architecture overview
 
-The system is a modular monolith built with the Next.js App Router. The interface and server application share one TypeScript repository and one deployment. Feature modules contain validation, queries, and application rules; route files remain thin entry points.
+Next.js serves the pages, Server Actions, and HTTP routes from one TypeScript project. The diagram includes the planned scaling workspace.
 
 ```mermaid
 flowchart TD
@@ -44,7 +40,7 @@ flowchart TD
     Media --> Blob
 ```
 
-Server Components call services directly for reads. Server Actions validate form submissions and call the same services for changes. Route Handlers provide the HTTP interfaces required for authentication callbacks and image delivery. Client Components receive serializable data and manage interaction; they do not import database or storage code.
+Server Components can call recipe queries directly. Server Actions handle edits, bookmarks, and cover uploads. HTTP routes handle authentication requests and image reads. Database access and storage credentials stay on the server.
 
 ## 3. Technology decisions
 
@@ -54,7 +50,7 @@ Server Components call services directly for reads. Server Actions validate form
 | Interface | Tailwind CSS 4 and HeroUI 3 | Shared styling and accessible component primitives. HeroUI 3 styles load after Tailwind. |
 | Relational persistence | Neon PostgreSQL and Prisma 7 | Typed queries, relational constraints, and versioned migrations. |
 | Database transport | `@prisma/adapter-pg` and `pg` | PostgreSQL connections with interactive transaction support. Runtime pools have bounded size and connection timeouts. |
-| Authentication | Better Auth | Planned email/password and Google sign-in with persistent sessions. |
+| Authentication | Better Auth | Email/password accounts and database-backed sessions. Google sign-in requires OAuth credentials and a verified callback. |
 | Input validation | Zod | Shared input contracts with explicit size and numeric limits. |
 | Scaling state | Redux Toolkit | Planned recipe-scoped state for controls, derived quantities, warnings, undo, and reset. |
 | Photograph storage | Private Vercel Blob | Store image bytes separately from relational metadata. |
@@ -62,18 +58,24 @@ Server Components call services directly for reads. Server Actions validate form
 | Hosting | Vercel | Deploy the Next.js application as one unit. |
 | Verification | Vitest, PGlite, ESLint, TypeScript, production builds | Test application boundaries and migration constraints without cloud credentials. |
 
-Prisma CLI, client, and adapter use the same pinned version. The dependency lockfile records installed versions. Database migrations have one owner and one history; no second ORM is introduced.
+The lockfile pins the Prisma CLI, client, and PostgreSQL adapter together. The schema history lives in the SQL migrations under `prisma/migrations/`.
 
 ## 4. Repository structure and boundaries
 
 ```text
 app/
-  api/health/route.ts       Public application liveness
+  actions.ts               Recipe writes, bookmarks, cover uploads, sign-out
+  api/auth/[...all]/        Better Auth requests and callbacks
+  api/images/[id]/          Access checks and image downloads
+  api/health/route.ts       Application health check
   layout.tsx               Shared document and styles
   page.tsx                 Application entry page
 lib/
+  auth/server.ts           Better Auth setup and session lookup
   config/env.ts            Validated server configuration
   db/client.ts             Lazy, server-only Prisma client
+  product/queries.ts       Search, collections, and recipe detail
+  product/storage.ts       Selects local files or private Blob storage
   recipes/
     schemas.ts             Bounded recipe input contracts
     access.ts              Visibility query predicates
@@ -89,22 +91,21 @@ prisma/
 tests/                     Input, service-boundary, and migration tests
 ```
 
-Authentication, media, and scaling modules are added alongside recipes as their workflows are implemented. Browser-safe schemas and pure calculations remain separate from server-only modules. Generated Prisma output is a build artifact, regenerated from the schema.
-
-Services accept a session reader supplied by the server authentication module. Identity must come from a verified session, never from form data or a submitted owner ID. Product mutation endpoints remain closed until authentication is integrated. A separate local tester uses a fixed identity inside a dedicated development schema.
+Product mutations get the user ID from the Better Auth session. The development tester uses a fixed identity in its own database schema. Prisma generates the TypeScript client from `schema.prisma`.
 
 ## 5. Data model
 
 | Model | Responsibility and constraints |
 | --- | --- |
-| `User` | Existing user profile, mapped to `users`; retains UUID identifiers and unique email addresses. Authentication account and session records will be added separately. |
-| `StoredFile` | Existing `files` metadata: owner, private pathname, media type, byte size, and creation time. File size remains positive. Image bytes remain in Blob storage. |
+| `User` | Existing profile in `users`, with a UUID and unique email address. |
+| `Account`, `Session`, `Verification` | Better Auth stores credentials or provider links, expiring sessions, and verification records in separate tables. |
+| `StoredFile` | File owner, private pathname, media type, positive byte count, and creation time. The image bytes live in private Blob storage or the local test directory. |
 | `Recipe` | Author, title, description, original serving count, preparation and cooking times, difficulty, visibility, timestamps, and optional unique cover association. Visibility defaults to private. |
 | `RecipeIngredient` | Recipe, position, display name, normalized search name, original decimal quantity, unit, and note. Each position is unique within a recipe. |
 | `RecipeStep` | Recipe, position, and instruction. Each position is unique within a recipe. |
 | `Bookmark` | User-to-recipe reference with a composite primary key preventing duplicate saves. |
 
-Servings use `Decimal(12,4)` and ingredient quantities use `Decimal(16,6)`. Service responses serialize decimals as strings to preserve stored precision. The future scaling adapter will validate conversion to finite JavaScript numbers at its boundary. Display rounding must not be written back to the recipe.
+Servings use `Decimal(12,4)` and ingredient quantities use `Decimal(16,6)`. Service responses serialize decimals as strings to preserve stored precision. The scaling engine converts these strings to finite, positive JavaScript numbers for calculation. Display rounding applies only when formatting the preview.
 
 Input contracts allow 1–100 ingredients and steps, a title of up to 160 characters, positive servings up to 10,000, and nonnegative preparation/cooking times up to 10,080 minutes each. Quantified ingredients require a unit and a positive quantity of at most 1,000,000. Unquantified entries require a descriptive note, such as “to taste.” Database checks reinforce numeric ranges, nonempty content, and valid ingredient measurements.
 
@@ -112,9 +113,9 @@ Recipe deletion cascades to ingredient, step, and bookmark records. It retains t
 
 ### Existing database compatibility
 
-The baseline migration represents the existing `users` and `files` tables. Read-only inspection confirmed their column types and constraints. The recipe migration adds new tables without recreating either existing table.
+The baseline describes the original `users` and `files` tables, whose column types and constraints were checked during the initial database review. The recipe migration adds recipes, ingredients, steps, and bookmarks. The authentication migration adds account, session, and verification tables and extends the existing user profile.
 
-On an existing database, verify and record the baseline before applying later migrations. On an empty development database, apply both migrations normally. Setup, installation, tests, and builds never apply migrations. See the [database workflow](../prisma/README.md) for the procedure.
+For an empty development database, apply all three migrations. An existing database with matching tables needs its baseline recorded first. The build generates the client. Migration tests run SQL against an in-memory database, and local setup for the integration tests migrates its own PostgreSQL cluster. [Database setup and baselining](../prisma/README.md)
 
 ## 6. Application flows
 
@@ -130,29 +131,23 @@ Detail queries include visibility in the database predicate: an anonymous viewer
 
 ### Edit, discovery, and bookmarks
 
-Edit and delete services constrain writes by the session user's identifier. Updates replace ordered ingredients and steps in the recipe transaction; owned listing is bounded to 50 records. Public discovery will filter visibility before applying title/ingredient search and bounded pagination. Saved views will reapply access rules when reading bookmark references. Making a recipe private must revoke public detail, discovery, bookmark-display, and image access.
+Only the author can edit or delete a recipe. Edits replace the ingredient and step rows in the same transaction. The tester can list up to 50 owned recipes at a time.
 
-Owned listing, creation, detail reads, editing, and deletion are implemented as internal services. Product interfaces, public discovery, and bookmark workflows remain planned.
+Product queries return six recipes per page. Discovery searches public recipe titles and ingredient names and can filter by difficulty. The owned collection filters by author. The saved collection checks both the viewer’s bookmark and their current access to the recipe. A bookmarked recipe disappears from another cook’s results as soon as its author makes it private.
 
 ### Cover photographs
 
-The internal upload service requires a verified session reader, enforces a 3 MiB limit, and decodes actual JPEG, PNG, or WebP content. It limits decoded images to 16 million pixels, rejects animation, and bounds processing time. Storage paths use server-generated identifiers; MIME type comes from decoded content. Upload success persists owned file metadata. Metadata checks during recipe creation supplement this inspection.
+A signed-in cook can upload a still JPEG, PNG, or WebP up to 3 MiB and 16 megapixels. Sharp decodes the bytes under a time limit. The server determines the media type and storage path, then saves the file metadata under the cook’s user ID. Attaching the cover to a recipe also checks ownership.
 
-Images will be delivered through a server route that checks the associated recipe's visibility. Public recipe images can be viewed without signing in; private recipe images require the owner. Blob tokens and private paths remain server-only. Authorized responses must avoid shared caching that could retain private content or survive a visibility change.
+`GET /api/images/[id]` looks up the file before reading it from storage. Anyone can read a public recipe’s cover. Only the owner can read a private or unattached image. Responses use `Cache-Control: private, no-store` so a cached public copy cannot bypass a later visibility change.
 
-Blob operations cannot participate in a PostgreSQL transaction. Failed upload/metadata writes trigger compensating deletion of the attempt's unique path. A cleanup failure retains that path in a server-side error for retry. Automated reconciliation and recipe replacement/deletion cleanup remain planned.
-
-The owner-scoped image reader checks file ownership before accessing Blob and keeps private paths out of its response. It supports image management; public/private recipe photo delivery still needs the visibility-aware route described above. Product upload and media HTTP endpoints remain closed before authentication is integrated; the local tester has separate development-only endpoints.
+Blob writes happen outside the SQL transaction. If saving metadata fails after an upload, the service deletes the new object. If deletion also fails, the product action logs the generated storage path to the private server log. Manual cleanup covers unattached files older than 24 hours and unrecorded uploads in a verified product user’s Blob prefix. [Cloud cleanup procedure](../prisma/README.md#reclaim-unused-cloud-covers)
 
 ## 7. Scaling and workspace state
 
-The scaling engine will be a pure TypeScript module independent of React, Redux, authentication, and persistence. It will always calculate from original quantities:
+The shared TypeScript engine accepts the original recipe detail and a scaling request. The serving control divides the target servings by the original servings. The available-ingredient control converts the original required quantity to the cook’s chosen unit, then divides the available quantity by that requirement. Both modes multiply every measured row by that factor and return the resulting servings, adjusted quantities, and warnings. [Frontend integration guide](recipe-scaling.md)
 
-- **Serving mode:** factor = target servings / original servings.
-- **Ingredient mode:** factor = available quantity / original required quantity after conversion to compatible units.
-- **Output:** original quantity × factor, with implied servings derived from the same factor.
-
-Only documented conversions within mass or volume dimensions will be enabled. Count quantities scale numerically and generate warnings for impractical fractions. Unmeasured ingredients remain unchanged and cannot drive scaling. Unknown units, incompatible dimensions, and nonpositive or nonfinite inputs are rejected as constraints. The engine will not infer mass from volume or adjust cooking time and temperature.
+The engine supports mass, volume, and count units. It reports incompatible units and invalid inputs, preserves unmeasured ingredients, and warns about fractional counts. Cooking steps, times, and temperatures retain their original values.
 
 A Redux store will be created per recipe workspace. State includes mode, target servings, selected ingredient, available quantity/unit, and bounded undo history. Selectors derive quantities and warnings from the same configuration. Switching modes preserves the active factor; undo restores a coherent prior configuration; reset returns to base quantities. A recipe change creates a new workspace and clears stale history. No server-global Redux store is used.
 
@@ -172,25 +167,15 @@ Development, preview, and production must use deliberately selected resources be
 
 ### Local backend integration page
 
-`/backend-test` is a minimal development interface with multiple ingredient rows, one editable cooking step, CRUD buttons, image controls, and raw API responses. Ingredient names, quantities, units, notes, and order survive loading and editing; additional saved cooking steps are retained. Its routes require development mode, a loopback host, and same-origin writes. They use the normal services against a separate schema prepared with `npm run backend-test:setup`; production requests return 404. Local schema/user configuration is ignored by Git. The test identity does not implement or replace product authentication. The main application page remains available for product frontend development. See the [run instructions](../README.md#simple-local-backend-tester).
+`/backend-test` lets a developer edit ingredient rows and one cooking step, upload a cover, and inspect the API response. Loading and saving preserves the ingredient order and any additional stored steps. Its routes accept loopback requests in development and require a matching origin for writes. `npm run backend-test:setup` creates the tester’s schema. Production requests return 404. [Run the tester](../README.md)
 
-## 9. Implementation status and delivery sequence
+## 9. Integration and test coverage
 
-| Area | Current implementation | Remaining work |
-| --- | --- | --- |
-| Foundation | Prisma configuration/client, environment template, HeroUI styles, liveness route, setup tooling, automated checks, and verified GitHub Actions | Keep CI passing and configure deployment resources. |
-| Persistence | Mapped legacy models; recipe, ingredient, step, and bookmark models; migration SQL and real Prisma CRUD/rollback verified in a disposable cloud schema | Review/baseline the application database and apply migrations. Public-schema migrations remain unapplied. |
-| Recipe services | Zod contracts, visibility-filtered reads, owner-scoped listing/creation/update/delete, transactional child writes, cover checks | Connect verified authentication and product interfaces. |
-| Authentication | Session-reader integration contract | Better Auth schema, configuration, account views, Google callbacks, and two-account verification. |
-| Media | Decoded image validation, private Blob adapter, owner-scoped upload/read services, compensating cleanup, and a verified live sample round trip | Authentication/UI integration, visibility-aware recipe photo delivery, deletion workflow, and automated cleanup reconciliation. |
-| Discovery and collections | Normalized ingredient search field, visibility index, and unique bookmark constraint | Browse/search queries, pagination, saved/owned views, and bookmark services. |
-| Scaling | Architecture and ingredient input contract | Pure engine, unit catalog, Redux workspace, and interactive interface. |
+On November 8, the team tested recipe edits and image upload, preview, and removal in the browser. All 17 live storage checks passed. The checks used a disposable PostgreSQL schema and private Blob objects, verified rollback and two-user access, and removed the test data afterward. [CRUD review](crud-review.md) · [Storage test results](storage-test-results.json)
 
-The first integrated milestone is authentication with recipe create/view. Recipe editing, deletion, cover uploads, discovery, and bookmarks follow. Scaling and coordinated state complete the minimum viable product. Optional copies and dietary discovery begin after core acceptance checks pass.
+The combined backend has a separate local check for email/password sessions, private and public recipe access, cover images, and bookmarks. It uses a local PostgreSQL cluster and local media files. Unit tests cover validation and service behavior, and PGlite tests apply the migration SQL.
 
-Local automated checks cover validation, session/visibility boundaries, image inspection, compensating cleanup, decimal serialization, and migration behavior. Unit service tests mock Prisma; PGlite tests apply the migration SQL locally. The local tester was also exercised in the browser for create/read/update/delete and image upload/preview/removal.
-
-The manual `storage:check` command also verifies the real Prisma adapter and migrations on the configured PostgreSQL server within a disposable schema, plus private Blob upload/read/delete and ownership checks. The November 8 CRUD review passed all 17 checks, including real service updates/deletes, two-identity write isolation, and rollback of an update whose replacement child fails. It removed its schema and sample objects. Public application tables and migration history were not changed. Browser authentication, recipe visibility-aware product media routes, product responsive layouts, and deployment checks remain outstanding. See the [recorded results](storage-test-results.json) and [CRUD review](crud-review.md).
+The product screens call the recipe actions and queries. The Playwright check signs in two users and follows a cover and recipe through creation, publication, bookmarking, and revocation. It checks the same detail and media URLs before and after a visibility change. Google consent and the return to a signed-in session require a live browser check on the registered deployment origin. [Run the browser check](../README.md#everyday-use)
 
 ## 10. Design references
 

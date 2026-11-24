@@ -1,59 +1,48 @@
-# Postman CRUD checks
+# Test recipe CRUD with Postman
 
-Import `crud.postman_collection.json` into Postman, or run it with the installed [Postman CLI](https://learning.postman.com/docs/postman-cli/postman-cli-run-collection). The collection is saved in Git so both teammates use the same requests and assertions. Local CLI runs do not require a Postman login; cloud publication is not configured.
+The development collection exercises recipe and image endpoints using a fixed account. It runs against an isolated schema and removes the records it creates. Keep an existing tester schema if you want to reuse it.
 
-## Start the development tester
+## Start the tester
 
-From the project root, with `DATABASE_URL` configured in `.env.local`:
+Set `DATABASE_URL` in `.env.local`. From the repository root, run
 
 ```bash
 npm run backend-test:setup
 npm run dev -- --hostname 127.0.0.1
 ```
 
-Setup creates a separate sandbox schema. Do not remove an existing sandbox just to run the collection: successful runs remove only their own generated recipe/image IDs. The fixed test identity exercises local services, not product authentication.
+## Run the development collection
 
-## Run in the Postman app
+**In Postman**, import [the CRUD collection](crud.postman_collection.json).
 
-1. Import `crud.postman_collection.json` and select the collection's variables.
-2. Set `baseUrl` to the development server's exact loopback origin, for example `http://127.0.0.1:3000`, with no trailing slash.
-3. Set Postman's local working directory to this repository. Request 29 uploads `README.md` to verify that fake image content is rejected. If the app cannot resolve the relative path, select that file manually in its form-data body.
-4. Leave `runImageTests` as `false` for the 33-request database/validation suite. For the full 44-request run, configure `BLOB_READ_WRITE_TOKEN` on the server and set `runImageTests` to `true`. Request 34 uses `tests/fixtures/storage-sample.png`; select this file manually if necessary.
-5. Run the **entire collection in order**, with one iteration and without stopping on assertion failure. Later requests use the IDs captured by earlier requests, then delete those records.
+1. Set the collection variable `baseUrl` to the server’s loopback origin, such as `http://127.0.0.1:3000`, without a trailing slash.
+2. Set Postman’s working directory to the repository root. Request 29 sends `README.md` as a fake image. If Postman cannot find it, select the file in the request’s form-data body.
+3. The default run sends 33 requests. To include all 44, set `BLOB_READ_WRITE_TOKEN` on the server and the collection variable `runImageTests` to `true`. Request 34 uploads `tests/fixtures/storage-sample.png`.
+4. Run one iteration in collection order. Let the collection continue after a failed assertion so the cleanup requests can run. Each run uses IDs returned by earlier requests.
 
-The collection covers create/list/read/update/delete, ordered ingredient/step replacement, decimal precision, unquantified notes, visibility changes, invalid IDs/input/ownership fields, body limits, Host/Origin checks, malformed uploads, and optional image attachment/read/delete behavior. Negative cases expect 400, 403, 404, 409, or 413 as appropriate. Responses must use `Cache-Control: no-store`.
-
-## Run from the terminal
-
-Keep the development server running in another terminal, then run from the repository root:
+**From the terminal**, install the [Postman CLI](https://learning.postman.com/docs/postman-cli/postman-cli-run-collection) and make sure `postman` is on your PATH. Keep the server running and use a second terminal in the repository root. These commands use the local collection file and can run without a Postman login.
 
 ```bash
 npm run test:postman
-# Include the real private-image round trip:
+# Include the image requests
 npm run test:postman -- --env-var runImageTests=true
-# Override the server port if needed:
+# Use a different server port
 npm run test:postman -- --env-var baseUrl=http://127.0.0.1:3002
 ```
 
-The CLI executable `postman` must be on your PATH; it is not an npm dependency. These checks are manual because they require a running server and development database. Credential-free Vitest checks remain in CI.
+The collection checks ingredient and step order, decimal quantities, unmeasured ingredients, visibility, and cover ownership. It also checks invalid IDs and inputs, upload and request size limits, and Host and Origin restrictions. Error cases assert the expected 400, 403, 404, 409, or 413 response. Tester responses must include `Cache-Control: no-store`.
 
-If a run is interrupted, its generated IDs are visible in its responses. Remove only those test records through the tester, or remove the entire sandbox with `npm run backend-test:cleanup` when you no longer need **any** of its data. Image records require Blob credentials for cleanup; a database-only sandbox with no recorded images can be cleaned up without a Blob token.
+If a run stops early, use the IDs in its responses to remove leftover records through the tester. Run `npm run backend-test:cleanup` only when you want to remove the **whole sandbox**. Cleanup needs a Blob token if the sandbox still has file records.
 
-## Check the production guards
+## Check that production disables the tester
 
-Build and start a local production instance on a separate port:
+Start a local production build on port 3001. This check can run without cloud credentials or a tester schema.
 
 ```bash
 npm run build
 npm run start -- --hostname 127.0.0.1 --port 3001
 ```
 
-In another terminal:
+From another terminal, run `npm run test:postman:production`, or import the [production guard collection](production-guards.postman_collection.json) and run it against that instance. All seven tester API operations should return JSON 404 responses before accessing storage or the database. Check the `/backend-test` page separately. It should also return 404.
 
-```bash
-npm run test:postman:production
-```
-
-Alternatively, import `production-guards.postman_collection.json` into Postman and run it against that instance. All seven supported tester API operations must return JSON 404 responses before using database/Blob services. The `/backend-test` page must also return 404. Production checks do not need sandbox setup or cloud credentials. Running this guard collection against a development server intentionally fails.
-
-Two-user service permissions and transaction rollback are also checked by `npm run storage:check` in a fresh disposable schema. Those checks inject test identities; real Better Auth session flows remain future work. Recorded review results are in [the CRUD review report](../docs/crud-review.md).
+CI runs the credential-free Vitest suite. For a manual check of two-user permissions and transaction rollback, `npm run storage:check` uses two test identities in a disposable schema. [Recorded CRUD review results](../docs/crud-review.md)
