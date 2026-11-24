@@ -12,6 +12,16 @@ export class ImageValidationError extends Error {
   }
 }
 
+// The PNG decoder reads the default frame of an APNG without reporting its frame count.
+function hasPngAnimation(bytes: Buffer) {
+  for (let offset = 8; offset + 12 <= bytes.length; offset += 12 + bytes.readUInt32BE(offset)) {
+    const chunk = bytes.toString("ascii", offset + 4, offset + 8);
+    if (chunk === "acTL") return true;
+    if (chunk === "IDAT") break;
+  }
+  return false;
+}
+
 export async function inspectRecipeImage(input: Uint8Array) {
   if (input.byteLength === 0 || input.byteLength > MAX_IMAGE_BYTES) {
     throw new ImageValidationError("Images must be nonempty and at most 3 MiB.");
@@ -22,6 +32,7 @@ export async function inspectRecipeImage(input: Uint8Array) {
   const webp = bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
   // Reject other formats before invoking a decoder, including SVG and remote references.
   if (!png && !jpeg && !webp) throw new ImageValidationError();
+  if (png && hasPngAnimation(bytes)) throw new ImageValidationError();
 
   try {
     const image = sharp(bytes, { failOn: "warning", limitInputPixels: MAX_IMAGE_PIXELS }).timeout({ seconds: 5 });

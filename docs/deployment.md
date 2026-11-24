@@ -59,6 +59,8 @@ Leave `NODE_ENV` to Next.js: local `next dev` uses `development`; **both** Previ
 
 Database migrations stay manual and environment-specific. Installation, CI, and Vercel builds generate the Prisma client but never run `prisma migrate deploy`. Review SQL, verify the target database and backup, and follow [the database workflow](../prisma/README.md). Apply additive changes in dev, then preprod, then production; a code rollback cannot undo a database change.
 
+Before promoting a release with schema changes, run `npm run db:status` against the destination database and compare its migration history with the release. Apply the pending migrations there before switching traffic. Verify email registration and a session refresh on the deployed origin. The health endpoint can return 200 while registration fails because its database tables or columns are missing.
+
 When rotating a nonproduction Neon password or Blob token, update the corresponding Vercel Preview values and any `preprod` branch overrides that reference the rotated credential. These values are copies of the provider credentials. Verify their branch scopes, redeploy each affected preview, and check its homepage and `/api/health` through authenticated preview access.
 
 ### Isolation verification on November 8, 2026

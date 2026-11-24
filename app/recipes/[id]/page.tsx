@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageFrame from "@/app/_components/page-frame";
+import { CookByline } from "@/app/_components/cook-byline";
 import { RecipeCover } from "@/app/_components/recipe-cover";
 import { getRecipe, type RecipeDetailData } from "@/lib/product/queries";
 import RecipeActions from "../_components/recipe-actions";
@@ -52,7 +53,9 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
             {recipe.source && (
               <a href={recipe.source.url} className="underline wrap-anywhere">Original recipe by {recipe.source.contributor} on HowToCook</a>
             )}
-            <span className="wrap-anywhere">{recipe.source ? "Shared by" : "By"} {recipe.authorName}</span>
+            <span className="wrap-anywhere">{recipe.source ? "Shared by" : "By"}{" "}
+              {recipe.author ? <CookByline cook={recipe.author} /> : "a home cook"}
+            </span>
             <span className="border-s border-line ps-3 font-medium capitalize">{recipe.visibility.toLowerCase()}</span>
           </div>
           <p className="max-w-[65ch] whitespace-pre-line text-base leading-relaxed text-subtle wrap-anywhere">{recipe.description}</p>

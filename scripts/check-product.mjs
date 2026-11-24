@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { chromium } from "playwright";
 import { checkDietaryPreferences } from "./check-dietary.mjs";
+import { checkScaling } from "./check-scaling.mjs";
 
 const baseURL = new URL(process.env.SMOKE_ORIGIN || "http://127.0.0.1:3100");
 const { origin } = baseURL;
@@ -207,7 +208,7 @@ try {
   await owner.getByLabel(/^Quantity \(optional\b/).fill("400");
   await owner.getByLabel("Unit", { exact: true }).fill("g");
   await owner.getByLabel("Step 1", { exact: true }).fill("Stir and serve.");
-  await owner.getByLabel("Choose a photo (optional)", { exact: true }).setInputFiles({ name: "smoke-" + runId + ".png", mimeType: "image/png", buffer: fixture });
+  await owner.getByLabel("Choose a photo (optional)", { exact: true }).setInputFiles({ name: "smoke-" + runId, mimeType: "application/octet-stream", buffer: fixture });
   assert(await owner.getByRole("radio", { name: /^Private\b/ }).isChecked());
   await owner.getByRole("button", { name: "Save recipe", exact: true }).click();
   await owner.waitForURL((url) => /^\/recipes\/[\da-f-]{36}$/.test(url.pathname));
@@ -217,11 +218,28 @@ try {
   console.log("Fixture", JSON.stringify({ title, detail, cover }));
   await Promise.all([expectDetail(owner, true), expectDetail(reader, false), expectDetail(guest, false)]);
   await Promise.all([expectImage(ownerContext, true), expectImage(readerContext, false), expectImage(guestContext, false)]);
+  await checkScaling(owner, ingredient);
+  passed("Both scaling modes, one-decimal results, ingredient names, unit conversion, validation, undo and reset");
   await Promise.all([search(owner, title, 1, "mine"), search(reader, title, 0), search(guest, ingredient, 0)]);
   passed("New private recipe and cover are accessible only to the owner");
 
   await saveVisibility("Public");
   await Promise.all([search(reader, title, 1), search(guest, ingredient.toUpperCase(), 1)]);
+  const authorLink = guest.getByRole("article").filter({ has: guest.getByRole("link", { name: title, exact: true }) })
+    .locator('a[href^="/users/"]');
+  const cookPath = await authorLink.getAttribute("href");
+  assert.match(cookPath, /^\/users\/[\da-f-]{36}$/);
+  await authorLink.click();
+  await guest.waitForURL((url) => url.pathname === cookPath);
+  await guest.getByRole("heading", { level: 1, name: /public recipes$/ }).waitFor();
+  await guest.getByRole("searchbox").fill(title);
+  await guest.getByRole("button", { name: "Search", exact: true }).click();
+  await guest.waitForURL((url) => url.pathname === cookPath && url.searchParams.get("q") === title);
+  await guest.reload();
+  await guest.getByRole("link", { name: title, exact: true }).click();
+  await guest.waitForURL((url) => url.pathname === detail);
+  assert.equal(await guest.locator('main a[href^="/users/"]').getAttribute("href"), cookPath);
+  passed("Guest follows a public recipe’s author, searches that cook’s recipes and opens the result after refresh");
   await Promise.all([expectDetail(reader, true), expectDetail(guest, true)]);
   await Promise.all([expectImage(readerContext, true), expectImage(guestContext, true)]);
   assert.equal(await reader.getByRole("link", { name: "Edit recipe", exact: true }).count(), 0);
@@ -267,6 +285,19 @@ try {
   passed("Reader independently edits a new private copy with its own ingredients, steps and no source photo");
 
   await saveVisibility("Private", "Whisk the original.");
+  await owner.goto("/account");
+  await owner.getByRole("link", { name: "View my recipe page", exact: true }).click();
+  await owner.waitForURL((url) => url.pathname === cookPath);
+  const scopedSearch = cookPath + "?" + new URLSearchParams({ q: title, collection: "mine" });
+  await owner.goto(scopedSearch);
+  await owner.getByRole("link", { name: title, exact: true }).waitFor();
+  await owner.getByText("private", { exact: true }).waitFor();
+  await Promise.all([reader, guest].map(async (page) => {
+    await page.goto(scopedSearch);
+    await page.getByText(`No recipes match “${title}”.`, { exact: true }).waitFor();
+    assert.equal(await page.getByRole("link", { name: title, exact: true }).count(), 0);
+  }));
+  passed("Only the owner can see an unpublished recipe on their recipe page");
   await Promise.all([search(reader, ingredient, 0, "saved"), search(guest, title, 0), search(owner, title, 1, "mine")]);
   await search(reader, title, 0);
   await Promise.all([expectDetail(owner, true), expectDetail(reader, false), expectDetail(guest, false)]);

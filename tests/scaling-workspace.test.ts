@@ -97,7 +97,7 @@ describe("recipe scaling workspace", () => {
     expect(selectPreview(original.getState())).toMatchObject({ ok: true, servings: 6 });
   });
 
-  it("labels pantry options with original amounts and distinguishes otherwise identical rows", () => {
+  it("uses only ingredient names for pantry options and selects duplicate names by row ID", () => {
     const flour = recipe.ingredients[0];
     const store = makeScalingStore({
       ...recipe,
@@ -111,9 +111,9 @@ describe("recipe scaling workspace", () => {
     store.dispatch(scalingActions.changeMode("ingredient"));
 
     expect(selectEligibleIngredients(store.getState())).toEqual([
-      { id: "flour", label: "Ingredient 1 · Flour · 400 g", units: ["g", "kg"] },
-      { id: "dusting", label: "Flour · 25 g · For dusting", units: ["g", "kg"] },
-      { id: "second-dough", label: "Ingredient 3 · Flour · 400 g", units: ["g", "kg"] },
+      { id: "flour", name: "Flour", units: ["g", "kg"] },
+      { id: "dusting", name: "Flour", units: ["g", "kg"] },
+      { id: "second-dough", name: "Flour", units: ["g", "kg"] },
     ]);
 
     store.dispatch(scalingActions.chooseIngredient("dusting"));

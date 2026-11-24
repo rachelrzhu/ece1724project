@@ -46,6 +46,12 @@ beforeAll(async () => {
   await database.exec(
     readFileSync("prisma/migrations/20261123020000_usernames/migration.sql", "utf8"),
   );
+  await database.exec(
+    readFileSync("prisma/migrations/20261124000000_username_cooldown/migration.sql", "utf8"),
+  );
+  await database.exec(
+    readFileSync("prisma/migrations/20261124010000_allergen_ingredient_names/migration.sql", "utf8"),
+  );
   const migrated = await database.query<{ username: string }>(
     "SELECT username FROM users WHERE id IN ($1, $2)", [ownerId, otherUserId],
   );
@@ -275,9 +281,37 @@ describe("editable usernames", () => {
         .rejects.toThrow(/users_username_format/);
     }
   });
+
+  it("enforces one calendar month between changes and leaves display names independent", async () => {
+    const account = await database.query<{ id: string }>("INSERT INTO users (email) VALUES ('monthly@example.test') RETURNING id");
+    const id = account.rows[0].id;
+    const first = await database.query<{ username_change_available_at: Date; full_month: boolean }>(
+      `UPDATE users SET username = 'monthly_cook' WHERE id = $1 RETURNING username_change_available_at,
+       username_change_available_at = ((statement_timestamp() AT TIME ZONE 'UTC') + interval '1 month') AT TIME ZONE 'UTC' AS full_month`,
+      [id],
+    );
+    expect(first.rows[0].full_month).toBe(true);
+    await expect(database.query("UPDATE users SET username = 'too_soon' WHERE id = $1", [id]))
+      .rejects.toThrow(/once a month/);
+    const same = await database.query(
+      "UPDATE users SET name = '糖醋 Chef 🍲', username = 'monthly_cook' WHERE id = $1 RETURNING name, username_change_available_at",
+      [id],
+    );
+    expect(same.rows).toEqual([{ name: "糖醋 Chef 🍲", username_change_available_at: first.rows[0].username_change_available_at }]);
+    // Move the deadline into the past to exercise an eligible second rename.
+    await database.query("UPDATE users SET username_change_available_at = now() - interval '1 second' WHERE id = $1", [id]);
+    const next = await database.query("UPDATE users SET username = 'next_month' WHERE id = $1 RETURNING username", [id]);
+    expect(next.rows).toEqual([{ username: "next_month" }]);
+  });
 });
 
 describe("dietary settings and ingredient catalogue", () => {
+  it("maps both soy sauce variants used by the published recipes", async () => {
+    const { rows } = await database.query(
+      "SELECT canonical_name FROM ingredient_allergens WHERE allergen = 'SOY' AND canonical_name IN ('light soy sauce', 'dark soy sauce') ORDER BY canonical_name",
+    );
+    expect(rows).toEqual([{ canonical_name: "dark soy sauce" }, { canonical_name: "light soy sauce" }]);
+  });
   it("keeps preferences optional, unique to the account, and removable with the account", async () => {
     const profileId = "40000000-0000-4000-8000-000000000100";
     await database.query("INSERT INTO users (id, email) VALUES ($1, 'dietary@example.test')", [profileId]);

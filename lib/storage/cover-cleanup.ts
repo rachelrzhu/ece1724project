@@ -71,7 +71,9 @@ export async function reconcileCovers(
       const eligible = file
         ? files.length === 1 && file.id === key.id && file.owner_id === key.owner &&
           file.pathname === pathname && file.created_at < cutoff &&
-          !(await db.query("SELECT id FROM public.recipes WHERE cover_file_id = $1::uuid", [file.id])).rows.length
+          !(await db.query(`SELECT id FROM public.recipes WHERE cover_file_id = $1::uuid
+            UNION ALL SELECT id FROM public.users WHERE id = $2::uuid AND image = $3`,
+            [file.id, file.owner_id, `/api/images/${file.id}`])).rows.length
         : blob && await knownOwner(key.owner);
       if (!eligible) {
         if (options.apply) await db.query("COMMIT");
@@ -108,6 +110,7 @@ export async function reconcileCovers(
        WHERE f.created_at < $1 AND ($2::uuid IS NULL OR f.id > $2)
        AND ($3::uuid IS NULL OR f.owner_id = $3)
        AND NOT EXISTS (SELECT 1 FROM public.recipes AS r WHERE r.cover_file_id = f.id)
+       AND NOT EXISTS (SELECT 1 FROM public.users AS u WHERE u.id = f.owner_id AND u.image = '/api/images/' || f.id::text)
        ORDER BY f.id LIMIT 100`, [cutoff, lastId, options.owner ?? null])).rows;
     for (const row of rows) await reconcile(row.pathname);
     if (rows.length < 100) break;

@@ -81,10 +81,11 @@ export function convertScalingQuantity(value: DecimalInput, from: string, to: st
   return positiveNumber(convertQuantity(quantity, source, target));
 }
 
-const displayFormat = new Intl.NumberFormat("en", { maximumSignificantDigits: 6, useGrouping: false });
+const displayFormat = new Intl.NumberFormat("en", { maximumFractionDigits: 1, useGrouping: false });
 
 export function formatScaledQuantity(value: number): string {
-  return displayFormat.format(value);
+  const rounded = displayFormat.format(value);
+  return rounded === "0" && value > 0 ? "<0.1" : rounded;
 }
 
 function failure(field: ErrorField, message: string, ingredientId?: string): ScalingFailure {

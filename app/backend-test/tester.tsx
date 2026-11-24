@@ -71,7 +71,10 @@ export default function BackendTester() {
     if (data.recipe) showRecipe(data.recipe);
     await refresh();
   }
-  function create(event: FormEvent<HTMLFormElement>) { event.preventDefault(); void run(() => save("POST")); }
+  function submitRecipe(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void run(() => save(selected ? "PATCH" : "POST"));
+  }
   function field(key: keyof typeof defaults, value: string) { setFields((current) => ({ ...current, [key]: value })); }
   function ingredientField(key: number, field: Exclude<keyof IngredientRow, "key">, value: string) {
     setIngredients((current) => current.map((ingredient) => ingredient.key === key ? { ...ingredient, [field]: value } : ingredient));
@@ -101,7 +104,7 @@ export default function BackendTester() {
       <button type="button" onClick={() => void run(async () => { const data = await request(recipesUrl); setRecipes(data.recipes ?? []); })}>Refresh / read</button>
     </fieldset>
 
-    <form onSubmit={create}>
+    <form onSubmit={submitRecipe}>
       <fieldset disabled={busy}>
         <legend>Recipe</legend>
         <label>Title<input required maxLength={160} value={fields.title} onChange={(event) => field("title", event.target.value)} /></label>
@@ -119,8 +122,7 @@ export default function BackendTester() {
         <label>Step<textarea required maxLength={4000} value={fields.step} onChange={(event) => field("step", event.target.value)} /></label>
         {(loadedRecipe?.steps?.length ?? 0) > 1 && <p>This form edits the first step; additional saved steps are kept unchanged.</p>}
         <div className={styles.buttons}>
-          <button type="submit">Create</button>
-          <button type="button" disabled={!selected} onClick={(event) => { if (event.currentTarget.form?.reportValidity()) void run(() => save("PATCH")); }}>Update selected</button>
+          <button type="submit">{selected ? "Update selected" : "Create"}</button>
           <button type="button" disabled={!selected} onClick={() => void run(async () => { await request(`${recipesUrl}?id=${selected}`, { method: "DELETE" }); setSelected(""); setLoadedRecipe(null); await refresh(); })}>Delete selected</button>
         </div>
       </fieldset>

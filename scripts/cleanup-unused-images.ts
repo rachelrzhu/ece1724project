@@ -18,8 +18,9 @@ for (const file of files) {
     await tx.$queryRaw`SELECT id FROM files WHERE id = ${file.id}::uuid FOR UPDATE`;
     const existing = await tx.storedFile.findFirst({
       where: { id: file.id, coverOf: { is: null } },
+      select: { owner: { select: { image: true } } },
     });
-    if (!existing) return;
+    if (!existing || existing.owner.image === `/api/images/${file.id}`) return;
     await tx.storedFile.delete({ where: { id: file.id } });
     await productImageStore().remove(file.pathname);
     removed++;

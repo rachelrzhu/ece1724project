@@ -50,6 +50,7 @@ enum IngredientDiet {
 model User {
   id        String       @id(map: "users_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username  String       @unique(map: "users_username_unique") @default(dbgenerated("('cook_'::text || substr(replace((gen_random_uuid())::text, '-'::text, ''::text), 1, 20))"))
+  usernameChangeAvailableAt DateTime? @map("username_change_available_at") @db.Timestamptz(6)
   email     String       @unique(map: "users_email_unique")
   name      String?
   emailVerified Boolean @default(false) @map("email_verified")

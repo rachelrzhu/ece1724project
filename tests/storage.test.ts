@@ -33,6 +33,11 @@ describe("recipe image content validation", () => {
     await expect(inspectRecipeImage(bytes)).rejects.toBeInstanceOf(ImageValidationError);
   });
 
+  it("rejects an animated PNG even when the decoder only reports its first frame", async () => {
+    const animation = readFileSync("tests/fixtures/two-frame.png");
+    await expect(inspectRecipeImage(animation)).rejects.toBeInstanceOf(ImageValidationError);
+  });
+
   it("rejects an image above the decoded pixel limit even when compressed below 3 MiB", async () => {
     const bytes = await sharp({ create: { width: 4001, height: 4000, channels: 3, background: "#123456" } }).png().toBuffer();
     expect(bytes.byteLength).toBeLessThan(MAX_IMAGE_BYTES);
