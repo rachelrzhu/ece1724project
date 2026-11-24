@@ -17,9 +17,7 @@ const cardSelect = {
   difficulty: true,
   visibility: true,
   coverFileId: true,
-  authorId: true,
   author: { select: { name: true } },
-  _count: { select: { ingredients: true } },
 } as const;
 export const recipePageSize = 6;
 
@@ -83,27 +81,21 @@ export async function listRecipes({
     ],
   };
   const db = getDatabase();
-  const [initialRows, total] = await Promise.all([
-    db.recipe.findMany({
+  function readPage(page: number) {
+    return db.recipe.findMany({
       where,
       select: cardSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (pageNumber - 1) * recipePageSize,
+      skip: (page - 1) * recipePageSize,
       take: recipePageSize,
-    }),
+    });
+  }
+  const [initialRows, total] = await Promise.all([
+    readPage(pageNumber),
     db.recipe.count({ where }),
   ]);
   const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / recipePageSize)));
-  const rows =
-    boundedPage === pageNumber
-      ? initialRows
-      : await db.recipe.findMany({
-          where,
-          select: cardSelect,
-          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          skip: (boundedPage - 1) * recipePageSize,
-          take: recipePageSize,
-        });
+  const rows = boundedPage === pageNumber ? initialRows : await readPage(boundedPage);
   const saved =
     viewer && rows.length
       ? await db.bookmark.findMany({
