@@ -3,6 +3,8 @@ import { cache } from "react";
 import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
 import { readDietaryContext } from "@/lib/dietary/server";
+import { publicAvatarImage } from "@/lib/product/avatar";
+import type { ExploreAllergenFilter } from "@/lib/dietary/policy";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
 import { getPublishedSource } from "@/lib/recipes/published-sources";
 import { createRecipeService } from "@/lib/recipes/service";
@@ -31,6 +33,7 @@ export async function listRecipes({
   authorId,
   difficulty = "",
   hideDietaryConflicts = false,
+  allergenFilter,
 }: {
   query?: string;
   page?: number;
@@ -38,18 +41,38 @@ export async function listRecipes({
   authorId?: string;
   difficulty?: string;
   hideDietaryConflicts?: boolean;
+  allergenFilter?: ExploreAllergenFilter;
 }) {
-  const [session, dietary] = await Promise.all([readSession(), readDietaryContext()]);
+  const db = getDatabase();
+  const [session, dietary, allergenMatches] = await Promise.all([
+    readSession(),
+    readDietaryContext(),
+    allergenFilter?.allergens.length
+      ? db.ingredientAllergen.findMany({
+          where: { allergen: { in: allergenFilter.allergens } },
+          select: { canonicalName: true },
+        })
+      : [],
+  ]);
+  const excludedNames = [...new Set([
+    ...allergenMatches.map(({ canonicalName }) => canonicalName),
+    ...(hideDietaryConflicts ? dietary?.conflictNames ?? [] : []),
+  ])];
   const viewer = session?.user.id ?? null;
   const q = query.trim().slice(0, 160);
   const pageNumber = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1;
+  // Prisma's PostgreSQL contains filter uses LIKE. Treat text in an ingredient name literally.
+  const excludedText = allergenFilter?.ingredient.replace(/[\\%_]/g, "\\$&");
   const where = {
     AND: [
-      ...(hideDietaryConflicts && dietary?.conflictNames.length
-        ? [{ ingredients: { none: { canonicalName: { in: dietary.conflictNames } } } }]
+      ...(excludedText
+        ? [{ ingredients: { none: { canonicalName: { contains: excludedText, mode: "insensitive" as const } } } }]
+        : []),
+      ...(excludedNames.length
+        ? [{ ingredients: { none: { canonicalName: { in: excludedNames } } } }]
         : []),
       {
-        ...(authorId ? { authorId, visibility: "PUBLIC" as const } : collection === "mine"
+        ...(authorId ? { authorId, ...(authorId === viewer ? {} : { visibility: "PUBLIC" as const }) } : collection === "mine"
           ? { authorId: viewer ?? "00000000-0000-4000-8000-000000000000" }
           : collection === "saved"
             ? {
@@ -88,7 +111,6 @@ export async function listRecipes({
       },
     ],
   };
-  const db = getDatabase();
   const select = {
     ...cardSelect,
     ingredients: dietary ? {
@@ -145,7 +167,8 @@ export type RecipeCardData = Awaited<
 >["rows"][number];
 export const getPublicCook = cache(async (id: string) => {
   if (!z.uuid().safeParse(id).success) return null;
-  return getDatabase().user.findUnique({ where: { id }, select: publicCookSelect });
+  const cook = await getDatabase().user.findUnique({ where: { id }, select: { ...publicCookSelect, image: true } });
+  return cook ? { ...cook, image: publicAvatarImage(cook.image) } : null;
 });
 export type PublicCook = NonNullable<Awaited<ReturnType<typeof getPublicCook>>>;
 
@@ -169,7 +192,7 @@ export const getRecipe = cache(async (id: string) => {
     source: getPublishedSource(recipe.id),
     ingredients: recipe.ingredients.map(({ id, name, quantity, unit, note }) => ({ id, name, quantity, unit, note })),
     dietary: dietary?.summarize(recipe.ingredients) ?? null,
-    authorName: author?.name || author?.username || "a home cook",
+    author,
     saved: !!bookmark,
     isOwner: session?.user.id === recipe.authorId,
     signedIn: !!session,

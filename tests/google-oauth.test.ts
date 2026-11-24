@@ -75,16 +75,22 @@ async function beginSignIn() {
 
 it("registers an email account with a generated username and signs it back in", async () => {
   const credentials = { email: "email-cook@example.test", password: "A test password" };
-  const request = (path: string, body: object) => POST(new Request(origin + "/api/auth/" + path, {
+  const request = (path: string, body: object, cookie = "") => POST(new Request(origin + "/api/auth/" + path, {
     method: "POST",
-    headers: { Origin: origin, "Content-Type": "application/json" },
+    headers: { Origin: origin, "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify(body),
   }));
+  const unsupported = { image: "https://example.test/personal-photo.png" };
+  expect((await request("sign-up/email", { ...credentials, name: "Email Cook", ...unsupported })).status).toBe(400);
   const registered = await request("sign-up/email", { ...credentials, name: "Email Cook" });
   expect(registered.status).toBe(200);
   const { user } = await registered.json();
   expect(user.username).toMatch(/^cook_[0-9a-f]{20}$/);
-  expect((await readUserSession(cookies(registered))).user.id).toBe(user.id);
+  const cookie = cookies(registered);
+  expect((await readUserSession(cookie)).user.id).toBe(user.id);
+  expect((await request("update-user", unsupported, cookie)).status).toBe(400);
+  expect((await request("update-user", { username: "new_cook" }, cookie)).status).toBe(400);
+  expect((await request("update-user", { usernameChangeAvailableAt: "2020-01-01" }, cookie)).status).toBe(400);
   const signedIn = await request("sign-in/email", credentials);
   expect(signedIn.status).toBe(200);
   expect((await readUserSession(cookies(signedIn))).user).toMatchObject({
@@ -167,6 +173,8 @@ it("imports the Google profile once and keeps local edits on later sign-ins", as
     where: [{ field: "id", value: user.id }],
     update: localProfile,
   });
+  const updated = await getAuth().api.getSession({ headers: { Cookie: cookie } });
+  expect(updated?.user.usernameChangeAvailableAt).toBeInstanceOf(Date);
 
   const signOut = await POST(
     new Request(origin + "/api/auth/sign-out", {

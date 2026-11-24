@@ -6,6 +6,8 @@ import { readDietaryPreferences } from "@/lib/dietary/server";
 import AccountForm from "./account-form";
 import DietaryPreferencesForm from "./dietary-preferences-form";
 import ProfileForm from "./profile-form";
+import { activeUsernameCooldown } from "./profile-options";
+import AvatarForm from "./avatar-form";
 
 export const metadata: Metadata = { title: "Account" };
 
@@ -14,10 +16,13 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     readSession(), searchParams, readDietaryPreferences().catch(() => null),
   ]);
   const returnTo = safeReturnPath(params.returnTo, "/");
+  const lockedUntil = activeUsernameCooldown(session?.user.usernameChangeAvailableAt)
+    ?.toLocaleString("en-US", { dateStyle: "long", timeStyle: "long", timeZone: "UTC" }) ?? null;
   return (
     <PageFrame title="Your account" back={{ href: "/", label: "Explore recipes" }} narrow>
-      {session && <Link href={`/users/${session.user.id}`} className="site-button-outline">View my public recipes</Link>}
-      {session && <ProfileForm name={session.user.name ?? ""} username={session.user.username} image={session.user.image ?? null} />}
+      {session && <Link href={`/users/${session.user.id}`} className="site-button-outline">View my recipe page</Link>}
+      {session && <ProfileForm name={session.user.name ?? ""} username={session.user.username} lockedUntil={lockedUntil} />}
+      {session && <AvatarForm name={session.user.name ?? ""} image={session.user.image ?? null} />}
       <div className="site-panel space-y-5">
         {params.error && (
           <p role="alert" className="text-sm text-rust">

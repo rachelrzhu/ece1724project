@@ -27,6 +27,18 @@ const allergenLabels = {
 export const allergenChoices: readonly { value: Allergen; label: string }[] =
   Object.values(Allergen).map((value) => ({ value, label: allergenLabels[value] }));
 
+export type ExploreAllergenFilter = { allergens: Allergen[]; ingredient: string };
+
+export function parseAllergenFilter(
+  allergens: string | string[] | undefined, ingredient: string | string[] | undefined,
+): ExploreAllergenFilter {
+  const selected = new Set(Array.isArray(allergens) ? allergens : [allergens]);
+  return {
+    allergens: allergenChoices.map(({ value }) => value).filter((value) => selected.has(value)),
+    ingredient: typeof ingredient === "string" ? ingredient.trim().slice(0, 160) : "",
+  };
+}
+
 export type DietaryPreferences = { diet: DietPreference; allergens: Allergen[] };
 export const defaultPreferences: DietaryPreferences = { diet: "NONE", allergens: [] };
 

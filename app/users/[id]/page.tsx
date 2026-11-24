@@ -5,7 +5,7 @@ import { getPublicCook } from "@/lib/product/queries";
 
 export async function generateMetadata({ params }: PageProps<"/users/[id]">): Promise<Metadata> {
   const cook = await getPublicCook((await params).id);
-  return { title: cook ? `${cook.name || cook.username}’s public recipes` : "Cook unavailable" };
+  return { title: cook ? `${cook.name || cook.username}’s recipes` : "Cook unavailable" };
 }
 
 export default async function PublicCookPage({ params, searchParams }: PageProps<"/users/[id]">) {

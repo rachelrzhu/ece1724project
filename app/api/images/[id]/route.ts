@@ -19,6 +19,7 @@ export async function GET(
       id,
       OR: [
         { coverOf: { is: { visibility: "PUBLIC" } } },
+        { owner: { image: `/api/images/${id}` } },
         ...(session ? [{ ownerId: session.user.id }] : []),
       ],
     },

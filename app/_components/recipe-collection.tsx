@@ -1,32 +1,65 @@
 import { Button } from "@heroui/react/button";
 import { Input } from "@heroui/react/input";
+import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import { CookByline } from "@/app/_components/cook-byline";
 import { Icon } from "@/app/_components/icons";
 import { RecipeCover } from "@/app/_components/recipe-cover";
 import { collections, SiteHeader, type Collection } from "@/app/_components/site-header";
 import { getGoogleProviderOptions, readSession } from "@/lib/auth/server";
+import { allergenChoices, parseAllergenFilter, type ExploreAllergenFilter } from "@/lib/dietary/policy";
 import { listRecipes, recipePageSize, type PublicCook, type RecipeCardData } from "@/lib/product/queries";
 import GoogleSignInButton from "@/app/account/google-sign-in-button";
 import RecipeActions from "@/app/recipes/_components/recipe-actions";
 
-function RecipeSearch({ collection, path, query, hideDietaryConflicts }: {
+function RecipeSearch({ collection, path, query, hideDietaryConflicts, allergenFilter }: {
   collection: Collection;
   path: string;
   query: string;
   hideDietaryConflicts: boolean;
+  allergenFilter?: ExploreAllergenFilter;
 }) {
+  const filterCount = allergenFilter ? allergenFilter.allergens.length + Number(Boolean(allergenFilter.ingredient)) : 0;
   return (
-    <form action={path + "#recipes"} method="get" role="search" className="flex w-full max-w-2xl gap-2">
+    <form action={path + "#recipes"} method="get" role="search" className="w-full max-w-2xl space-y-2">
       {hideDietaryConflicts && <input type="hidden" name="dietary" value="1" />}
       {collection !== "explore" && <input type="hidden" name="collection" value={collection} />}
-      <div className="relative min-w-0 flex-1">
-        <label htmlFor="recipe-query" className="sr-only">Find a recipe</label>
-        <Icon name="search" className="pointer-events-none absolute inset-s-3 top-1/2 z-10 size-4 -translate-y-1/2 text-subtle" />
-        <Input id="recipe-query" name="q" type="search" maxLength={160} defaultValue={query}
-          placeholder="Name or ingredient" className="site-field recipe-search-input w-full" />
+      <div className="flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <label htmlFor="recipe-query" className="sr-only">Find a recipe</label>
+          <Icon name="search" className="pointer-events-none absolute inset-s-3 top-1/2 z-10 size-4 -translate-y-1/2 text-subtle" />
+          <Input id="recipe-query" name="q" type="search" maxLength={160} defaultValue={query}
+            placeholder="Name or ingredient" className="site-field recipe-search-input w-full" />
+        </div>
+        <Button type="submit" className="site-button">Search</Button>
       </div>
-      <Button type="submit" className="site-button">Search</Button>
+      {allergenFilter && (
+        <details>
+          <summary className="w-fit cursor-pointer py-2 text-sm font-semibold text-brand">
+            Filter by allergen{filterCount > 0 && ` (${filterCount})`}
+          </summary>
+          <fieldset className="space-y-2">
+            <legend className="text-sm font-semibold">Allergens to exclude</legend>
+            <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-3">
+              {allergenChoices.map(({ value, label }) => (
+                <label key={value} className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+                  <input type="checkbox" name="allergen" value={value} defaultChecked={allergenFilter.allergens.includes(value)}
+                    className="size-4 shrink-0 accent-brand" />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <label className="grid gap-1 text-sm font-semibold" htmlFor="excluded-ingredient">
+              Ingredient name to exclude
+              <input id="excluded-ingredient" name="exclude" type="text" maxLength={160}
+                defaultValue={allergenFilter.ingredient} placeholder="e.g. celery" className="site-field font-normal" />
+            </label>
+            <p className="text-sm text-subtle">Hide recipes that contain this text in an ingredient name or have a recorded match for a selected allergen. Ingredient records can be incomplete.</p>
+            <Button type="submit" className="site-button-outline">Apply allergen filter</Button>
+          </fieldset>
+        </details>
+      )}
     </form>
   );
 }
@@ -49,9 +82,7 @@ function RecipeListItem({ recipe, collection, showAuthor }: { recipe: RecipeCard
           )}
           {showAuthor && (
             <p className="mt-1 text-sm text-subtle wrap-anywhere">{recipe.source ? "Shared by" : "By"}{" "}
-              <Link href={`/users/${recipe.author.id}`} className="relative z-10 underline">
-                {recipe.author.name || recipe.author.username}
-              </Link>
+              <CookByline cook={recipe.author} />
             </p>
           )}
           <p className="mt-1 line-clamp-2 max-w-[65ch] text-sm text-subtle wrap-anywhere">{recipe.description}</p>
@@ -108,21 +139,26 @@ function ResultsLoading() {
   );
 }
 
-async function RecipeResults({ collection, cookId, query, page, signedIn, hideDietaryConflicts }: {
+async function RecipeResults({ collection, cookId, query, page, signedIn, hideDietaryConflicts, allergenFilter }: {
   collection: Collection;
   cookId?: string;
   query: string;
   page: number;
   signedIn: boolean;
   hideDietaryConflicts: boolean;
+  allergenFilter?: ExploreAllergenFilter;
 }) {
-  function collectionHref(query: string, page: number, hideConflicts: boolean) {
+  function collectionHref(query: string, page: number, hideConflicts: boolean, keepAllergens = true) {
     const path = cookId ? `/users/${cookId}` : "/";
     const params = new URLSearchParams();
     if (collection !== "explore") params.set("collection", collection);
     if (query) params.set("q", query);
     if (page > 1) params.set("page", String(page));
     if (hideConflicts) params.set("dietary", "1");
+    if (allergenFilter && keepAllergens) {
+      for (const allergen of allergenFilter.allergens) params.append("allergen", allergen);
+      if (allergenFilter.ingredient) params.set("exclude", allergenFilter.ingredient);
+    }
     return params.size ? `${path}?${params}` : path;
   }
 
@@ -135,7 +171,7 @@ async function RecipeResults({ collection, cookId, query, page, signedIn, hideDi
     );
   }
 
-  const result = await listRecipes({ collection, authorId: cookId, query, page, hideDietaryConflicts }).catch(() => null);
+  const result = await listRecipes({ collection, authorId: cookId, query, page, hideDietaryConflicts, allergenFilter }).catch(() => null);
   if (!result) {
     return (
       <div className="site-panel space-y-3">
@@ -146,10 +182,22 @@ async function RecipeResults({ collection, cookId, query, page, signedIn, hideDi
   }
 
   const filtering = result.hasDietaryPreferences && hideDietaryConflicts;
+  const selectedLabels = allergenChoices.filter(({ value }) => allergenFilter?.allergens.includes(value)).map(({ label }) => label);
+  const hasExclusions = selectedLabels.length > 0 || Boolean(allergenFilter?.ingredient);
+  const allergenStatus = hasExclusions && (
+    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm wrap-anywhere">
+      <p>
+        {selectedLabels.length > 0 && `Hiding recorded matches for ${selectedLabels.join(", ")}. `}
+        {allergenFilter?.ingredient && `Hiding ingredient names containing “${allergenFilter.ingredient}”. `}
+        Ingredient records can be incomplete.
+      </p>
+      <Link className="font-semibold text-brand underline" href={collectionHref(query, 1, filtering, false) + "#recipes"}>Clear allergen filter</Link>
+    </div>
+  );
   const dietaryFilter = result.hasDietaryPreferences && (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <Link className="site-button-outline" href={collectionHref(query, 1, !filtering) + "#recipes"}
-        aria-describedby="dietary-filter-help">{filtering ? "Show all recipes" : "Hide known conflicts"}</Link>
+        aria-describedby="dietary-filter-help">{filtering ? (hasExclusions ? "Show saved preference conflicts" : "Show all recipes") : "Hide known conflicts"}</Link>
       <p id="dietary-filter-help" className="text-sm text-subtle">
         {filtering ? "Known conflicts with your preferences are hidden." : "Filter by your dietary preferences."}
         {" "}Recipes with incomplete records stay visible unless they have a known conflict.
@@ -158,11 +206,12 @@ async function RecipeResults({ collection, cookId, query, page, signedIn, hideDi
   );
 
   if (result.total === 0) {
-    const emptyMessage = filtering ? "No recipes match the current dietary filter."
+    const emptyMessage = filtering || hasExclusions ? "No recipes match the current dietary filter."
       : collection === "mine" ? "You haven’t created any recipes yet."
       : collection === "saved" ? "You haven’t saved any recipes yet." : "No public recipes have been shared yet.";
     return (
       <div className="site-panel space-y-3">
+        {allergenStatus}
         {dietaryFilter}
         <p className="font-semibold wrap-anywhere">{query ? `No recipes match “${query}”.` : emptyMessage}</p>
         {query && <Link className="site-button-outline" href={collectionHref("", 1, filtering)}>Clear search</Link>}
@@ -175,6 +224,7 @@ async function RecipeResults({ collection, cookId, query, page, signedIn, hideDi
   const pageCount = Math.ceil(result.total / recipePageSize);
   return (
     <div className="space-y-5">
+      {allergenStatus}
       {dietaryFilter}
       <p className="text-sm text-subtle" aria-live="polite">{result.total} {result.total === 1 ? "recipe" : "recipes"}</p>
       <ul aria-label={collections[collection].heading} className="divide-y divide-line border-y border-line">
@@ -197,10 +247,14 @@ export default async function RecipeCollection({ searchParams, cook }: {
 }) {
   const [params, session] = await Promise.all([searchParams, readSession().catch(() => null)]);
   const query = typeof params.q === "string" ? params.q.trim().slice(0, 160) : "";
-  const collection = !cook && (params.collection === "mine" || params.collection === "saved") ? params.collection : "explore";
+  const ownPage = Boolean(cook && cook.id === session?.user.id);
+  const collection = cook ? (ownPage ? "mine" : "explore")
+    : params.collection === "mine" || params.collection === "saved" ? params.collection : "explore";
   const page = typeof params.page === "string" ? Number(params.page) : 1;
   const signedIn = Boolean(session);
   const hideDietaryConflicts = signedIn && params.dietary === "1";
+  const allergenFilter = !cook && collection === "explore" ? parseAllergenFilter(params.allergen, params.exclude) : undefined;
+  const searchKey = JSON.stringify([collection, query, allergenFilter]);
 
   return (
     <>
@@ -213,21 +267,30 @@ export default async function RecipeCollection({ searchParams, cook }: {
         )}
         <header className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="site-heading text-3xl sm:text-4xl">
-                {cook ? `${cook.name || cook.username}’s public recipes` : collection === "explore" ? "Explore recipes" : collections[collection].heading}
-              </h1>
-              {cook?.name && <p className="mt-1 text-sm text-subtle wrap-anywhere">@{cook.username}</p>}
+            <div className="flex min-w-0 items-center gap-4">
+              {cook && (cook.image
+                ? <Image src={cook.image} unoptimized width={64} height={64} alt="" className="size-16 shrink-0 rounded-full object-cover" />
+                : <span aria-hidden="true" className="grid size-16 shrink-0 place-items-center rounded-full bg-brand text-2xl font-bold text-white">
+                    {Array.from(cook.name?.trim() || cook.username)[0]?.toUpperCase()}
+                  </span>)}
+              <div className="min-w-0">
+                <h1 className="site-heading text-3xl wrap-anywhere sm:text-4xl">
+                  {cook ? `${cook.name || cook.username}’s ${ownPage ? "recipes" : "public recipes"}`
+                    : collection === "explore" ? "Explore recipes" : collections[collection].heading}
+                </h1>
+                {cook && <p className="mt-1 text-sm text-subtle wrap-anywhere">@{cook.username}</p>}
+                {ownPage && <p className="mt-1 text-sm text-subtle">Only you can see your private recipes.</p>}
+              </div>
             </div>
             {!cook && collection === "explore" && !signedIn && getGoogleProviderOptions() && <GoogleSignInButton />}
           </div>
           {(collection === "explore" || signedIn) && (
-            <RecipeSearch key={`${collection}:${query}`} collection={collection} path={cook ? `/users/${cook.id}` : "/"} query={query} hideDietaryConflicts={hideDietaryConflicts} />
+            <RecipeSearch key={searchKey} collection={collection} path={cook ? `/users/${cook.id}` : "/"} query={query} hideDietaryConflicts={hideDietaryConflicts} allergenFilter={allergenFilter} />
           )}
         </header>
         <section id="recipes" aria-label={collections[collection].heading} className="scroll-mt-5">
-          <Suspense key={`${collection}:${query}:${page}:${hideDietaryConflicts}`} fallback={<ResultsLoading />}>
-            <RecipeResults collection={collection} cookId={cook?.id} query={query} page={page} signedIn={signedIn} hideDietaryConflicts={hideDietaryConflicts} />
+          <Suspense key={`${searchKey}:${page}:${hideDietaryConflicts}`} fallback={<ResultsLoading />}>
+            <RecipeResults collection={collection} cookId={cook?.id} query={query} page={page} signedIn={signedIn} hideDietaryConflicts={hideDietaryConflicts} allergenFilter={allergenFilter} />
           </Suspense>
         </section>
       </main>
