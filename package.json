@@ -18,6 +18,7 @@
     "test:postman": "postman collection run postman/crud.postman_collection.json --no-report-events --timeout-request 45000",
     "test:postman:production": "postman collection run postman/production-guards.postman_collection.json --no-report-events --timeout-request 45000",
     "check": "npm run db:validate && npm run lint && npm run typecheck && npm test",
+    "images:cleanup": "node --conditions=react-server --import tsx scripts/cleanup-cloud-covers.ts",
     "storage:check": "node --conditions=react-server --import tsx scripts/check-storage.ts",
     "backend-test:setup": "node --conditions=react-server --import tsx scripts/backend-test.ts setup",
     "backend-test:cleanup": "node --conditions=react-server --import tsx scripts/backend-test.ts cleanup",

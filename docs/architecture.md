@@ -141,7 +141,7 @@ A signed-in cook can upload a still JPEG, PNG, or WebP up to 3 MiB and 16 megapi
 
 `GET /api/images/[id]` looks up the file before reading it from storage. Anyone can read a public recipe’s cover. Only the owner can read a private or unattached image. Responses use `Cache-Control: private, no-store` so a cached public copy cannot bypass a later visibility change.
 
-Blob writes happen outside the SQL transaction. If saving metadata fails after an upload, the service deletes the new object. If deletion also fails, it records the path in the server error for a retry. The local cleanup command checks for unattached files older than 24 hours. Cloud cleanup is still open.
+Blob writes happen outside the SQL transaction. If saving metadata fails after an upload, the service deletes the new object. If deletion also fails, the product action logs the generated storage path to the private server log. Manual cleanup covers unattached files older than 24 hours and unrecorded uploads in a verified product user’s Blob prefix. [Cloud cleanup procedure](../prisma/README.md#reclaim-unused-cloud-covers)
 
 ## 7. Scaling and workspace state
 

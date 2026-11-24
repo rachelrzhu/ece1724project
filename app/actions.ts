@@ -8,7 +8,7 @@ import { recipeIdSchema, recipeInputSchema } from "@/lib/recipes/schemas";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
 import { headers } from "next/headers";
 import { productImageStore } from "@/lib/product/storage";
-import { createImageService } from "@/lib/storage/service";
+import { createImageService, ImageCleanupError } from "@/lib/storage/service";
 
 export async function saveRecipe(id: string | null, input: unknown) {
   const parsed = recipeInputSchema.safeParse(input);
@@ -99,7 +99,10 @@ export async function uploadCover(data: FormData) {
       bytes: new Uint8Array(await file.arrayBuffer()),
     });
     return { id: result.id };
-  } catch {
+  } catch (error) {
+    if (error instanceof ImageCleanupError) {
+      console.error("Cover cleanup retry required", { pathname: error.pathname });
+    }
     return {
       error:
         "Upload failed. Try again with a still JPEG, PNG or WebP (up to 3 MiB and 16 megapixels).",

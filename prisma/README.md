@@ -77,3 +77,19 @@ The check signs in over HTTP, writes a recipe, and tests who can read its cover 
 Create migrations against an isolated development database, review generated SQL, and commit both the schema and migrations. Retain custom SQL checks that Prisma cannot represent. Never accept a reset prompt against a database containing needed data.
 
 Better Auth uses the existing user UUIDs and stores accounts, sessions, and verifications in PostgreSQL.
+
+## Reclaim unused cloud covers
+
+Use the target deployment’s paired PostgreSQL and private Blob credentials. Independently look up its database host and database name in Neon and its `store_…` ID in Vercel. The command compares both identifiers with the active credentials before connecting. Supplying identifiers from the wrong pair can still select the wrong resources. Use the environment’s documented mapping, especially for cloned databases that may contain the same user IDs.
+
+```bash
+npm run images:cleanup -- --database HOST/DATABASE --store store_ID
+npm run images:cleanup -- --database HOST/DATABASE --store store_ID --owner PRODUCT_USER_UUID
+npm run images:cleanup -- --database HOST/DATABASE --store store_ID --path recipe-images/OWNER_UUID/FILE_UUID.jpg
+```
+
+The first command previews unattached product file records older than 24 hours. Include the port in `HOST` when it is explicit in the database URL. The owner option also checks that cook’s Blob prefix for old uploads without matching metadata. The path option retries a single object using the generated path from a private server log entry labeled `Cover cleanup retry required`. Use owner discovery for uploads interrupted before logging. Only an existing user in the product database can be selected for storage discovery.
+
+Review the preview and add `--apply` to the same command to reclaim eligible covers. The command checks file age and rechecks attachment under a database row lock. It commits metadata removal before deleting the matching Blob version. If interrupted or the provider is unavailable, rerun with the exact path printed in the private command output or the owner option. A changed Blob version is preserved for another review. Keep this output private.
+
+The cloud command manages server-generated `recipe-images/<owner UUID>/<file UUID>.<jpg|png|webp>` keys. It leaves other uploaders’ namespaces and seed assets in place. Review legacy files with custom paths against their original owner and schema before manual cleanup. Ownerless Blob keys without matching product metadata require independent provenance. The loopback demo continues to use `npm run poc:cleanup-images`.
