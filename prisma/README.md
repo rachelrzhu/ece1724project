@@ -42,6 +42,26 @@ Before adopting this history:
 
 Recording the baseline writes migration metadata. It does not run the baseline's table-creation SQL. Do not run the baseline SQL against tables that already exist. Public application tables and their migration history have not been changed by this implementation.
 
+## Local database and API tests
+
+Use a fresh checkout with Node.js 24 and the PostgreSQL 18 tools (`initdb` and `pg_ctl`) on your PATH. Run these commands in the first terminal:
+
+```bash
+npm ci
+npm run poc:setup
+npm run poc:dev
+```
+
+Setup starts PostgreSQL on `127.0.0.1:55432`, applies the migrations, and seeds two accounts and sample recipes. It keeps the database and images in `.local-poc/` and writes the connection settings to `.env.local`. Keep any existing development credentials in their own checkout.
+
+With the app running on `http://127.0.0.1:3100`, open a second terminal in the same folder:
+
+```bash
+npm run poc:verify
+```
+
+The check signs in over HTTP, writes a recipe, and tests who can read its cover before and after publication. When you're done, stop the app with **Ctrl+C** and run `npm run poc:stop-db`. Your local recipes will still be there the next time you run `npm run poc:setup`.
+
 ## Live storage verification
 
 `npm run storage:check` applies the migrations only within a uniquely named disposable schema on the configured PostgreSQL server. It exercises the actual Prisma adapter, recipe services, updates/deletes, constraints, and rollback, then removes the schema. Private Blob upload/read/delete is included, using a synthetic sample image and test-owned file metadata. The check never applies migrations to `public`, and it verifies Blob cleanup by the unique test-owner prefix. The database role needs schema-creation privileges. This command is explicitly manual; setup and CI do not run it.

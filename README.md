@@ -1,59 +1,33 @@
-# ECE1724 Project
+# Recipe sharing and ingredient scaling
 
 Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated recipe services, private-image upload/read services, and automated checks. Better Auth persists sessions in PostgreSQL. A local backend tester exercises recipe and image services.
 
-See the [system architecture](docs/architecture.md), [requirements](docs/requirements.md), and [database workflow](prisma/README.md) for implementation details and status.
+## Run the app
 
-For safe releases, use **dev → preprod → main (prod)**. See the [deployment guide](docs/deployment.md) for branches, Vercel settings, separate credentials, and rollback.
+1. Install **Node.js 24** with npm, then reopen your terminal. [Node.js downloads](https://nodejs.org/en/download)
+2. Clone the repo or extract the GitHub ZIP. Open the folder containing `package.json`.
+3. Run `npm run setup`. On macOS you can also double-click `setup.command`, and on Windows you can double-click `setup.cmd`.
+4. Open [http://localhost:3000](http://localhost:3000) to see the Savor homepage. For Google sign-in, use the hostname and port registered for the OAuth callback. The homepage also links to the backend tester in development. Press **Ctrl+C** to stop the server.
 
-## First-time setup (no web development experience needed)
+Setup installs the locked dependencies, generates the Prisma client, and creates `.env.local` if it's missing. You'll need internet access on the first run. You can open the homepage and run the unit tests without cloud credentials. To try the API with seeded accounts and recipes, start in a fresh checkout and follow the [local database instructions](prisma/README.md#local-database-and-api-tests).
 
-### 1. Install Node.js 24
+## Project docs
 
-Download and install **version 24 LTS** from [the official Node.js website](https://nodejs.org/en/download). Choose version 24 in the version selector even if a newer version is shown first. Choose the installer for your laptop and include **npm**, which installs the project's packages.
-
-Close and reopen your terminal after installation. A terminal is the app where you type commands: **Terminal** on macOS/Linux or **Command Prompt / Windows Terminal** on Windows.
-
-### 2. Download the project
-
-On this project's GitHub page, choose **Code → Download ZIP**, then extract the ZIP completely. You can also clone the repository if you already use Git. Open the extracted project folder: it should contain `package.json`, `setup.command`, and `setup.cmd`.
-
-### 3. Run setup
-
-| Your laptop | What to do |
-| --- | --- |
-| macOS | Double-click `setup.command`. If it cannot open, open Terminal in the project folder and run `sh setup.command`. |
-| Windows | Double-click `setup.cmd` in the extracted folder. |
-| Linux | Open a terminal in the project folder and run `npm run setup`. |
-
-The same terminal command also works on macOS and Windows:
-
-```bash
-npm run setup
-```
-
-To open a terminal in the right folder, use your editor's **Open Folder** and then **Terminal → New Terminal**. Alternatively, type `cd ` followed by the project folder's path, putting the path in double quotes if it contains spaces.
-
-Setup checks Node.js and npm, installs the exact packages listed in `package-lock.json`, generates the Prisma client, prepares `.env.local` if missing, and starts the app. An internet connection is needed for installation and the first run, including downloading Google fonts. The Savor homepage opens and the automated checks run without cloud credentials. Setup does not apply database migrations.
-
-### 4. Open the app
-
-Wait until the terminal says **Ready**, then open [Savor on localhost](http://localhost:3000). The homepage shows **Continue with Google** when the provider is configured. To enable it, follow the [Google sign-in setup](docs/deployment.md#google-sign-in).
-
-If Next.js selects another port, use that port with `localhost` in the browser, in `BETTER_AUTH_URL`, and in the Google client's authorized redirect URI.
-
-Keep the terminal open while using the app. Press **Ctrl+C** to stop it.
+- [Architecture](docs/architecture.md) and [requirements](docs/requirements.md) cover the data model, permissions, and scaling rules.
+- [Database workflow](prisma/README.md) covers migrations, local test data, and existing databases.
+- [Deployment guide](docs/deployment.md) covers releases from `dev` through `preprod` to `main`.
 
 ## Frontend and backend
 
-Next.js runs the frontend and its server-side code together. **You only need one command and one terminal**; there is no separate backend server to install or start.
+Next.js serves the pages and API routes from the same process.
 
 - The frontend homepage is in `app/page.tsx`.
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
-- `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. These services require a verified session reader before connecting authenticated product interfaces.
+- `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.
 - `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
-- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads. The homepage handles Google sign-in. The editor and scaling interfaces are planned. Setup does not provision cloud services.
+- The homepage offers **Continue with Google** when the provider is configured and shows the signed-in account after the callback. [Google sign-in setup](docs/deployment.md#google-sign-in)
+- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads.
 
 An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`.
 
@@ -61,43 +35,28 @@ Migrations are explicit. Read the [database workflow](prisma/README.md) before r
 
 ## Everyday use
 
-After the first setup, open a terminal in the project folder and run:
+Run `npm run dev` to start the app again. After a dependency change, stop the dev server and rerun `npm run setup`.
 
-```bash
-npm run dev
-```
-
-Edit `app/page.tsx` and save; the browser updates automatically. Stop the server with **Ctrl+C**. If a teammate changes the project's dependencies, stop the server and run `npm run setup` again to reinstall them.
-
-Other useful commands:
-
-```bash
-npm run setup -- --install-only   # Install packages without starting the app
-npm run setup -- --port 3002      # Install and start on a specific port
-npm run dev -- --port 3002        # Start on that port without reinstalling
-npm run lint                     # Check code style and common mistakes
-npm run typecheck                # Generate route types and check TypeScript
-npm test                         # Run input, service-boundary, and migration tests
-npm run check                    # Validate schema, lint, typecheck, and run tests
-npm run build                    # Check that a production build succeeds
-```
-
-The launchers can be run from any working directory. The `npm run ...` commands must be run from the folder containing `package.json`. Setup intentionally does not change your system settings or install Node.js for you.
+| Command | When to use it |
+| --- | --- |
+| `npm run check` | Run Prisma validation, lint, TypeScript, and the unit and migration tests. |
+| `npm test` | Run the test suite on its own. |
+| `npm run build` | Check the production build. |
+| `npm run setup -- --install-only` | Install dependencies without starting the app. |
+| `npm run dev -- --port 3002` | Start the dev server on a specific port. |
 
 ## Simple local backend tester
 
-Prepare a separate test schema once, then start the development server:
+Set `DATABASE_URL` in `.env.local` to your development database. Add `BLOB_READ_WRITE_TOKEN` if you're testing image uploads. From the project folder, run:
 
 ```bash
 npm run backend-test:setup
 npm run dev -- --hostname 127.0.0.1
 ```
 
-Open [http://127.0.0.1:3000/backend-test](http://127.0.0.1:3000/backend-test). Use **Add ingredient** to enter more ingredients, or **Remove** beside a row to delete it. Each ingredient has its own quantity, unit, and optional note; leave quantity blank and add a note for entries such as “salt to taste.” The form supports up to 100 ingredients and one editable cooking step; additional saved steps are preserved. Use **Refresh / read**, **Create**, **Update selected**, **Delete selected**, and the image upload controls. Each action shows its HTTP status and JSON response.
+Open `/backend-test` on the local address printed by Next.js. You can create a recipe, edit its ingredients and first cooking step, upload a cover, and inspect each HTTP response. For an ingredient like “salt to taste,” leave the quantity blank and enter “to taste” in the note.
 
-This is an integration tool with a fixed test identity, not a sign-in flow. Its APIs use the existing recipe/image services against an isolated PostgreSQL schema. They accept local development requests only and return 404 in production. Existing application tables are unchanged. The test configuration stays in ignored `.backend-test.json`; test records persist between development-server restarts. The product frontend remains separate under `app/page.tsx` for continued frontend work.
-
-Database credentials are required; image testing also needs the Blob token. To remove the tester's database schema, uploaded images, and local configuration:
+The tester uses a fixed user in a separate PostgreSQL schema. Its recipes survive server restarts. When you're done with **all** the test data in that schema, remove it and the tester's uploaded images with:
 
 ```bash
 npm run backend-test:cleanup
@@ -105,32 +64,19 @@ npm run backend-test:cleanup
 
 The test APIs are `GET/POST/PATCH/DELETE /api/backend-test/recipes` (use `?id=...` for a single recipe) and `GET/POST/DELETE /api/backend-test/images`. Writes require a matching `Origin` header, which the test page sends automatically.
 
-Import the shared [Postman collections](postman/README.md) for repeatable CRUD and production-guard checks. With the development server running, `npm run test:postman` runs recipe/validation checks; append `-- --env-var runImageTests=true` to include image upload/read/cleanup. The Postman CLI must be installed separately. See the [CRUD review](docs/crud-review.md) for verification results.
+For repeatable checks, use the [Postman collections](postman/README.md). The [November 8 CRUD review](docs/crud-review.md) records the requests, results, and fixes from that run.
 
 ## Manual live storage check
 
-With database and Blob credentials configured, run:
-
-```bash
-npm run storage:check
-```
-
-This command writes disposable test data. It creates a uniquely named PostgreSQL schema, applies the migrations there, and tests real Prisma create/read/update/delete operations, transaction rollback, visibility, and bookmarks. It also uploads the sample PNG to private Blob storage, verifies its contents and access restrictions, modifies its file metadata, and removes the object and records. Cleanup removes the temporary schema and verifies that no sample Blob objects remain.
-
-It does not modify public application tables or their migration history. The database role must be allowed to create a schema. This check is manual and is not part of setup or CI. It writes a credential-free report to [storage-test-results.json](docs/storage-test-results.json). See the [system architecture](docs/architecture.md) for current boundaries and remaining integration work.
+With development database and Blob credentials configured, run `npm run storage:check`. It creates a temporary PostgreSQL schema, checks recipe writes and rollback, uploads and reads a sample image, then removes its test data. The database role needs permission to create schemas. The script writes its [results](docs/storage-test-results.json) to the repo.
 
 ## Troubleshooting
 
-| What you see | What to do |
+| Problem | What to try |
 | --- | --- |
-| `node` or `npm` is not recognized / not found | Install Node.js 24 with npm, then close and reopen the terminal. Check with `node --version` and `npm --version`. |
-| The wrong Node.js version | Install/select Node.js 24. If you use nvm, run `nvm install` and `nvm use` in the project folder. |
-| `npm.ps1 cannot be loaded` on Windows | Use `setup.cmd`, Command Prompt, or `npm.cmd run setup` in PowerShell. No execution-policy change is needed. |
-| `package.json` cannot be found | Extract the ZIP and open a terminal in the project folder, not its parent folder. |
-| Server already running | Use its existing browser page, or press Ctrl+C in that project's running terminal before running setup again. Setup refuses to reinstall packages while it detects an active development server. |
-| Server lock after a crash | Close any running server for this project first. If the problem remains, delete only the generated `.next` folder in this project and rerun setup. Next.js will recreate it. |
-| A specific port is busy | Use the next available port, for example `npm run setup -- --port 3002`. |
-| Package download or font download fails | Check your internet connection, proxy, or VPN, then retry. If it persists, share the error message with a teammate. |
-| Browser says it cannot connect | Keep the terminal running and use its printed Local address. Check the terminal for errors. |
-
-If setup fails, it stops and prints a next step. It does not overwrite `.env.local` or change the dependency versions to try to fix the error.
+| Node or npm is missing | Install Node.js 24 with npm, reopen the terminal, and run `node --version`. With nvm, run `nvm install` and `nvm use` in the project folder. |
+| PowerShell blocks `npm.ps1` | Use `setup.cmd` or run `npm.cmd run setup`. |
+| npm can't find `package.json` | Open a terminal in the extracted project folder. |
+| Server already running | Use the URL in the existing terminal, or stop that server with **Ctrl+C** before running setup. If a crash left a stale lock, confirm the server has stopped before removing `.next` and restarting. |
+| The page won't open | Check the **Local** URL in the terminal. Next.js can choose a different port if 3000 is busy. |
+| Package or font download fails | Check your connection or proxy, then rerun the command. |
