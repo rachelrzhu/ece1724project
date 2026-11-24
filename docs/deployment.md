@@ -61,6 +61,8 @@ Database migrations stay manual and environment-specific. Installation, CI, and 
 
 Before promoting a release with schema changes, run `npm run db:status` against the destination database and compare its migration history with the release. Apply the pending migrations there before switching traffic. Verify email registration and a session refresh on the deployed origin. The health endpoint can return 200 while registration fails because its database tables or columns are missing.
 
+If Google accepts sign-in but the app reports a failure on return, check the runtime logs for `/api/auth/callback/google` on the affected deployment. Prisma error `P2022` names a missing database column. Verify the database mapped to that branch, back it up, and apply the release’s pending migrations. Localhost uses the database configured in `.env.local`.
+
 When rotating a nonproduction Neon password or Blob token, update the corresponding Vercel Preview values and any `preprod` branch overrides that reference the rotated credential. These values are copies of the provider credentials. Verify their branch scopes, redeploy each affected preview, and check its homepage and `/api/health` through authenticated preview access.
 
 ### Isolation verification on November 8, 2026
