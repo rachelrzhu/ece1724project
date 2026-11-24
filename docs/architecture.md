@@ -6,7 +6,7 @@ This document describes the backend after the `database`, `auth`, `recipes`, and
 
 ## 1. Purpose and scope
 
-The recipe backend supports public and private recipes, title and ingredient search, and bookmarks. The planned scaling controls adjust ingredient quantities for a different serving count or an ingredient the cook has on hand. Editable copies, dietary filters, and step photos come later. [Requirements and priorities](requirements.md)
+The recipe backend supports public and private recipes, title and ingredient search, bookmarks, and editable private copies of public recipes. The scaling engine adjusts ingredient quantities for a different serving count or an ingredient the cook has on hand. Dietary filters and step photos are planned extensions. [Requirements and priorities](requirements.md)
 
 ## 2. Architecture overview
 
@@ -115,7 +115,9 @@ Recipe deletion cascades to ingredient, step, and bookmark records. It retains t
 
 The baseline describes the original `users` and `files` tables, whose column types and constraints were checked during the initial database review. The recipe migration adds recipes, ingredients, steps, and bookmarks. The authentication migration adds account, session, and verification tables and extends the existing user profile.
 
-For an empty development database, apply all three migrations. An existing database with matching tables needs its baseline recorded first. The build generates the client. Migration tests run SQL against an in-memory database, and local setup for the integration tests migrates its own PostgreSQL cluster. [Database setup and baselining](../prisma/README.md)
+The copy migration adds a nullable `source_recipe_id` to recipes. Existing recipes keep a null value. The source UUID records which recipe was copied and remains available after the source is deleted. The public detail response omits this internal field.
+
+For an empty development database, apply the committed migrations. An existing database with matching tables needs its baseline recorded first. The build generates the client. Migration tests run SQL against an in-memory database, and local setup for the integration tests migrates its own PostgreSQL cluster. [Database setup and baselining](../prisma/README.md)
 
 ## 6. Application flows
 
@@ -151,9 +153,11 @@ The engine supports mass, volume, and count units. It reports incompatible units
 
 A Redux store will be created per recipe workspace. State includes mode, target servings, selected ingredient, available quantity/unit, and bounded undo history. Selectors derive quantities and warnings from the same configuration. Switching modes preserves the active factor; undo restores a coherent prior configuration; reset returns to base quantities. A recipe change creates a new workspace and clears stale history. No server-global Redux store is used.
 
-### Planned extensions
+### Editable copies
 
-A recipe copy will create independent private recipe, ingredient, and step records in one transaction, with source provenance. Source edits will not alter the copy. Photograph copying requires a separate storage and ownership policy before implementation; bookmarks remain references to the original recipe.
+A signed-in cook can copy a public recipe into their own collection. One transaction reads the source and creates a private recipe with new ingredient and step rows. Later edits and deletion of either recipe leave the other intact. The copy starts without a cover, and its owner can upload their own photo in the editor.
+
+### Planned dietary discovery
 
 Dietary discovery will use structured ingredient-to-allergen relationships and separate user dietary preferences from declared allergies. Missing mappings remain unknown rather than evidence of suitability. These extensions do not change the core scaling calculation.
 

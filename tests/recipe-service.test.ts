@@ -89,11 +89,13 @@ describe("recipe service boundaries", () => {
     const selection = client.recipe.findFirst.mock.calls[0][0].select;
     expect(selection).not.toHaveProperty("cover");
     expect(selection).not.toHaveProperty("author");
+    expect(selection).not.toHaveProperty("sourceRecipeId");
   });
 
   it("requires a session for listing, editing, and deleting", async () => {
     const { service, database } = setup(null);
     await expect(service.listOwn()).rejects.toBeInstanceOf(RecipeAccessError);
+    await expect(service.copyPublic(recipeId)).rejects.toBeInstanceOf(RecipeAccessError);
     await expect(service.update(recipeId, recipeInput())).rejects.toBeInstanceOf(RecipeAccessError);
     await expect(service.remove(recipeId)).rejects.toBeInstanceOf(RecipeAccessError);
     expect(database).not.toHaveBeenCalled();
@@ -110,8 +112,53 @@ describe("recipe service boundaries", () => {
     await expect(service.update(recipeId, { ...recipeInput(), baseServings: 0 })).rejects.toThrow();
     await expect(service.update(recipeId, { ...recipeInput(), authorId: otherUserId })).rejects.toThrow();
     await expect(service.update("not-an-id", recipeInput())).rejects.toThrow();
+    await expect(service.copyPublic("not-an-id")).rejects.toThrow();
+    await expect(service.update(recipeId, { ...recipeInput(), sourceRecipeId: recipeId })).rejects.toThrow();
     await expect(service.remove("not-an-id")).rejects.toThrow();
     expect(database).not.toHaveBeenCalled();
+  });
+
+  it("requires a public source before copying, even when the requester owns a private recipe", async () => {
+    const { service, transaction } = setup();
+    await expect(service.copyPublic(recipeId)).resolves.toBeNull();
+    expect(transaction.recipe.findFirst.mock.calls[0][0].where).toEqual({ id: recipeId, visibility: "PUBLIC" });
+    expect(transaction.recipe.create).not.toHaveBeenCalled();
+  });
+
+  it("copies only recipe contents and ordered child values from one public snapshot", async () => {
+    const { service, client, transaction } = setup(otherUserId);
+    const ingredients = [
+      { position: 1, name: "Flours", canonicalName: "flour", quantity: new Prisma.Decimal("123456.123456"), unit: "g", note: null },
+      { position: 3, name: "Salt", canonicalName: "salt", quantity: null, unit: null, note: "To taste" },
+    ];
+    const steps = [{ position: 2, instruction: "Mix." }, { position: 5, instruction: "Bake." }];
+    const content = {
+      title: "Simple bread", description: "Everyday bread", baseServings: new Prisma.Decimal("3.1257"),
+      prepMinutes: 10, cookMinutes: 20, difficulty: "MEDIUM",
+    };
+    transaction.recipe.findFirst.mockResolvedValue({ ...content, ingredients, steps });
+    const copyId = "00000000-0000-4000-8000-000000000006";
+    transaction.recipe.create.mockResolvedValue({ id: copyId });
+
+    await expect(service.copyPublic(recipeId)).resolves.toEqual({ id: copyId });
+    expect(client.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: "RepeatableRead" });
+    const { select } = transaction.recipe.findFirst.mock.calls[0][0];
+    expect(select.ingredients.orderBy).toEqual({ position: "asc" });
+    expect(select.steps.orderBy).toEqual({ position: "asc" });
+    expect(select.ingredients.select).not.toHaveProperty("id");
+    expect(select.steps.select).not.toHaveProperty("id");
+    expect(select).not.toHaveProperty("id");
+    expect(select).not.toHaveProperty("authorId");
+    expect(select).not.toHaveProperty("sourceRecipeId");
+    expect(select).not.toHaveProperty("bookmarks");
+    expect(select).not.toHaveProperty("coverFileId");
+    expect(transaction.recipe.create).toHaveBeenCalledWith({
+      data: {
+        ...content, authorId: otherUserId, sourceRecipeId: recipeId, visibility: "PRIVATE", coverFileId: null,
+        ingredients: { create: ingredients }, steps: { create: steps },
+      },
+      select: { id: true },
+    });
   });
 
   it("rejects an unavailable cover before replacing any saved children", async () => {

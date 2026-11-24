@@ -40,6 +40,19 @@ export async function saveRecipe(id: string | null, input: unknown) {
     };
   }
 }
+export async function copyRecipe(id: string) {
+  if (!recipeIdSchema.safeParse(id).success)
+    return { error: "This recipe is unavailable." };
+  if (!(await readSession())) return { error: "Sign in to copy this recipe." };
+  try {
+    const copy = await recipes().copyPublic(id);
+    if (!copy) return { error: "This recipe is unavailable." };
+    revalidatePath("/", "layout");
+    return { id: copy.id };
+  } catch {
+    return { error: "Couldn’t copy this recipe. Please try again." };
+  }
+}
 export async function deleteRecipe(id: string) {
   if (!z.uuid().safeParse(id).success || !(await readSession()))
     return { error: "Sign in to manage your recipes." };

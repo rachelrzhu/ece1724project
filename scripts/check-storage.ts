@@ -81,7 +81,7 @@ async function main() {
       await administrator!.query("BEGIN");
       try {
         await administrator!.query(`SET LOCAL search_path TO "${schemaName}"`);
-        for (const migration of ["0_baseline", "20261108000000_recipe_domain", "20261108120000_authentication"]) {
+        for (const migration of ["0_baseline", "20261108000000_recipe_domain", "20261108120000_authentication", "20261123000000_recipe_copy_source"]) {
           const sql = readFileSync(new URL(`../prisma/migrations/${migration}/migration.sql`, import.meta.url), "utf8")
             .replace('CREATE SCHEMA IF NOT EXISTS "public";', "");
           assert.ok(!sql.includes('"public"'), "Test migrations must not address the public schema.");

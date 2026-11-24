@@ -49,6 +49,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
             id={id}
             title={recipe.title}
             saved={recipe.saved}
+            canCopy={recipe.visibility === "PUBLIC"}
             isOwner={recipe.isOwner}
             afterDeleteHref="/?collection=mine"
           />

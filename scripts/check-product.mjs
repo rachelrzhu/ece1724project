@@ -29,6 +29,7 @@ if (headerName || headerValue) {
 const runId = randomUUID();
 const title = "Smoketest " + runId;
 const ingredient = "Cocoa " + runId;
+const copyTitle = "Personal recipe " + runId;
 const fixture = await readFile(new URL("../tests/fixtures/storage-sample.png", import.meta.url));
 const browser = await chromium.launch();
 const [ownerContext, readerContext, guestContext] = await Promise.all(
@@ -40,6 +41,8 @@ const [owner, reader, guest] = await Promise.all(
 let detail;
 let cover;
 let deleted = false;
+let copyDetail;
+let copyDeleted = false;
 let passedChecks = 0;
 
 async function createContext() {
@@ -126,16 +129,16 @@ async function search(page, term, count, collection = "explore") {
   assert.equal(await page.getByRole("link", { name: title, exact: true }).count(), count);
 }
 
-async function expectDetail(page, visible, url = detail) {
+async function expectDetail(page, visible, url = detail, expectedTitle = title) {
   const response = await page.goto(url);
   if (visible) {
     assert.equal(response.status(), 200);
-    await page.getByRole("heading", { name: title, exact: true }).waitFor();
+    await page.getByRole("heading", { name: expectedTitle, exact: true }).waitFor();
   } else {
     // A streamed App Router response can render the 404 boundary after sending 200.
     assert([404, 200].includes(response.status()));
     await page.getByRole("heading", { name: "404", exact: true }).waitFor();
-    assert.equal(await page.getByRole("heading", { name: title, exact: true }).count(), 0);
+    assert.equal(await page.getByRole("heading", { name: expectedTitle, exact: true }).count(), 0);
   }
 }
 
@@ -152,8 +155,9 @@ async function expectImage(context, visible) {
   }
 }
 
-async function saveVisibility(visibility) {
+async function saveVisibility(visibility, instruction) {
   await owner.goto(detail + "?edit=1");
+  if (instruction) await owner.getByLabel("Step 1", { exact: true }).fill(instruction);
   const choice = owner.getByRole("radiogroup", { name: "Visibility", exact: true });
   await choice.getByText(visibility, { exact: true }).click();
   assert(await choice.getByRole("radio", { name: visibility, exact: true }).isChecked());
@@ -162,13 +166,26 @@ async function saveVisibility(visibility) {
   await owner.getByText(new RegExp(" · " + visibility.toLowerCase() + "$")).waitFor();
 }
 
-async function deleteFixture() {
-  await owner.goto(detail);
-  const button = owner.getByRole("button", { name: "Delete recipe: " + title, exact: true });
-  owner.once("dialog", (dialog) => dialog.accept());
-  await button.click();
-  await owner.waitForURL((url) => url.pathname === "/" && url.searchParams.get("collection") === "mine");
-  deleted = true;
+async function deleteFixture(page, path) {
+  await page.goto(path);
+  const fixtureTitle = await page.getByRole("heading", { level: 1 }).innerText();
+  assert([title, copyTitle].includes(fixtureTitle), "Unexpected fixture title.");
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Delete recipe: " + fixtureTitle, exact: true }).click();
+  await page.waitForURL((url) => url.pathname === "/" && url.searchParams.get("collection") === "mine");
+}
+
+async function clearOwnedFixtures(page) {
+  // Navigation can fail after creation committed but before we received the new ID.
+  await page.goto("/?collection=mine&q=" + runId);
+  for (const fixtureTitle of [title, copyTitle]) {
+    const paths = await page.getByRole("link", { name: fixtureTitle, exact: true })
+      .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+    for (const path of paths) {
+      assert.match(path, /^\/recipes\/[\da-f-]{36}$/);
+      await deleteFixture(page, path);
+    }
+  }
 }
 
 try {
@@ -212,28 +229,69 @@ try {
   await search(reader, title, 1, "saved");
   passed("Two independent save submissions both succeed and produce one saved listing");
 
-  await saveVisibility("Private");
+  await reader.goto(detail);
+  await reader.getByRole("button", { name: "Make an editable copy" }).click();
+  await reader.waitForURL((url) => /^\/recipes\/[\da-f-]{36}$/.test(url.pathname)
+    && url.pathname !== detail && url.searchParams.get("edit") === "1");
+  copyDetail = new URL(reader.url()).pathname;
+  assert.equal(await reader.getByLabel("Title", { exact: true }).inputValue(), title);
+  assert.equal(await reader.getByLabel("Name", { exact: true }).inputValue(), ingredient);
+  assert.equal(await reader.getByLabel("Quantity (optional)").inputValue(), "400");
+  assert.equal(await reader.getByLabel("Step 1", { exact: true }).inputValue(), "Stir and serve.");
+  assert(await reader.getByRole("radio", { name: "Private", exact: true }).isChecked());
+  assert.equal(await reader.getByRole("link", { name: "View current cover" }).count(), 0);
+
+  await reader.getByLabel("Title", { exact: true }).fill(copyTitle);
+  await reader.getByLabel("Quantity (optional)").fill("200");
+  await reader.getByLabel("Step 1", { exact: true }).fill("Chill the copy.");
+  await reader.getByRole("button", { name: "Save recipe", exact: true }).click();
+  await reader.waitForURL((url) => url.pathname === copyDetail && !url.search);
+  await expectDetail(reader, true, copyDetail, copyTitle);
+  assert.equal(await reader.getByRole("link", { name: "View cover photo" }).count(), 0);
+  await expectDetail(owner, false, copyDetail, copyTitle);
+  await expectDetail(guest, false, copyDetail, copyTitle);
+  await expectDetail(owner, true);
+  await owner.getByText("400 g " + ingredient, { exact: true }).waitFor();
+  await owner.getByText("Stir and serve.", { exact: true }).waitFor();
+  passed("Reader independently edits a new private copy with its own ingredients, steps and no source photo");
+
+  await saveVisibility("Private", "Whisk the original.");
   await Promise.all([search(reader, ingredient, 0, "saved"), search(guest, title, 0), search(owner, title, 1, "mine")]);
   await search(reader, title, 0);
   await Promise.all([expectDetail(owner, true), expectDetail(reader, false), expectDetail(guest, false)]);
   await Promise.all([expectImage(ownerContext, true), expectImage(readerContext, false), expectImage(guestContext, false)]);
   passed("Unpublishing revokes discovery, saved listing, direct detail and cover; owner retains access");
 
-  await deleteFixture();
+  await owner.getByText("Whisk the original.", { exact: true }).waitFor();
+  await expectDetail(reader, true, copyDetail, copyTitle);
+  await reader.getByText("Chill the copy.", { exact: true }).waitFor();
+  await deleteFixture(owner, detail);
+  deleted = true;
   await expectDetail(owner, false);
   await search(owner, title, 0, "mine");
   passed("Owner deletes the fixture and loses access to its recipe detail");
+  await expectDetail(reader, true, copyDetail, copyTitle);
+  await reader.getByText("200 g " + ingredient, { exact: true }).waitFor();
+  await reader.getByText("Chill the copy.", { exact: true }).waitFor();
+  await deleteFixture(reader, copyDetail);
+  copyDeleted = true;
+  passed("Source edits, privacy changes and deletion preserve the independent copy");
   await Promise.all([signOut(owner), signOut(reader)]);
   passed("Both sessions are invalidated after logout");
 } catch (error) {
   reportFailure(error);
 } finally {
   try {
-    if (detail && !deleted) await deleteFixture();
+    const cleanup = [];
+    if (!deleted) cleanup.push(clearOwnedFixtures(owner));
+    if (!copyDeleted) cleanup.push(clearOwnedFixtures(reader));
+    for (const result of await Promise.allSettled(cleanup)) {
+      if (result.status === "rejected") reportFailure(result.reason);
+    }
   } catch (error) {
     reportFailure(error);
   } finally {
-    console.log("Fixture teardown", JSON.stringify({ detail, deleted, retainedCover: cover, passed: passedChecks }));
+    console.log("Fixture teardown", JSON.stringify({ detail, deleted, copyDetail, copyDeleted, retainedCover: cover, passed: passedChecks }));
     await browser.close();
   }
 }

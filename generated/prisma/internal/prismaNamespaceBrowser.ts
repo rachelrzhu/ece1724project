@@ -159,6 +159,7 @@ export const RecipeScalarFieldEnum = {
   cookMinutes: 'cookMinutes',
   difficulty: 'difficulty',
   visibility: 'visibility',
+  sourceRecipeId: 'sourceRecipeId',
   coverFileId: 'coverFileId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

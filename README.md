@@ -23,6 +23,7 @@ Next.js serves the pages and API routes from the same process.
 
 - The temporary HeroUI screens live in `app/_dummy-frontend/`. The page files for `/`, `/account`, `/recipes/new`, and `/recipes/[id]` each re-export one screen. To replace the wireframe, point those page files at the new screens, then remove `app/_dummy-frontend/`. The recipe server actions live in `app/actions.ts`.
 - The homepage lets you search public recipes. Sign in or register at `/account` to test recipe creation, editing, deletion, cover uploads, and bookmarks.
+- Open a public recipe while signed in to make an editable private copy. It includes the original quantities, units, and ordered steps. You can edit it and upload your own cover from the recipe editor.
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
 - `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.

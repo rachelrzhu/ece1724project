@@ -106,6 +106,8 @@ model Recipe {
   cookMinutes  Int                @map("cook_minutes")
   difficulty   RecipeDifficulty
   visibility   RecipeVisibility   @default(PRIVATE)
+  // Historical UUID stays on a copy after the source is deleted.
+  sourceRecipeId String?          @map("source_recipe_id") @db.Uuid
   coverFileId  String?            @unique @map("cover_file_id") @db.Uuid
   createdAt    DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
