@@ -15,7 +15,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const returnTo = safeReturnPath(params.returnTo, "/");
   return (
     <PageFrame title="Your account" back={{ href: "/", label: "Explore recipes" }} narrow>
-      {session && <ProfileForm name={session.user.name ?? ""} image={session.user.image ?? null} />}
+      {session && <ProfileForm name={session.user.name ?? ""} username={session.user.username} image={session.user.image ?? null} />}
       <div className="site-panel space-y-5">
         {params.error && (
           <p role="alert" className="text-sm text-rust">

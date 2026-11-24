@@ -1,23 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { createAuthClient } from "better-auth/client";
 import { useState, useTransition, type FormEvent } from "react";
+import { saveProfile } from "./profile-actions";
+import { avatars, usernameHint, usernamePattern } from "./profile-options";
 
-const auth = createAuthClient();
-const avatars = [
-  { label: "Toast", image: "/images/toast.jpg" },
-  { label: "Pasta", image: "/images/pasta.jpg" },
-  { label: "Pancakes", image: "/images/pancakes.jpg" },
-  { label: "Salad", image: "/images/salad.jpg" },
-];
-
-export default function ProfileForm({ name, image }: { name: string; image: string | null }) {
-  const router = useRouter();
+export default function ProfileForm({ name, username, image }: { name: string; username: string; image: string | null }) {
   const [draftName, setDraftName] = useState(name);
+  const [draftUsername, setDraftUsername] = useState(username);
   const [avatar, setAvatar] = useState(image);
-  const [message, setMessage] = useState("");
+  const [feedback, setFeedback] = useState({ message: "", error: false });
   const [pending, startTransition] = useTransition();
   const choices = [
     ...(image && !avatars.some(choice => choice.image === image) ? [{ label: "Current photo", image }] : []),
@@ -26,32 +18,40 @@ export default function ProfileForm({ name, image }: { name: string; image: stri
 
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmed = draftName.trim();
-    if (!trimmed) {
-      setMessage("Enter a display name.");
-      return;
-    }
     startTransition(async () => {
       try {
-        const result = await auth.updateUser({ name: trimmed, image: avatar });
-        if (result.error) throw new Error();
-        setDraftName(trimmed);
-        setMessage("Profile saved.");
-        router.refresh();
+        const result = await saveProfile({ name: draftName, username: draftUsername, image: avatar });
+        if ("error" in result) {
+          setFeedback({ message: result.error, error: true });
+          return;
+        }
+        setDraftName(result.name);
+        setDraftUsername(result.username);
+        setFeedback({ message: "Profile saved.", error: false });
       } catch {
-        setMessage("Couldn’t save your profile. Please try again.");
+        setFeedback({ message: "Couldn’t save your profile. Please try again.", error: true });
       }
     });
   }
 
   return (
-    <form onSubmit={save} onChange={() => setMessage("")} className="site-panel space-y-4">
+    <form onSubmit={save} onChange={() => setFeedback({ message: "", error: false })} className="site-panel space-y-4">
       <h2 className="site-heading text-xl">Profile</h2>
       <fieldset disabled={pending} className="grid gap-4">
-        <label className="grid gap-1">Display name
-          <input className="site-field" autoComplete="name" required maxLength={120}
+        <div className="grid gap-1">
+          <label htmlFor="profile-name">Display name</label>
+          <input id="profile-name" className="site-field" autoComplete="name" required maxLength={120} aria-describedby="profile-name-hint"
             value={draftName} onChange={event => setDraftName(event.target.value)} />
-        </label>
+          <p id="profile-name-hint" className="text-sm text-subtle">Shown on recipes you share.</p>
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="profile-username">Username</label>
+          <input id="profile-username" name="username" className="site-field" autoComplete="username" autoCapitalize="none"
+            spellCheck={false} required minLength={3} maxLength={32} pattern={usernamePattern}
+            aria-describedby="profile-username-hint" title={usernameHint}
+            value={draftUsername} onChange={event => setDraftUsername(event.target.value)} />
+          <p id="profile-username-hint" className="text-sm text-subtle">{usernameHint}</p>
+        </div>
         <fieldset>
           <legend className="mb-2">Avatar</legend>
           <div className="flex flex-wrap gap-3">
@@ -68,11 +68,11 @@ export default function ProfileForm({ name, image }: { name: string; image: stri
             ))}
           </div>
         </fieldset>
-        <button className="site-button justify-self-start" disabled={pending || (draftName === name && avatar === image)}>
+        <button className="site-button justify-self-start" disabled={pending || (draftName === name && draftUsername === username && avatar === image)}>
           {pending ? "Saving…" : "Save profile"}
         </button>
       </fieldset>
-      {message && <p role="status" className="text-sm">{message}</p>}
+      {feedback.message && <p role={feedback.error ? "alert" : "status"} className={feedback.error ? "text-sm text-rust" : "text-sm"}>{feedback.message}</p>}
     </form>
   );
 }

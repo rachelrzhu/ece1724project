@@ -30,6 +30,12 @@ function createAuth() {
       // Retain the session cookie namespace across display-name changes.
       cookiePrefix: "savor",
     },
+    user: {
+      additionalFields: {
+        // PostgreSQL assigns the initial username. Profile edits validate and save it.
+        username: { type: "string", input: false, unique: true },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,

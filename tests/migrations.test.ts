@@ -5,6 +5,7 @@ import { coverId, otherUserId, ownerId, recipeId } from "./fixtures";
 
 let database: PGlite;
 let originalBeforeCopies: { id: string; source_recipe_id: string | null };
+let migratedUsernames: string[];
 
 beforeAll(async () => {
   database = new PGlite();
@@ -42,6 +43,13 @@ beforeAll(async () => {
   await database.exec(
     readFileSync("prisma/migrations/20261123010000_dietary_preferences/migration.sql", "utf8"),
   );
+  await database.exec(
+    readFileSync("prisma/migrations/20261123020000_usernames/migration.sql", "utf8"),
+  );
+  const migrated = await database.query<{ username: string }>(
+    "SELECT username FROM users WHERE id IN ($1, $2)", [ownerId, otherUserId],
+  );
+  migratedUsernames = migrated.rows.map(row => row.username);
 });
 
 afterAll(async () => {
@@ -232,6 +240,40 @@ describe("additive Better Auth migration", () => {
       (await database.query("SELECT id FROM sessions WHERE user_id=$1", [id]))
         .rows,
     ).toHaveLength(0);
+  });
+});
+
+describe("editable usernames", () => {
+  it("assigns distinct usernames to existing and new profiles without requiring a name", async () => {
+    const added = await database.query<{ username: string }>(
+      "INSERT INTO users (email) VALUES ('new-cook@example.test') RETURNING username",
+    );
+    const usernames = [...migratedUsernames, added.rows[0].username];
+    expect(new Set(usernames).size).toBe(3);
+    for (const username of usernames) expect(username).toMatch(/^cook_[a-f0-9]{20}$/);
+  });
+
+  it("preserves session and recipe ownership after a rename and enforces uniqueness", async () => {
+    await database.query(
+      "INSERT INTO sessions (token, user_id, expires_at, updated_at) VALUES ('rename-session', $1, now() + interval '1 day', now())",
+      [ownerId],
+    );
+    await database.query("UPDATE users SET username = 'soup_cook' WHERE id = $1", [ownerId]);
+    const owner = await database.query(
+      `SELECT u.id, u.username, r.id AS recipe_id FROM users u
+       JOIN sessions s ON s.user_id = u.id JOIN recipes r ON r.author_id = u.id
+       WHERE s.token = 'rename-session' AND r.id = $1`, [recipeId],
+    );
+    expect(owner.rows).toEqual([{ id: ownerId, username: "soup_cook", recipe_id: recipeId }]);
+    await expect(database.query("UPDATE users SET username = 'soup_cook' WHERE id = $1", [otherUserId]))
+      .rejects.toThrow(/users_username_unique/);
+  });
+
+  it("enforces the allowed characters and length in the database", async () => {
+    for (const username of ["ab", "a".repeat(33), "Soup", "two cooks", "jalapeño", "a-b", "abc\n"]) {
+      await expect(database.query("UPDATE users SET username = $1 WHERE id = $2", [username, otherUserId]))
+        .rejects.toThrow(/users_username_format/);
+    }
   });
 });
 
