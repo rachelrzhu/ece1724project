@@ -20,7 +20,7 @@ export default function IngredientFields({
   const prefix = `ingredient-${ingredient.id}`;
 
   return (
-    <Fieldset className="min-w-0 rounded-xl border border-line bg-canvas p-3 sm:p-4">
+    <Fieldset className="min-w-0 rounded-md border border-line p-3 sm:p-4">
       <Fieldset.Legend className="px-1 font-semibold">Ingredient {number}</Fieldset.Legend>
       <div className="grid min-w-0 gap-3 sm:grid-cols-2">
         <TextField name={`${prefix}-name`} defaultValue={ingredient.name} fullWidth isRequired>

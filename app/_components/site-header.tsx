@@ -12,14 +12,14 @@ export type Collection = keyof typeof collections;
 
 export function SiteHeader({ signedIn, active }: { signedIn: boolean; active?: Collection }) {
   return (
-    <header className="site-masthead">
+    <header className={`border-b border-line bg-paper ${signedIn ? "" : "site-header-guest"}`}>
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-paper focus:p-3">Skip to content</a>
-      <div className="site-container kitchen-masthead-grid">
+      <div className="site-container site-header-grid">
         <Link href="/" className="site-wordmark masthead-brand">
-          <Icon name="brand" className="size-7 shrink-0 text-brand sm:size-8" />
+          <Icon name="brand" className="size-5 shrink-0 text-brand" />
           {appName}
         </Link>
-        <nav aria-label="Recipe navigation" className="masthead-nav flex flex-wrap items-center gap-x-0.5 md:gap-x-4">
+        <nav aria-label="Recipe navigation" className="masthead-nav flex flex-wrap items-center gap-0.5 md:ms-4 md:gap-1">
           {(Object.keys(collections) as Collection[]).filter((key) => signedIn || key === "explore").map((key) => (
             <Link key={key} href={collections[key].href} className="site-nav-link"
               aria-current={active === key ? "page" : undefined}>

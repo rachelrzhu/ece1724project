@@ -1,18 +1,6 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import { appName } from "@/lib/brand";
 import "./globals.css";
-
-const newsreader = localFont({
-  src: [
-    { path: "./_fonts/newsreader-latin-standard-normal.woff2", weight: "200 800", style: "normal" },
-    { path: "./_fonts/newsreader-latin-standard-italic.woff2", weight: "200 800", style: "italic" },
-  ],
-  variable: "--font-newsreader",
-  display: "swap",
-  preload: false,
-  fallback: ["Georgia"],
-});
 
 export const metadata: Metadata = {
   applicationName: appName,
@@ -22,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={newsreader.variable}>
+    <html lang="en">
       <body>{children}</body>
     </html>
   );

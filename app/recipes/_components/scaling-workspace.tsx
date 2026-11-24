@@ -35,7 +35,7 @@ function ScalingControls() {
   }
 
   return (
-    <div className="kitchen-paper grid gap-4 border border-line py-4 pe-3 ps-6 sm:pe-4 sm:ps-7">
+    <div className="grid gap-4 rounded-md border border-line bg-canvas p-3 sm:p-4">
       <div role="group" aria-label="Scale by" className="flex flex-wrap gap-2">
         <Button type="button" className={settings.mode === "servings" ? "site-button" : "site-button-outline"}
           aria-pressed={settings.mode === "servings"} onPress={() => dispatch(scalingActions.changeMode("servings"))}>
@@ -109,7 +109,7 @@ function IngredientPreview() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-2 border-y border-line bg-tint px-3 py-2 text-sm text-brand" role="status">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-y border-line bg-canvas px-3 py-2 text-sm text-ink" role="status">
         <p className="font-semibold wrap-anywhere">Serves {servings}</p>
         {preview.ok && preview.factor !== 1 && <p className="wrap-anywhere">×{formatScaledQuantity(preview.factor)} batch</p>}
       </div>
@@ -139,9 +139,9 @@ export default function ScalingWorkspace({ recipe }: { recipe: ScalingRecipe }) 
   const [store] = useState(() => makeScalingStore(recipe));
   return (
     <Provider store={store}>
-      <section aria-labelledby="ingredients-title" className="min-w-0 space-y-4 border-t-2 border-brand pt-4">
+      <section aria-labelledby="ingredients-title" className="min-w-0 space-y-4 border-t border-line pt-4">
         <div className="space-y-1">
-          <h2 id="ingredients-title" className="site-heading text-4xl">Ingredients</h2>
+          <h2 id="ingredients-title" className="site-heading text-2xl">Ingredients</h2>
           <p className="text-sm text-subtle">Adjust quantities for your serving count or an ingredient you have on hand.</p>
         </div>
         <ScalingControls />

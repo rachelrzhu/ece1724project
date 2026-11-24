@@ -74,7 +74,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
           <p className="text-subtle wrap-anywhere">Signed in as <strong className="text-ink">{signedInEmail}</strong></p>
         ) : (
           <>
-            <h2 className="site-heading text-2xl">{registering ? "Create your account" : "Sign in to your account"}</h2>
+            <h2 className="site-heading text-xl">{registering ? "Create your account" : "Sign in to your account"}</h2>
             {registering && (
               <TextField name="name" autoComplete="name" fullWidth isRequired>
                 <Label>Name</Label>
