@@ -34,7 +34,7 @@ function createAuth() {
       maxPasswordLength: 128,
     },
     socialProviders: { google: getGoogleProviderOptions() },
-    onAPIError: { errorURL: "/" },
+    onAPIError: { errorURL: "/account" },
     session: { expiresIn: 60 * 60 * 24 * 7, cookieCache: { enabled: false } },
     rateLimit: {
       enabled: true,

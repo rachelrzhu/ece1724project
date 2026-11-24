@@ -43,7 +43,7 @@ async function beginSignIn() {
       body: JSON.stringify({
         provider: "google",
         callbackURL: "/",
-        errorCallbackURL: "/",
+        errorCallbackURL: "/account",
       }),
     }),
   );
@@ -65,7 +65,7 @@ it("returns a user who cancels Google sign-in to the app without a session", asy
   const response = await GET(new Request(callback, { headers }));
   expect(response.status).toBe(302);
   expect(new URL(response.headers.get("Location")!, origin).href).toBe(
-    origin + "/?error=access_denied",
+    origin + "/account?error=access_denied",
   );
   expect(cookies(response)).not.toContain("savor.session_token");
 });
