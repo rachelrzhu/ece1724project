@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { coverId, otherUserId, ownerId, recipeId } from "./fixtures";
 
 let database: PGlite;
+let originalBeforeCopies: { id: string; source_recipe_id: string | null };
 
 beforeAll(async () => {
   database = new PGlite();
@@ -30,6 +31,14 @@ beforeAll(async () => {
       "utf8",
     ),
   );
+  await database.query(createRecipeSql, [recipeId, ownerId, 4]);
+  await database.exec(
+    readFileSync("prisma/migrations/20261123000000_recipe_copy_source/migration.sql", "utf8"),
+  );
+  const { rows } = await database.query<typeof originalBeforeCopies>(
+    "SELECT id, source_recipe_id FROM recipes WHERE id = $1", [recipeId],
+  );
+  [originalBeforeCopies] = rows;
 });
 
 afterAll(async () => {
@@ -57,6 +66,16 @@ describe("PostgreSQL migrations", () => {
     await expect(
       database.query("UPDATE files SET size = 0 WHERE id = $1", [coverId]),
     ).rejects.toThrow(/files_size_positive/);
+  });
+
+  it("migrates existing recipes and keeps historical provenance after the source is deleted", async () => {
+    expect(originalBeforeCopies).toEqual({ id: recipeId, source_recipe_id: null });
+    const copyId = "00000000-0000-4000-8000-000000000006";
+    await database.query(createRecipeSql, [copyId, otherUserId, 4]);
+    await database.query("UPDATE recipes SET source_recipe_id = $1 WHERE id = $2", [recipeId, copyId]);
+    await database.query("DELETE FROM recipes WHERE id = $1", [recipeId]);
+    const { rows } = await database.query("SELECT id, source_recipe_id FROM recipes WHERE id = $1", [copyId]);
+    expect(rows).toEqual([{ id: copyId, source_recipe_id: recipeId }]);
   });
 
   it("rejects zero servings and defaults recipes to private", async () => {

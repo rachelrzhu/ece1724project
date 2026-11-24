@@ -2,15 +2,15 @@
 
 Recipe Sharing and Adaptive Ingredient Scaling · Design recorded November 8, 2026
 
-This document describes the backend after the `database`, `auth`, `recipes`, and `tests` changes are combined. The scaling section describes the planned frontend integration.
+The product screens use server-side recipe queries, authenticated Server Actions, and a recipe-scoped Redux store for ingredient scaling.
 
 ## 1. Purpose and scope
 
-The recipe backend supports public and private recipes, title and ingredient search, and bookmarks. The planned scaling controls adjust ingredient quantities for a different serving count or an ingredient the cook has on hand. Editable copies, dietary filters, and step photos come later. [Requirements and priorities](requirements.md)
+The recipe backend supports public and private recipes, title and ingredient search, bookmarks, and editable private copies of public recipes. The scaling controls adjust ingredient quantities for a different serving count or an ingredient the cook has on hand. Dietary filters and step photos are planned extensions. [Requirements and priorities](requirements.md)
 
 ## 2. Architecture overview
 
-Next.js serves the pages, Server Actions, and HTTP routes from one TypeScript project. The diagram includes the planned scaling workspace.
+Next.js serves the pages, Server Actions, and HTTP routes from one TypeScript project.
 
 ```mermaid
 flowchart TD
@@ -52,7 +52,7 @@ Server Components can call recipe queries directly. Server Actions handle edits,
 | Database transport | `@prisma/adapter-pg` and `pg` | PostgreSQL connections with interactive transaction support. Runtime pools have bounded size and connection timeouts. |
 | Authentication | Better Auth | Email/password accounts and database-backed sessions. Google sign-in requires OAuth credentials and a verified callback. |
 | Input validation | Zod | Shared input contracts with explicit size and numeric limits. |
-| Scaling state | Redux Toolkit | Planned recipe-scoped state for controls, derived quantities, warnings, undo, and reset. |
+| Scaling state | Redux Toolkit | Recipe-scoped state for controls, derived quantities, warnings, undo, and reset. |
 | Photograph storage | Private Vercel Blob | Store image bytes separately from relational metadata. |
 | Image validation | Sharp | Decode actual JPEG, PNG, and WebP content with byte, pixel, and processing limits. |
 | Hosting | Vercel | Deploy the Next.js application as one unit. |
@@ -69,7 +69,9 @@ app/
   api/images/[id]/          Access checks and image downloads
   api/health/route.ts       Application health check
   layout.tsx               Shared document and styles
-  page.tsx                 Application entry page
+  page.tsx                 Explore, owned recipes, and saved recipes
+  account/                 Account forms and sign-in
+  recipes/                 Recipe detail, editor, and scaling controls
 lib/
   auth/server.ts           Better Auth setup and session lookup
   config/env.ts            Validated server configuration
@@ -77,6 +79,8 @@ lib/
   product/queries.ts       Search, collections, and recipe detail
   product/storage.ts       Selects local files or private Blob storage
   recipes/
+    scaling.ts             Pure scaling engine and unit conversions
+    scaling-workspace.ts   Redux store, undo history, and selectors
     schemas.ts             Bounded recipe input contracts
     access.ts              Visibility query predicates
     service.ts             Session-aware CRUD and transactional recipe writes
@@ -115,7 +119,9 @@ Recipe deletion cascades to ingredient, step, and bookmark records. It retains t
 
 The baseline describes the original `users` and `files` tables, whose column types and constraints were checked during the initial database review. The recipe migration adds recipes, ingredients, steps, and bookmarks. The authentication migration adds account, session, and verification tables and extends the existing user profile.
 
-For an empty development database, apply all three migrations. An existing database with matching tables needs its baseline recorded first. The build generates the client. Migration tests run SQL against an in-memory database, and local setup for the integration tests migrates its own PostgreSQL cluster. [Database setup and baselining](../prisma/README.md)
+The copy migration adds a nullable `source_recipe_id` to recipes. Existing recipes keep a null value. The source UUID records which recipe was copied and remains available after the source is deleted. The public detail response omits this internal field.
+
+For an empty development database, apply the committed migrations. An existing database with matching tables needs its baseline recorded first. The build generates the client. Migration tests run SQL against an in-memory database, and local setup for the integration tests migrates its own PostgreSQL cluster. [Database setup and baselining](../prisma/README.md)
 
 ## 6. Application flows
 
@@ -145,15 +151,17 @@ Blob writes happen outside the SQL transaction. If saving metadata fails after a
 
 ## 7. Scaling and workspace state
 
-The shared TypeScript engine accepts the original recipe detail and a scaling request. The serving control divides the target servings by the original servings. The available-ingredient control converts the original required quantity to the cook’s chosen unit, then divides the available quantity by that requirement. Both modes multiply every measured row by that factor and return the resulting servings, adjusted quantities, and warnings. [Frontend integration guide](recipe-scaling.md)
+The shared TypeScript engine accepts the original recipe detail and a scaling request. The serving control divides the target servings by the original servings. The available-ingredient control expresses the available and required quantities in compatible units, then divides the available quantity by the requirement. Both modes multiply every measured row by that factor and return the resulting servings, adjusted quantities, and warnings. [Frontend integration guide](recipe-scaling.md)
 
 The engine supports mass, volume, and count units. It reports incompatible units and invalid inputs, preserves unmeasured ingredients, and warns about fractional counts. Cooking steps, times, and temperatures retain their original values.
 
-A Redux store will be created per recipe workspace. State includes mode, target servings, selected ingredient, available quantity/unit, and bounded undo history. Selectors derive quantities and warnings from the same configuration. Switching modes preserves the active factor; undo restores a coherent prior configuration; reset returns to base quantities. A recipe change creates a new workspace and clears stale history. No server-global Redux store is used.
+Each recipe workspace creates its own Redux store. State includes mode, target servings, selected ingredient, available quantity/unit, and bounded undo history. Selectors derive quantities and warnings from the same configuration. Switching modes preserves the active factor. Undo restores the previous settings, and reset returns to base quantities. A recipe change creates a new workspace and clears stale history. No server-global Redux store is used.
 
-### Planned extensions
+### Editable copies
 
-A recipe copy will create independent private recipe, ingredient, and step records in one transaction, with source provenance. Source edits will not alter the copy. Photograph copying requires a separate storage and ownership policy before implementation; bookmarks remain references to the original recipe.
+A signed-in cook can copy a public recipe into their own collection. One transaction reads the source and creates a private recipe with new ingredient and step rows. Later edits and deletion of either recipe leave the other intact. The copy starts without a cover, and its owner can upload their own photo in the editor.
+
+### Planned dietary discovery
 
 Dietary discovery will use structured ingredient-to-allergen relationships and separate user dietary preferences from declared allergies. Missing mappings remain unknown rather than evidence of suitability. These extensions do not change the core scaling calculation.
 
@@ -167,7 +175,7 @@ Development, preview, and production must use deliberately selected resources be
 
 ### Local backend integration page
 
-`/backend-test` lets a developer edit ingredient rows and one cooking step, upload a cover, and inspect the API response. Loading and saving preserves the ingredient order and any additional stored steps. Its routes accept loopback requests in development and require a matching origin for writes. `npm run backend-test:setup` creates the tester’s schema. Production requests return 404. [Run the tester](../README.md)
+`/backend-test` lets a developer edit ingredient rows and one cooking step, upload a cover, and inspect the API response. Loading and saving preserves the ingredient order and any additional stored steps. Its routes accept loopback requests in development and require a matching origin for writes. `npm run backend-test:setup` creates the tester’s schema. Production requests return 404. [Run the tester](../README.md#simple-local-backend-tester)
 
 ## 9. Integration and test coverage
 
@@ -175,7 +183,7 @@ On November 8, the team tested recipe edits and image upload, preview, and remov
 
 The combined backend has a separate local check for email/password sessions, private and public recipe access, cover images, and bookmarks. It uses a local PostgreSQL cluster and local media files. Unit tests cover validation and service behavior, and PGlite tests apply the migration SQL.
 
-The product screens call the recipe actions and queries. The Playwright check signs in two users and follows a cover and recipe through creation, publication, bookmarking, and revocation. It checks the same detail and media URLs before and after a visibility change. Google consent and the return to a signed-in session require a live browser check on the registered deployment origin. [Run the browser check](../README.md#everyday-use)
+Local UI checks covered recipe editing, scaling controls, warnings, undo and reset, and responsive layouts down to 350 px. Unit tests exercise the scaling engine and Redux transitions. The Playwright check signs in two users and follows a cover and recipe through creation, publication, bookmarking, and revocation. It checks the same detail and media URLs before and after a visibility change. The remaining preprod checks cover Google consent and session restoration on the registered origin, and the integrated private Blob upload and visibility flow. [Run the browser check](../README.md#everyday-use)
 
 ## 10. Design references
 

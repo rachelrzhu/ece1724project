@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { appName } from "@/lib/brand";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Recipe Sharing | ECE1724",
-  description: "Browse, create, and test shared recipes.",
+  applicationName: appName,
+  title: { default: `${appName} | Recipe sharing`, template: `%s | ${appName}` },
+  description: "Share recipes from your kitchen and adjust them for the people at your table.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
