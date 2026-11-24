@@ -32,7 +32,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
         };
         const name = String(fields.get("name") ?? "").trim();
         if (registering && !name) {
-          setError("Enter your name.");
+          setError("Enter a display name.");
           return;
         }
         const result = signedInEmail ? await auth.signOut()
@@ -78,7 +78,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
             <h2 className="site-heading text-xl">{registering ? "Create an account" : "Sign in with email"}</h2>
             {registering && (
               <TextField name="name" autoComplete="name" fullWidth isRequired>
-                <Label>Name</Label>
+                <Label>Display name</Label>
                 <Input className="site-field" maxLength={120} />
               </TextField>
             )}

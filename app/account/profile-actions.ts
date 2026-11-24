@@ -5,12 +5,11 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { readSession } from "@/lib/auth/server";
 import { getDatabase } from "@/lib/db/client";
-import { avatars, usernameHint, usernamePattern } from "./profile-options";
+import { activeUsernameCooldown, usernameHint, usernamePattern } from "./profile-options";
 
 const profileInput = z.strictObject({
   name: z.string().trim().min(1, "Enter a display name.").max(120, "Use up to 120 characters for your display name."),
-  username: z.string().trim().regex(new RegExp(`^${usernamePattern}$`), usernameHint).toLowerCase(),
-  image: z.string().nullable(),
+  username: z.string().trim().regex(new RegExp(`^${usernamePattern}$`), usernameHint).toLowerCase().optional(),
 });
 
 export async function saveProfile(input: unknown): Promise<{ name: string; username: string } | { error: string }> {
@@ -21,21 +20,27 @@ export async function saveProfile(input: unknown): Promise<{ name: string; usern
     const issue = parsed.error.issues[0];
     return { error: issue.code === "unrecognized_keys" ? "Submit only the profile fields shown." : issue.message };
   }
-  const { name, username, image } = parsed.data;
-  if (image !== null && image !== session.user.image && !avatars.some((choice) => choice.image === image))
-    return { error: "Choose one of the available avatars." };
+  const { name, username } = parsed.data;
+  const user = session.user;
+  const rename = username !== undefined && username !== user.username;
+  if (rename && activeUsernameCooldown(user.usernameChangeAvailableAt))
+    return { error: "You can change your username once a month." };
+  if (!rename && name === user.name) return { name, username: user.username };
 
   try {
-    await getDatabase().user.update({
-      where: { id: session.user.id },
-      data: { name, username, image },
-      select: { id: true },
+    const saved = await getDatabase().user.update({
+      // If two renames race, only the request seeing the original handle can succeed.
+      where: { id: user.id, ...(rename && { username: user.username }) },
+      data: { name, ...(rename && { username }) },
+      select: { username: true },
     });
+    refresh();
+    return { name, username: saved.username };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
       return { error: "That username is taken. Choose another." };
+    if (rename && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
+      return { error: "Your username changed in another request. Reload your profile to see it." };
     return { error: "Couldn’t save your profile. Please try again." };
   }
-  refresh();
-  return { name, username };
 }

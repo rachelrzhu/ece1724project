@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { readFile, unlink, writeFile } from "node:fs/promises";
+import { readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import nextEnvironment from "@next/env";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { list } from "@vercel/blob";
@@ -39,7 +39,8 @@ try {
       await administrator.query("BEGIN");
       try {
         await administrator.query(`SET LOCAL search_path TO "${config.schema}"`);
-        for (const migration of ["0_baseline", "20261108000000_recipe_domain", "20261108120000_authentication", "20261123000000_recipe_copy_source", "20261123010000_dietary_preferences", "20261123020000_usernames"]) {
+        const entries = await readdir(new URL("../prisma/migrations/", import.meta.url), { withFileTypes: true });
+        for (const migration of entries.filter(entry => entry.isDirectory()).map(entry => entry.name).sort()) {
           const sql = (await readFile(new URL(`../prisma/migrations/${migration}/migration.sql`, import.meta.url), "utf8")).replace('CREATE SCHEMA IF NOT EXISTS "public";', "");
           if (sql.includes('"public"')) throw new Error("Test migrations must not address public tables.");
           await administrator.query(sql);

@@ -84,6 +84,20 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     assert.equal(await guest.getByRole("heading", { name: "Your dietary flags", exact: true }).count(), 0);
     await guest.goto(filtered);
     await guest.getByRole("link", { name: title, exact: true }).waitFor();
+    await guest.getByText("Filter by allergen", { exact: true }).click();
+    await guest.getByRole("checkbox", { name: "Milk", exact: true }).check();
+    await guest.getByRole("checkbox", { name: "Peanuts", exact: true }).check();
+    await guest.getByRole("button", { name: "Apply allergen filter" }).click();
+    await guest.getByText(`No recipes match “${title}”.`, { exact: true }).waitFor();
+    assert.deepEqual(new URL(guest.url()).searchParams.getAll("allergen"), ["MILK", "PEANUT"]);
+    await guest.reload();
+    await guest.getByRole("link", { name: "Clear allergen filter" }).click();
+    await guest.getByRole("link", { name: title, exact: true }).waitFor();
+    await guest.getByText("Filter by allergen", { exact: true }).click();
+    await guest.getByLabel("Ingredient name to exclude").fill("CHOCOLATE");
+    await guest.getByRole("button", { name: "Apply allergen filter" }).click();
+    await guest.getByText(`No recipes match “${title}”.`, { exact: true }).waitFor();
+    passed("A guest can exclude multiple allergens, refresh the results, and clear the filter while keeping their search");
 
     // Each restriction must exclude the same known ingredient independently.
     for (const profile of [

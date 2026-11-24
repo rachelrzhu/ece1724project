@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Allergen } from "@/generated/prisma/enums";
 import {
-  allergenChoices, buildDietaryContext, defaultPreferences, dietChoices, dietaryInputSchema,
+  allergenChoices, buildDietaryContext, defaultPreferences, dietChoices, dietaryInputSchema, parseAllergenFilter,
 } from "@/lib/dietary/policy";
 
 const profiles = [
@@ -20,6 +20,14 @@ const ingredients = [
 ];
 
 describe("dietary preferences", () => {
+  it("accepts single and repeated Explore filter parameters and ignores unsupported values", () => {
+    expect(parseAllergenFilter(undefined, undefined)).toEqual({ allergens: [], ingredient: "" });
+    expect(parseAllergenFilter("EGG", ["one", "two"])).toEqual({ allergens: ["EGG"], ingredient: "" });
+    expect(parseAllergenFilter(["EGG", "UNSUPPORTED", "MILK", "EGG"], " 花椒 ")).toEqual({
+      allergens: ["MILK", "EGG"], ingredient: "花椒",
+    });
+  });
+
   it("accepts any supported combination and preserves an empty profile", () => {
     expect(dietaryInputSchema.parse(defaultPreferences)).toEqual({ diet: "NONE", allergens: [] });
     expect(dietChoices.map((choice) => choice.value)).toEqual(["NONE", "VEGETARIAN", "VEGAN"]);

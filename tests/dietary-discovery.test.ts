@@ -4,14 +4,16 @@ import { ownerId, otherUserId } from "./fixtures";
 
 const mocks = vi.hoisted(() => ({
   context: vi.fn(), findMany: vi.fn(), count: vi.fn(), findUser: vi.fn(),
+  session: vi.fn(), allergenMatches: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/auth/server", () => ({ readSession: async () => ({ user: { id: otherUserId } }) }));
+vi.mock("@/lib/auth/server", () => ({ readSession: mocks.session }));
 vi.mock("@/lib/dietary/server", () => ({ readDietaryContext: mocks.context }));
 vi.mock("@/lib/db/client", () => ({
   getDatabase: () => ({
     recipe: { findMany: mocks.findMany, count: mocks.count },
     user: { findUnique: mocks.findUser },
+    ingredientAllergen: { findMany: mocks.allergenMatches },
   }),
 }));
 
@@ -19,6 +21,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.findMany.mockResolvedValue([]);
   mocks.count.mockResolvedValue(1);
+  mocks.session.mockResolvedValue({ user: { id: otherUserId } });
   mocks.context.mockResolvedValue({ conflictNames: ["milk"], summarize: vi.fn() });
 });
 
@@ -48,17 +51,48 @@ it("can reach the last page of a large public collection with a bounded database
 
 it("keeps recipes visible when the cook has not opted into filtering", async () => {
   await listRecipes({});
+  expect(mocks.allergenMatches).not.toHaveBeenCalled();
   expect(mocks.count.mock.calls[0][0].where.AND).not.toContainEqual(
     expect.objectContaining({ ingredients: expect.anything() }),
   );
 });
 
-it.each([ownerId, otherUserId])("limits profile result counts and pages to public recipes by %s, even for the cook viewing their own page", async (authorId) => {
+it.each([false, true])("combines Explore allergens with search and optional saved conflicts (signed in: %s)", async (signedIn) => {
+  if (!signedIn) {
+    mocks.session.mockResolvedValue(null);
+    mocks.context.mockResolvedValue(null);
+  }
+  mocks.allergenMatches.mockResolvedValue([
+    { canonicalName: "soy sauce" }, { canonicalName: "peanuts" },
+    { canonicalName: "mixed sauce" }, { canonicalName: "mixed sauce" },
+  ]);
+  mocks.count.mockResolvedValue(recipePageSize + 1);
+  await listRecipes({
+    query: "rice", allergenFilter: { allergens: ["SOY", "PEANUT"], ingredient: "100% 花椒" },
+    hideDietaryConflicts: signedIn, page: 2,
+  });
+  expect(mocks.allergenMatches).toHaveBeenCalledWith({
+    where: { allergen: { in: ["SOY", "PEANUT"] } }, select: { canonicalName: true },
+  });
+  const { where } = mocks.count.mock.calls[0][0];
+  const names = ["soy sauce", "peanuts", "mixed sauce", ...(signedIn ? ["milk"] : [])];
+  expect(where.AND).toEqual(expect.arrayContaining([
+    { visibility: "PUBLIC" }, { ingredients: { none: { canonicalName: { in: names } } } },
+    { ingredients: { none: { canonicalName: { contains: "100\\% 花椒", mode: "insensitive" } } } },
+    expect.objectContaining({ OR: expect.any(Array) }),
+  ]));
+  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: recipePageSize }));
+});
+
+it.each([
+  [ownerId, { authorId: ownerId, visibility: "PUBLIC" }],
+  [otherUserId, { authorId: otherUserId }],
+] as const)("scopes profile counts and pages to the author's recipes visible to the viewer (%s)", async (authorId, scope) => {
   mocks.count.mockResolvedValue(recipePageSize + 1);
   const page = await listRecipes({ authorId, query: "flour", page: 2 });
   expect(page.page).toBe(2);
   const { where } = mocks.count.mock.calls[0][0];
-  expect(where.AND).toContainEqual({ authorId, visibility: "PUBLIC" });
+  expect(where.AND).toContainEqual(scope);
   expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
     where, skip: recipePageSize, take: recipePageSize, orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   }));
@@ -71,6 +105,6 @@ it("loads only public profile fields and rejects malformed IDs before querying",
   expect(await getPublicCook(ownerId)).toBeNull();
   expect(mocks.findUser).toHaveBeenCalledWith({
     where: { id: ownerId },
-    select: { id: true, name: true, username: true },
+    select: { id: true, name: true, username: true, image: true },
   });
 });

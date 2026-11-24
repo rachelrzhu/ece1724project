@@ -12,7 +12,7 @@ const blob = { pathname, uploadedAt: old, etag: "version1" };
 const unknown = `recipe-images/${otherUserId}/${coverId}.png`;
 
 beforeAll(async () => {
-  for (const migration of ["0_baseline", "20261108000000_recipe_domain"]) {
+  for (const migration of ["0_baseline", "20261108000000_recipe_domain", "20261108120000_authentication"]) {
     await db.exec(readFileSync(`prisma/migrations/${migration}/migration.sql`, "utf8"));
   }
   await db.query("INSERT INTO users (id, email) VALUES ($1, 'cook@example.test')", [ownerId]);
@@ -64,6 +64,22 @@ it("rechecks an attachment committed between the candidate scan and deletion", a
   await reconcileCovers(db, store, { apply: true }, vi.fn(), now);
   expect(await remaining()).toBe(1);
   expect(store.remove).not.toHaveBeenCalled();
+});
+
+it("retains a current avatar and reclaims it after the cook replaces it", async () => {
+  await createFile();
+  const store = storage();
+  store.inspect.mockImplementationOnce(async () => {
+    await db.query("UPDATE users SET image = $1 WHERE id = $2", [`/api/images/${coverId}`, ownerId]);
+    return blob;
+  });
+  await reconcileCovers(db, store, { apply: true }, vi.fn(), now);
+  await reconcileCovers(db, store, { apply: true, path: pathname }, vi.fn(), now);
+  expect(await remaining()).toBe(1);
+  expect(store.remove).not.toHaveBeenCalled();
+  await db.query("UPDATE users SET image = NULL WHERE id = $1", [ownerId]);
+  await reconcileCovers(db, store, { apply: true }, vi.fn(), now);
+  expect(await remaining()).toBe(0);
 });
 
 it("preserves fresh objects and metadata, and skips pre-existing non-upload paths", async () => {

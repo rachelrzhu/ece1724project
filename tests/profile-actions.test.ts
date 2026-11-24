@@ -9,22 +9,41 @@ vi.mock("@/lib/auth/server", () => ({ readSession: session }));
 vi.mock("@/lib/db/client", () => ({ getDatabase: () => ({ user: { update } }) }));
 vi.mock("next/cache", () => ({ refresh: vi.fn() }));
 
-const googlePhoto = "https://lh3.googleusercontent.com/profile-photo";
-const profile = { name: " Home Cook ", username: "New_Cook", image: googlePhoto };
+const user = { id: ownerId, name: "Previous Name", username: "starter", usernameChangeAvailableAt: null };
+const profile = { name: " Home Cook ", username: "New_Cook" };
 
 beforeEach(() => {
   vi.resetAllMocks();
-  session.mockResolvedValue({ user: { id: ownerId, image: googlePhoto } });
+  session.mockResolvedValue({ user });
+  update.mockResolvedValue({ username: "new_cook" });
 });
 
-it("saves a normalized username with the name and existing Google photo for the signed-in user", async () => {
+it("saves a normalized username and display name for the signed-in user", async () => {
   expect(await saveProfile(profile)).toEqual({ name: "Home Cook", username: "new_cook" });
   expect(update).toHaveBeenCalledExactlyOnceWith({
-    where: { id: ownerId },
-    data: { name: "Home Cook", username: "new_cook", image: googlePhoto },
-    select: { id: true },
+    where: { id: ownerId, username: "starter" },
+    data: { name: "Home Cook", username: "new_cook" },
+    select: { username: true },
   });
   expect(refresh).toHaveBeenCalledOnce();
+});
+
+it("rejects an early rename without writing and lets the cook change their display name", async () => {
+  session.mockResolvedValue({ user: { ...user, usernameChangeAvailableAt: new Date("2100-01-01") } });
+  expect(await saveProfile(profile)).toEqual({ error: "You can change your username once a month." });
+  expect(update).not.toHaveBeenCalled();
+  update.mockResolvedValueOnce({ username: "starter" });
+  const name = "糖醋 Chef 🍲";
+  expect(await saveProfile({ name })).toEqual({ name, username: "starter" });
+  expect(update).toHaveBeenCalledExactlyOnceWith({
+    where: { id: ownerId }, data: { name }, select: { username: true },
+  });
+});
+
+it("skips an unchanged submission including a differently cased handle", async () => {
+  expect(await saveProfile({ name: user.name, username: user.username.toUpperCase() }))
+    .toEqual({ name: user.name, username: user.username });
+  expect(update).not.toHaveBeenCalled();
 });
 
 it("requires a session and rejects a submitted account ID", async () => {

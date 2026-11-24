@@ -286,15 +286,18 @@ try {
 
   await saveVisibility("Private", "Whisk the original.");
   await owner.goto("/account");
-  await owner.getByRole("link", { name: "View my public recipes", exact: true }).click();
+  await owner.getByRole("link", { name: "View my recipe page", exact: true }).click();
   await owner.waitForURL((url) => url.pathname === cookPath);
   const scopedSearch = cookPath + "?" + new URLSearchParams({ q: title, collection: "mine" });
-  await Promise.all([owner, guest].map(async (page) => {
+  await owner.goto(scopedSearch);
+  await owner.getByRole("link", { name: title, exact: true }).waitFor();
+  await owner.getByText("private", { exact: true }).waitFor();
+  await Promise.all([reader, guest].map(async (page) => {
     await page.goto(scopedSearch);
     await page.getByText(`No recipes match “${title}”.`, { exact: true }).waitFor();
     assert.equal(await page.getByRole("link", { name: title, exact: true }).count(), 0);
   }));
-  passed("Owner and guest see the same public recipe boundary on the cook’s page after unpublishing");
+  passed("Only the owner can see an unpublished recipe on their recipe page");
   await Promise.all([search(reader, ingredient, 0, "saved"), search(guest, title, 0), search(owner, title, 1, "mine")]);
   await search(reader, title, 0);
   await Promise.all([expectDetail(owner, true), expectDetail(reader, false), expectDetail(guest, false)]);

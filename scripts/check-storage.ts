@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import nextEnvironment from "@next/env";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { head, list } from "@vercel/blob";
@@ -81,7 +81,8 @@ async function main() {
       await administrator!.query("BEGIN");
       try {
         await administrator!.query(`SET LOCAL search_path TO "${schemaName}"`);
-        for (const migration of ["0_baseline", "20261108000000_recipe_domain", "20261108120000_authentication", "20261123000000_recipe_copy_source", "20261123010000_dietary_preferences", "20261123020000_usernames"]) {
+        const entries = readdirSync(new URL("../prisma/migrations/", import.meta.url), { withFileTypes: true });
+        for (const migration of entries.filter(entry => entry.isDirectory()).map(entry => entry.name).sort()) {
           const sql = readFileSync(new URL(`../prisma/migrations/${migration}/migration.sql`, import.meta.url), "utf8")
             .replace('CREATE SCHEMA IF NOT EXISTS "public";', "");
           assert.ok(!sql.includes('"public"'), "Test migrations must not address the public schema.");
