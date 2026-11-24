@@ -52,6 +52,9 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  DietarySettings: 'DietarySettings',
+  IngredientProfile: 'IngredientProfile',
+  IngredientAllergen: 'IngredientAllergen',
   Session: 'Session',
   Account: 'Account',
   Verification: 'Verification',
@@ -89,6 +92,31 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const DietarySettingsScalarFieldEnum = {
+  userId: 'userId',
+  diet: 'diet',
+  allergens: 'allergens'
+} as const
+
+export type DietarySettingsScalarFieldEnum = (typeof DietarySettingsScalarFieldEnum)[keyof typeof DietarySettingsScalarFieldEnum]
+
+
+export const IngredientProfileScalarFieldEnum = {
+  canonicalName: 'canonicalName',
+  classification: 'classification'
+} as const
+
+export type IngredientProfileScalarFieldEnum = (typeof IngredientProfileScalarFieldEnum)[keyof typeof IngredientProfileScalarFieldEnum]
+
+
+export const IngredientAllergenScalarFieldEnum = {
+  canonicalName: 'canonicalName',
+  allergen: 'allergen'
+} as const
+
+export type IngredientAllergenScalarFieldEnum = (typeof IngredientAllergenScalarFieldEnum)[keyof typeof IngredientAllergenScalarFieldEnum]
 
 
 export const SessionScalarFieldEnum = {
@@ -159,6 +187,7 @@ export const RecipeScalarFieldEnum = {
   cookMinutes: 'cookMinutes',
   difficulty: 'difficulty',
   visibility: 'visibility',
+  sourceRecipeId: 'sourceRecipeId',
   coverFileId: 'coverFileId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
