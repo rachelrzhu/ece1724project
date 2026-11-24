@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { appName } from "@/lib/brand";
 import { Icon } from "./icons";
 
 export const collections = {
@@ -11,16 +12,14 @@ export type Collection = keyof typeof collections;
 
 export function SiteHeader({ signedIn, active }: { signedIn: boolean; active?: Collection }) {
   return (
-    <header className="border-b border-line bg-paper">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-paper focus:p-3">Skip to content</a>
-      <div className="site-container flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3 sm:min-h-18 sm:flex-nowrap sm:py-0">
-        <Link href="/" className="inline-flex items-center gap-2.5 rounded-lg text-2xl font-serif font-bold tracking-tight">
-          <span className="grid size-9 place-items-center rounded-[0.7rem] bg-brand text-white">
-            <Icon name="brand" className="size-6" />
-          </span>
-          Savor
+    <header className="site-masthead">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-paper focus:p-3">Skip to content</a>
+      <div className="site-container kitchen-masthead-grid">
+        <Link href="/" className="site-wordmark masthead-brand">
+          <Icon name="brand" className="size-7 shrink-0 text-brand sm:size-8" />
+          {appName}
         </Link>
-        <nav aria-label="Recipe navigation" className="order-3 flex w-full flex-wrap items-center gap-1 sm:order-none sm:w-auto sm:gap-2">
+        <nav aria-label="Recipe navigation" className="masthead-nav flex flex-wrap items-center gap-x-0.5 md:gap-x-4">
           {(Object.keys(collections) as Collection[]).filter((key) => signedIn || key === "explore").map((key) => (
             <Link key={key} href={collections[key].href} className="site-nav-link"
               aria-current={active === key ? "page" : undefined}>
@@ -28,17 +27,17 @@ export function SiteHeader({ signedIn, active }: { signedIn: boolean; active?: C
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link href="/account" className="site-nav-link">
-            <Icon name="account" className="size-4" />
-            {signedIn ? "Account" : "Sign in"}
+        <Link href="/account" className="site-nav-link masthead-account">
+          <Icon name="account" className="size-4" />
+          {signedIn ? "Account" : "Sign in"}
+        </Link>
+        {signedIn && (
+          <Link href="/recipes/new" aria-label="New recipe" className="site-button masthead-create">
+            <Icon name="plus" className="size-4" />
+            <span className="sm:hidden">New</span>
+            <span className="hidden sm:inline">New recipe</span>
           </Link>
-          {signedIn && (
-            <Link href="/recipes/new" className="site-button">
-              <Icon name="plus" className="size-4" /> New recipe
-            </Link>
-          )}
-        </div>
+        )}
       </div>
     </header>
   );

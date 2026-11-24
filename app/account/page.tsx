@@ -9,8 +9,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const [session, params] = await Promise.all([readSession(), searchParams]);
   const returnTo = safeReturnPath(params.returnTo, "/");
   return (
-    <PageFrame title={session ? "Your account" : "Welcome to Savor"} back={{ href: "/", label: "Explore recipes" }} narrow>
-      <div className="site-panel space-y-5">
+    <PageFrame title="Your account" back={{ href: "/", label: "Explore recipes" }} narrow>
+      <div className="site-panel space-y-5 border-t-2 border-t-brand">
         {params.error && (
           <p role="alert" className="text-sm text-rust">
             {params.error === "access_denied"

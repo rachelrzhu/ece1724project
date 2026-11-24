@@ -147,7 +147,7 @@ export const getRecipe = cache(async (id: string) => {
   ]);
   return {
     ...recipe,
-    authorName: author?.name ?? "Savor cook",
+    authorName: author?.name ?? "a home cook",
     saved: !!bookmark,
     isOwner: session?.user.id === recipe.authorId,
     signedIn: !!session,

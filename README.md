@@ -1,4 +1,4 @@
-# ECE1724 Project
+# From My Kitchen
 
 Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated recipe services, private-image upload/read services, and automated checks. Better Auth persists sessions in PostgreSQL. A local backend tester exercises recipe and image services.
 
@@ -38,7 +38,7 @@ Setup checks Node.js and npm, installs the exact packages listed in `package-loc
 
 ### 4. Open the app
 
-Wait until the terminal says **Ready**, then open [Savor on localhost](http://localhost:3000). The homepage lists public recipes. If a database is unavailable, it shows a connection message. The homepage and account form offer **Continue with Google** when the provider is configured. [Google sign-in setup](docs/deployment.md#google-sign-in)
+Wait until the terminal says **Ready**, then open [From My Kitchen on localhost](http://localhost:3000). The homepage lists public recipes. If a database is unavailable, it shows a connection message. The homepage and account form offer **Continue with Google** when the provider is configured. [Google sign-in setup](docs/deployment.md#google-sign-in)
 
 If Next.js selects another port, use that port with `localhost` in the browser, in `BETTER_AUTH_URL`, and in the Google client's authorized redirect URI.
 

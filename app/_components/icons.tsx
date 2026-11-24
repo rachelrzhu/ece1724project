@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 const paths = {
-  brand: <><path d="M4 12a8 8 0 0 0 16 0H4Z" /><path d="M8 20h8M12 12c0-4 2-7 6-8M12 10C9 10 7 8 7 5c3 0 5 2 5 5Z" /></>,
+  brand: <><path d="M12 6v13M12 6C9 4 6 4 3 5v13c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z" /><path d="M6 8.5c1-.1 2 0 3 .4m-3 3c1-.1 2 0 3 .4m6-3.4c1-.4 2-.5 3-.4m-3 3.8c1-.4 2-.5 3-.4" /></>,
   search: <><circle cx="10.5" cy="10.5" r="5.5" /><path d="m15 15 4 4" /></>,
   plus: <path d="M12 5v14M5 12h14" />,
   arrow: <path d="M4 12h15m-6-6 6 6-6 6" />,

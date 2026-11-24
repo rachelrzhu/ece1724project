@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Icon } from "@/app/_components/icons";
 import PageFrame from "@/app/_components/page-frame";
 import { RecipeCover } from "@/app/_components/recipe-cover";
 import { getRecipe } from "@/lib/product/queries";
@@ -32,42 +33,52 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
 
   return (
     <PageFrame title={recipe.title} back={{ href: "/", label: "Explore recipes" }}>
-      <div className="grid gap-6 md:grid-cols-[1fr_1.05fr]">
-        <div className="site-panel flex flex-col justify-center gap-5 md:p-8">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-subtle">
+      <div className={`grid items-start gap-6 ${recipe.coverFileId ? "md:grid-cols-[1fr_0.8fr] md:gap-10" : ""}`}>
+        <div className="flex max-w-3xl flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle">
             <span className="wrap-anywhere">By {recipe.authorName}</span>
-            <span className="rounded-full bg-sage px-2.5 py-1 font-semibold text-brand capitalize">{recipe.visibility.toLowerCase()}</span>
+            <span className="border-s border-line ps-3 font-semibold text-brand capitalize">{recipe.visibility.toLowerCase()}</span>
           </div>
-          <p className="whitespace-pre-line leading-relaxed text-subtle wrap-anywhere">{recipe.description}</p>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-line pt-4 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4">
+          <p className="max-w-[65ch] whitespace-pre-line text-base leading-relaxed text-subtle wrap-anywhere">{recipe.description}</p>
+          <dl className="grid grid-cols-2 gap-x-3 gap-y-3 border-y border-line py-3 sm:grid-cols-4">
             {[
               ["Base servings", recipe.baseServings],
               ["Prep", `${recipe.prepMinutes} min`],
               ["Cook", `${recipe.cookMinutes} min`],
               ["Difficulty", recipe.difficulty.toLowerCase()],
             ].map(([label, value]) => (
-              <div key={label}><dt className="text-sm text-subtle">{label}</dt><dd className="font-semibold capitalize">{value}</dd></div>
+              <div key={label}>
+                <dt className="text-xs font-semibold text-subtle">{label}</dt>
+                <dd className={`mt-1 font-serif text-[1.6rem] leading-none font-medium ${label === "Difficulty" ? "capitalize" : ""}`}>{value}</dd>
+              </div>
             ))}
           </dl>
-          <div className="flex flex-wrap items-start gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {recipe.isOwner && <Link className="site-button" href={`${href}?edit=1`}>Edit recipe</Link>}
             {recipe.signedIn ? (
               <RecipeActions id={id} title={recipe.title} saved={recipe.saved} isOwner={recipe.isOwner} afterDeleteHref="/?collection=mine" />
             ) : (
               <Link className="site-button-outline" href={`/account?${new URLSearchParams({ returnTo: href })}`}>Sign in to bookmark</Link>
             )}
+            {!recipe.coverFileId && (
+              <span className="inline-flex items-center gap-1.5 px-2 text-sm text-subtle">
+                <Icon name="brand" className="size-4" /> No cover photo
+              </span>
+            )}
           </div>
         </div>
-        <RecipeCover fileId={recipe.coverFileId} className="aspect-[16/10] rounded-2xl border border-line md:aspect-auto md:min-h-72" />
+        {recipe.coverFileId && (
+          <RecipeCover fileId={recipe.coverFileId} className="aspect-[4/3] border border-line" />
+        )}
       </div>
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.08fr]">
+      <div className="grid items-start gap-7 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-10">
         <ScalingWorkspace key={recipe.id} recipe={{ baseServings: recipe.baseServings, ingredients: recipe.ingredients }} />
-        <section aria-labelledby="method-title" className="site-panel">
-          <h2 id="method-title" className="site-heading text-3xl">Method</h2>
-          <ol className="mt-3 divide-y divide-line">
+        <section aria-labelledby="method-title" className="min-w-0 border-t-2 border-brand pt-4">
+          <h2 id="method-title" className="site-heading text-4xl">Method</h2>
+          <ol className="mt-2 divide-y divide-line">
             {recipe.steps.map((step, index) => (
-              <li className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 py-4" key={step.id}>
-                <span aria-hidden="true" className="grid size-8 place-items-center rounded-full bg-sage text-sm font-semibold text-brand">{index + 1}</span>
+              <li className="grid grid-cols-[2rem_minmax(0,1fr)] gap-3 py-4 sm:gap-4" key={step.id}>
+                <span aria-hidden="true" className="font-serif text-3xl leading-none font-medium text-brand">{index + 1}</span>
                 <p className="whitespace-pre-line leading-relaxed text-subtle wrap-anywhere">{step.instruction}</p>
               </li>
             ))}

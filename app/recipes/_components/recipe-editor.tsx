@@ -153,7 +153,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
         </div>
       )}
       <fieldset className="grid w-full min-w-0 gap-5" disabled={pending} aria-label="Recipe fields">
-        <section className="site-panel grid gap-4" aria-labelledby="recipe-basics">
+        <section className="site-panel grid gap-4 border-t-2 border-t-brand" aria-labelledby="recipe-basics">
           <h2 id="recipe-basics" className="site-heading text-2xl">Recipe details</h2>
           <TextField name="title" defaultValue={recipe?.title} fullWidth isRequired>
             <Label>Title</Label>
@@ -189,7 +189,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
           </RadioGroup>
         </section>
 
-        <section className="site-panel grid gap-4" aria-labelledby="recipe-ingredients">
+        <section className="site-panel grid gap-4 border-t-2 border-t-brand" aria-labelledby="recipe-ingredients">
           <div className="space-y-1">
             <h2 id="recipe-ingredients" className="site-heading text-2xl">Ingredients</h2>
             <p className="text-sm text-subtle">Use a quantity and unit for measured ingredients. For unmeasured ingredients, add a note such as “to taste”.</p>
@@ -208,7 +208,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
           </Button>
         </section>
 
-        <section className="site-panel grid gap-4" aria-labelledby="recipe-method">
+        <section className="site-panel grid gap-4 border-t-2 border-t-brand" aria-labelledby="recipe-method">
           <h2 id="recipe-method" className="site-heading text-2xl">Method</h2>
           {steps.map((step, index) => (
             <div key={step.id} className="grid min-w-0 gap-2 rounded-xl border border-line bg-canvas p-3 sm:p-4">
@@ -232,7 +232,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
           </Button>
         </section>
 
-        <section className="site-panel grid gap-4" aria-labelledby="recipe-photo">
+        <section className="site-panel grid gap-4 border-t-2 border-t-brand" aria-labelledby="recipe-photo">
           <h2 id="recipe-photo" className="site-heading text-2xl">Cover photo</h2>
           {(preview || coverId) && (
             preview ? (
@@ -246,7 +246,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
           <div className="grid min-w-0 gap-1.5">
             <Label htmlFor={`${formId}-cover`}>Choose a photo (optional)</Label>
             <Input id={`${formId}-cover`} type="file" ref={fileInput}
-              className="max-w-full file:me-2 file:rounded-md file:border-0 file:bg-sage file:px-2 file:py-0.5 file:text-brand"
+              className="max-w-full file:me-2 file:rounded-md file:border-0 file:bg-tint file:px-2 file:py-0.5 file:text-brand"
               fullWidth accept="image/jpeg,image/png,image/webp" aria-describedby={`${formId}-cover-help`}
               onChange={(event) => chooseCover(event.currentTarget.files?.[0])} />
             <p id={`${formId}-cover-help`} className="text-sm text-subtle">JPEG, PNG, or WebP up to 3 MiB.</p>
@@ -261,7 +261,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
           )}
         </section>
 
-        <section className="site-panel grid gap-4" aria-labelledby="recipe-publishing">
+        <section className="site-panel grid gap-4 border-t-2 border-t-brand" aria-labelledby="recipe-publishing">
           <h2 id="recipe-publishing" className="site-heading text-2xl">Visibility</h2>
           <RadioGroup name="visibility" aria-labelledby="recipe-publishing" defaultValue={recipe?.visibility ?? "PRIVATE"}>
             {[
