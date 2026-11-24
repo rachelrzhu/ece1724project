@@ -31,6 +31,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
   }
 
   const canCopy = recipe.signedIn && recipe.visibility === "PUBLIC";
+  const dietary = recipe.dietary;
   return (
     <PageFrame title={recipe.title} back={{ href: "/", label: "Explore recipes" }}>
       <div className={`grid items-start gap-6 ${recipe.coverFileId ? "md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8" : ""}`}>
@@ -72,6 +73,34 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
           <RecipeCover fileId={recipe.coverFileId} className="aspect-[4/3] rounded-md border border-line" />
         )}
       </div>
+      {dietary && (
+        <section aria-labelledby="dietary-flags" className="site-panel space-y-3">
+          <h2 id="dietary-flags" className="site-heading text-xl">Your dietary flags</h2>
+          {dietary.conflicts.length ? (
+            <div className="space-y-2">
+              <h3 className="font-semibold text-rust">Known conflicts</h3>
+              <dl className="space-y-2">
+                {dietary.conflicts.map(({ ingredient, reasons }, index) => (
+                  <div key={index} className="text-sm wrap-anywhere">
+                    <dt className="font-semibold">{ingredient}</dt>
+                    <dd><ul className="list-disc ps-5 text-subtle">{reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul></dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ) : <p className="text-sm">No known conflicts in mapped ingredients.</p>}
+          {dietary.unknownIngredients.length > 0 && (
+            <div>
+              <h3 className="font-semibold">Incomplete ingredient information</h3>
+              <p className="text-sm text-subtle">These entries have missing or incomplete records for your settings.</p>
+              <ul className="list-disc ps-5 text-sm wrap-anywhere">
+                {dietary.unknownIngredients.map((name, index) => <li key={index}>{name}</li>)}
+              </ul>
+            </div>
+          )}
+          <p className="text-sm text-subtle">Flags use recorded ingredient information. Check product labels and preparation for possible cross-contact.</p>
+        </section>
+      )}
       <div className="grid items-start gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12">
         <ScalingWorkspace key={recipe.id} recipe={{ baseServings: recipe.baseServings, ingredients: recipe.ingredients }} />
         <section aria-labelledby="method-title" className="min-w-0 border-t border-line pt-4">
