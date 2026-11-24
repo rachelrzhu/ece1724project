@@ -1,8 +1,8 @@
 # Database workflow
 
-Prisma owns the schema and migration history. `DATABASE_URL` is used by the runtime client. The CLI prefers `DIRECT_URL`, falling back to `DATABASE_URL`. Environment values load from the project's Next.js environment files, including `.env.local`.
+Prisma owns the schema and migration history. The runtime client uses `DATABASE_URL`. When run directly, the Prisma CLI prefers `DIRECT_URL`, falling back to `DATABASE_URL`. Environment values load from the project's Next.js environment files, including `.env.local`.
 
-Installation and builds generate the client but never change the database. The homepage, health endpoint, and automated tests work without database credentials.
+Installation and `npm run build` generate the client. GitHub Actions applies the committed migrations to disposable PostgreSQL and compares the resulting schema with `prisma/schema.prisma`. Vercel runs `npm run db:migrate` on the matching database after a successful build of a release branch. [Release branches and database settings](../docs/deployment.md#automatic-database-migrations)
 
 ## Local commands
 
@@ -27,7 +27,7 @@ This applies the committed migrations to the selected database, including the di
 
 `0_baseline` describes the existing profile and file tables, including UUID keys, named uniqueness constraints/indexes, the file-owner foreign key, and `files_size_positive`. The next migration adds recipes, ingredients, steps, and bookmarks.
 
-Before adopting this history:
+Complete these steps before connecting a populated database to automatic deployments.
 
 1. Confirm the selected database and preserve a recoverable backup/branch.
 2. Compare its existing schema with `0_baseline/migration.sql`, including defaults, nullability, indexes, and constraints. Resolve differences before proceeding.

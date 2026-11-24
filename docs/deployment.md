@@ -29,7 +29,7 @@ Keep `main` as Vercel's Production Branch. A separate `prod` branch is unnecessa
 
 Protected `main` and `preprod` require a pull request, an up-to-date branch, passing application checks, the correct source branch, and a successful Vercel build. Admins must follow these rules too. Dev allows direct pushes; all three branches reject force pushes and deletion. The initial setup creates dev and preprod without changing main or publishing unfinished local work.
 
-`npm run check` validates Prisma, lints, checks TypeScript, and runs automated tests. CI also builds the app. `vercel.json` repeats these checks before Vercel can accept a build. The production build guard rejects production builds whose Git branch is not `main`. A manual **Promote to Production** action can bypass branch-based release flow; reserve the Vercel dashboard for reviewed releases and rollback.
+`npm run check` validates Prisma, lints, checks TypeScript, and runs automated tests. GitHub Actions also applies all committed migrations to disposable PostgreSQL, compares the result with `prisma/schema.prisma`, and builds the app. A manual **Promote to Production** action can bypass the production build and its database migration. Release production changes through `main`.
 
 ## Vercel settings
 
@@ -47,7 +47,8 @@ GitHub branch protection controls merges into `main`. Vercel's own branch/domain
 
 | Setting | Development / generic Preview | Preprod branch Preview | Production |
 | --- | --- | --- | --- |
-| `DATABASE_URL`, `DIRECT_URL` | Development database/Neon branch | Separate preprod database/Neon branch | Production database/Neon branch |
+| App connection (`DATABASE_URL`) | Development Neon database | Preprod Neon database | Production Neon database |
+| Direct migration connection | `DIRECT_URL` (also available as `DATABASE_URL_UNPOOLED`) | Branch override for `DIRECT_URL` (also available as `DATABASE_URL_UNPOOLED`) | `DATABASE_URL_UNPOOLED` |
 | `BLOB_READ_WRITE_TOKEN` | Development Blob store | Separate preprod Blob store | Production Blob store |
 | `BETTER_AUTH_SECRET` | Development-only secret | Unique preprod secret | Unique production secret |
 | `BETTER_AUTH_URL` | Local/dev URL | Preprod URL | Production domain |
@@ -57,11 +58,17 @@ Use independent database credentials and Blob stores. Separate page URLs do not 
 
 Leave `NODE_ENV` to Next.js: local `next dev` uses `development`; **both** Preview and Production builds use `production`. `NODE_ENV=preprod` and `.env.preprod` are not supported stage selectors. Vercel supplies `VERCEL_ENV` (`preview` or `production`) and `VERCEL_GIT_COMMIT_REF` to distinguish deployments. `.env.local` is for local development credentials.
 
-Database migrations stay manual and environment-specific. Installation, CI, and Vercel builds generate the Prisma client but never run `prisma migrate deploy`. Review SQL, verify the target database and backup, and follow [the database workflow](../prisma/README.md). Apply additive changes in dev, then preprod, then production; a code rollback cannot undo a database change.
+### Automatic database migrations
 
-Before promoting a release with schema changes, run `npm run db:status` against the destination database and compare its migration history with the release. Apply the pending migrations there before switching traffic. Verify email registration and a session refresh on the deployed origin. The health endpoint can return 200 while registration fails because its database tables or columns are missing.
+Vercel runs the application checks and builds Next.js first. Before publishing a Preview build from this repository’s `dev` or `preprod` branch, or a Production build from `main`, it runs `npm run db:migrate` (`prisma migrate deploy`). Prisma applies only pending, committed migrations. Feature previews skip this step.
 
-If Google accepts sign-in but the app reports a failure on return, check the runtime logs for `/api/auth/callback/google` on the affected deployment. Prisma error `P2022` names a missing database column. Verify the database mapped to that branch, back it up, and apply the release’s pending migrations. Localhost uses the database configured in `.env.local`.
+In the Vercel project’s **Environment Variables** settings, enable access to system environment variables so the build can identify its target, Git repository and branch. The migration step requires the app’s `DATABASE_URL` and uses `DIRECT_URL` when set, falling back to `DATABASE_URL_UNPOOLED` for the direct connection. Both connections must select the same Neon branch and database. The project already supplies these variables for the default Preview, the `preprod` override and Production as shown above. Complete the baseline procedure before connecting a populated database without migration history. [Vercel system environment variables](https://vercel.com/docs/environment-variables/system-environment-variables) · [Database baselining](../prisma/README.md#existing-database-with-users-and-files)
+
+Review the SQL in each pull request. Keep changes compatible with the version currently serving traffic, including any version intended for rollback. For example, add a nullable column first, deploy code that writes it, then backfill it before requiring values in a later release. After deployment, verify a database-backed operation such as email registration and session refresh.
+
+If a migration fails, Vercel stops the release. Check the build log and run `npm run db:status` against that stage’s database. For a connection failure, correct the credentials or connectivity and redeploy. For failed SQL, preserve a backup, inspect which statements took effect, and reconcile the database and migration history before retrying. A Vercel code rollback leaves applied SQL in place. [Prisma failed migration recovery](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/patching-and-hotfixing#failed-migration)
+
+If Google accepts sign-in but the app reports a failure on return, check the runtime logs for `/api/auth/callback/google`. Prisma error `P2022` names a missing database column. Compare the deployment’s runtime database with its migration target and check its migration status. Localhost uses the database configured in `.env.local`.
 
 When rotating a nonproduction Neon password or Blob token, update the corresponding Vercel Preview values and any `preprod` branch overrides that reference the rotated credential. These values are copies of the provider credentials. Verify their branch scopes, redeploy each affected preview, and check its homepage and `/api/health` through authenticated preview access.
 
