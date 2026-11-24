@@ -23,15 +23,21 @@ function ScalingControls() {
   const canUndo = useScalingSelector((state) => state.history.length > 0);
   const canReset = useScalingSelector(selectCanReset);
   const eligible = useScalingSelector(selectEligibleIngredients);
+  const ingredientCount = useScalingSelector((state) => state.recipe.ingredients.length);
   const preview = useScalingSelector(selectPreview);
   const selected = eligible.find((item) => item.id === settings.ingredientId);
   const error = preview.ok ? null : preview.error;
   const allowIngredientMode = eligible.length > 0;
+  const showIngredientHelp = !allowIngredientMode || (settings.mode === "ingredient" && eligible.length < ingredientCount);
+  const ingredientHelpId = `${id}-ingredient-help`;
   const errorId = `${id}-scaling-error`;
 
-  function invalidProps(field: string) {
+  function invalidProps(field: string, helpId?: string) {
     const isInvalid = error?.field === field;
-    return { "aria-invalid": isInvalid || undefined, "aria-describedby": isInvalid ? errorId : undefined };
+    return {
+      "aria-invalid": isInvalid || undefined,
+      "aria-describedby": [helpId, isInvalid ? errorId : undefined].filter(Boolean).join(" ") || undefined,
+    };
   }
 
   return (
@@ -43,14 +49,15 @@ function ScalingControls() {
         </Button>
         <Button type="button" className={settings.mode === "ingredient" ? "site-button" : "site-button-outline"}
           aria-pressed={settings.mode === "ingredient"} isDisabled={!allowIngredientMode}
-          aria-describedby={allowIngredientMode ? undefined : `${id}-no-ingredients`}
+          aria-describedby={allowIngredientMode ? undefined : ingredientHelpId}
           onPress={() => dispatch(scalingActions.changeMode("ingredient"))}>
           By ingredient
         </Button>
       </div>
-      {!allowIngredientMode && (
-        <p id={`${id}-no-ingredients`} className="text-sm text-subtle">
-          Ingredient scaling needs a measured ingredient in g, kg, mL, L, tsp, tbsp, or count.
+      {showIngredientHelp && (
+        <p id={ingredientHelpId} className="text-sm text-subtle">
+          The picker uses measured quantities in g, kg, mL, L, tsp, tbsp, or count.
+          Entries such as “to taste” and measurements in cups are skipped.
         </p>
       )}
       {settings.mode === "servings" ? (
@@ -65,9 +72,10 @@ function ScalingControls() {
         <div className="grid min-w-0 gap-3">
           <div className="grid min-w-0 gap-1">
             <Label htmlFor={`${id}-ingredient`}>Ingredient on hand</Label>
-            <select id={`${id}-ingredient`} className="site-field w-full min-w-0" value={settings.ingredientId}
-              onChange={(event) => dispatch(scalingActions.chooseIngredient(event.target.value))} {...invalidProps("ingredientId")}>
-              {eligible.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            <select id={`${id}-ingredient`} className="site-field w-full min-w-0 truncate" value={settings.ingredientId}
+              onChange={(event) => dispatch(scalingActions.chooseIngredient(event.target.value))}
+              {...invalidProps("ingredientId", showIngredientHelp ? ingredientHelpId : undefined)}>
+              {eligible.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
             </select>
           </div>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-2">
