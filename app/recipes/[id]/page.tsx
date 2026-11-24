@@ -30,6 +30,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
     );
   }
 
+  const canCopy = recipe.signedIn && recipe.visibility === "PUBLIC";
   return (
     <PageFrame title={recipe.title} back={{ href: "/", label: "Explore recipes" }}>
       <div className={`grid items-start gap-6 ${recipe.coverFileId ? "md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8" : ""}`}>
@@ -55,7 +56,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
           <div className="flex flex-wrap items-center gap-2">
             {recipe.isOwner && <Link className="site-button" href={`${href}?edit=1`}>Edit recipe</Link>}
             {recipe.signedIn ? (
-              <RecipeActions id={id} title={recipe.title} saved={recipe.saved} isOwner={recipe.isOwner} afterDeleteHref="/?collection=mine" />
+              <RecipeActions id={id} title={recipe.title} saved={recipe.saved} canCopy={canCopy} isOwner={recipe.isOwner} afterDeleteHref="/?collection=mine" />
             ) : (
               <Link className="site-button-outline" href={`/account?${new URLSearchParams({ returnTo: href })}`}>Sign in to bookmark</Link>
             )}
@@ -63,6 +64,9 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
               <span className="px-2 text-sm text-subtle">No cover photo</span>
             )}
           </div>
+          {canCopy && (
+            <p id="copy-details" className="text-sm text-subtle">You’ll get a private copy you can edit independently. The cover photo stays with the original.</p>
+          )}
         </div>
         {recipe.coverFileId && (
           <RecipeCover fileId={recipe.coverFileId} className="aspect-[4/3] rounded-md border border-line" />
