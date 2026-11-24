@@ -105,10 +105,15 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await editIngredient(owner, detail, ingredient);
     passed("Milk, peanuts and a vegan pattern each hide the conflicting recipe; a vegetarian pattern keeps it");
   } finally {
-    // Local accounts can have settings from an earlier run or from manual testing.
-    if (!isDeepStrictEqual(await readPreferences(reader), original)) {
-      if (original.pattern === "NONE" && !original.allergens.length) await clearPreferences(reader);
-      else await savePreferences(reader, original);
+    // A failed navigation on the test tab must not interrupt restoring a local cook's settings.
+    const restore = await reader.context().newPage();
+    try {
+      if (!isDeepStrictEqual(await readPreferences(restore), original)) {
+        if (original.pattern === "NONE" && !original.allergens.length) await clearPreferences(restore);
+        else await savePreferences(restore, original);
+      }
+    } finally {
+      await restore.close();
     }
   }
 }
