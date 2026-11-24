@@ -22,11 +22,11 @@
     "backend-test:setup": "node --conditions=react-server --import tsx scripts/backend-test.ts setup",
     "backend-test:cleanup": "node --conditions=react-server --import tsx scripts/backend-test.ts cleanup",
     "poc:setup": "node scripts/local-db.mjs",
-    "poc:dev": "next dev --hostname 127.0.0.1 --port 3100",
+    "poc:dev": "node scripts/local-db.mjs dev",
     "poc:stop-db": "node scripts/local-db.mjs stop",
-    "poc:verify": "node --conditions=react-server --import tsx scripts/check-backend.ts",
-    "poc:cleanup-images": "node --conditions=react-server --import tsx scripts/cleanup-unused-images.ts",
-    "poc:start": "next start --hostname 127.0.0.1 --port 3100"
+    "poc:verify": "node scripts/local-db.mjs verify",
+    "poc:cleanup-images": "node scripts/local-db.mjs cleanup-images",
+    "poc:start": "node scripts/local-db.mjs start"
   },
   "engines": {
     "node": "24.x"

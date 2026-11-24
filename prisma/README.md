@@ -40,7 +40,13 @@ Before adopting this history:
 
 5. Review the pending recipe and authentication migrations and apply them with `npm run db:migrate`.
 
-Recording the baseline writes migration metadata. It does not run the baseline's table-creation SQL. Do not run the baseline SQL against tables that already exist. Public application tables and their migration history have not been changed by this implementation.
+Recording the baseline writes migration metadata. Do not run the baseline SQL against tables that already exist. Run `npx prisma migrate status` to check the selected database against the committed migration history.
+
+## Cloud development fixtures
+
+The development Neon database contains seven public demo recipes with ordered ingredients and steps. Their covers live in the development private Blob store. The demo author profiles have no login credentials. The local seed script also creates password-based accounts and a private recipe for testing on loopback.
+
+On a deployment that includes the image route, request `/api/images/30000000-0000-4000-8000-000000000001` to read the first demo cover. A successful response reads the file metadata from PostgreSQL and streams the JPEG from Blob. The separate `/api/health` endpoint checks application liveness.
 
 ## Local database and API tests
 
