@@ -55,9 +55,7 @@ function RecipeListItem({ recipe, collection }: { recipe: RecipeCardData; collec
           {recipe.saved && <li className="inline-flex items-center gap-1"><Icon name="bookmark" className="size-4" />Saved</li>}
         </ul>
       </div>
-      {recipe.coverFileId && (
-        <RecipeCover fileId={recipe.coverFileId} className="size-16 rounded-md border border-line sm:size-20" />
-      )}
+      <RecipeCover fileId={recipe.coverFileId} className="size-16 rounded-md border border-line sm:size-20" />
       {collection === "mine" && (
         <div className="relative z-10 col-span-full flex w-fit flex-wrap items-center gap-2 pt-2">
           <Link href={`${href}?edit=1`} className="site-button-outline" aria-label={`Edit ${recipe.title}`}>Edit</Link>

@@ -32,7 +32,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
 
   return (
     <PageFrame title={recipe.title} back={{ href: "/", label: "Explore recipes" }}>
-      <div className={`grid items-start gap-6 ${recipe.coverFileId ? "md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8" : ""}`}>
+      <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8">
         <div className="flex max-w-3xl flex-col gap-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle">
             <span className="wrap-anywhere">By {recipe.authorName}</span>
@@ -59,14 +59,9 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
             ) : (
               <Link className="site-button-outline" href={`/account?${new URLSearchParams({ returnTo: href })}`}>Sign in to bookmark</Link>
             )}
-            {!recipe.coverFileId && (
-              <span className="px-2 text-sm text-subtle">No cover photo</span>
-            )}
           </div>
         </div>
-        {recipe.coverFileId && (
-          <RecipeCover fileId={recipe.coverFileId} className="aspect-[4/3] rounded-md border border-line" />
-        )}
+        <RecipeCover fileId={recipe.coverFileId} showPlaceholderLabel className="aspect-[4/3] rounded-md border border-line" />
       </div>
       <div className="grid items-start gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12">
         <ScalingWorkspace key={recipe.id} recipe={{ baseServings: recipe.baseServings, ingredients: recipe.ingredients }} />
