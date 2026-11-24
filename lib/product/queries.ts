@@ -21,6 +21,8 @@ const cardSelect = {
   author: { select: { name: true } },
   _count: { select: { ingredients: true } },
 } as const;
+export const recipePageSize = 6;
+
 export async function listRecipes({
   query = "",
   page = 1,
@@ -86,12 +88,12 @@ export async function listRecipes({
       where,
       select: cardSelect,
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (pageNumber - 1) * 6,
-      take: 6,
+      skip: (pageNumber - 1) * recipePageSize,
+      take: recipePageSize,
     }),
     db.recipe.count({ where }),
   ]);
-  const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / 6)));
+  const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / recipePageSize)));
   const rows =
     boundedPage === pageNumber
       ? initialRows
@@ -99,8 +101,8 @@ export async function listRecipes({
           where,
           select: cardSelect,
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-          skip: (boundedPage - 1) * 6,
-          take: 6,
+          skip: (boundedPage - 1) * recipePageSize,
+          take: recipePageSize,
         });
   const saved =
     viewer && rows.length

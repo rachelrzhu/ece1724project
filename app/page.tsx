@@ -1,1 +1,188 @@
-export { default } from "@/app/_dummy-frontend/home";
+import { Button } from "@heroui/react/button";
+import { Input } from "@heroui/react/input";
+import Image from "next/image";
+import Link from "next/link";
+import { Suspense } from "react";
+import { Icon } from "@/app/_components/icons";
+import { RecipeCover } from "@/app/_components/recipe-cover";
+import { collections, SiteHeader, type Collection } from "@/app/_components/site-header";
+import { getGoogleProviderOptions, readSession } from "@/lib/auth/server";
+import { listRecipes, recipePageSize, type RecipeCardData } from "@/lib/product/queries";
+import AccountButton from "./account-button";
+import RecipeActions from "./_dummy-frontend/recipe-actions";
+
+function collectionHref(collection: Collection, query = "", page = 1) {
+  const params = new URLSearchParams();
+  if (collection !== "explore") params.set("collection", collection);
+  if (query) params.set("q", query);
+  if (page > 1) params.set("page", String(page));
+  return params.size ? `/?${params}` : "/";
+}
+
+function RecipeSearch({ collection, query }: { collection: Collection; query: string }) {
+  return (
+    <form action="/#recipes" method="get" role="search" className="grid w-full max-w-xl gap-2">
+      {collection !== "explore" && <input type="hidden" name="collection" value={collection} />}
+      <label htmlFor="recipe-query" className="text-sm font-semibold">Search by title or ingredient</label>
+      <div className="flex flex-wrap gap-2">
+        <div className="relative min-w-[10rem] flex-1">
+          <Icon name="search" className="pointer-events-none absolute inset-s-3 top-1/2 z-10 size-4 -translate-y-1/2 text-subtle" />
+          <Input id="recipe-query" name="q" type="search" maxLength={160} defaultValue={query}
+            placeholder="Try pasta, basil, or tomato" className="site-field recipe-search-input w-full" />
+        </div>
+        <Button type="submit" className="site-button">Search</Button>
+      </div>
+    </form>
+  );
+}
+
+function RecipeCard({ recipe, collection }: { recipe: RecipeCardData; collection: Collection }) {
+  const href = `/recipes/${recipe.id}`;
+  return (
+    <article className="relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-line bg-paper">
+      <RecipeCover fileId={recipe.coverFileId} className="aspect-[16/9]" />
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-brand">
+          <span className="rounded-full bg-sage px-2.5 py-1 capitalize">{recipe.difficulty.toLowerCase()}</span>
+          {collection === "mine" && <span className="capitalize">{recipe.visibility.toLowerCase()}</span>}
+        </div>
+        <h3 className="site-heading text-2xl">
+          <Link href={href} className="rounded-sm hover:text-brand hover:underline after:absolute after:inset-0">{recipe.title}</Link>
+        </h3>
+        <p className="line-clamp-2 text-sm leading-relaxed text-subtle wrap-anywhere">{recipe.description}</p>
+        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 text-sm text-subtle">
+          <span className="inline-flex items-center gap-1.5"><Icon name="clock" className="size-4" />{recipe.prepMinutes + recipe.cookMinutes} min</span>
+          <span className="inline-flex items-center gap-1.5"><Icon name="people" className="size-4" />Serves {recipe.baseServings}</span>
+          {recipe.saved && <span className="inline-flex items-center gap-1.5"><Icon name="bookmark" className="size-4" />Saved</span>}
+        </div>
+        {collection === "mine" && (
+          <div className="relative z-10 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+            <Link href={`${href}?edit=1`} className="site-button-outline" aria-label={`Edit ${recipe.title}`}>Edit</Link>
+            <RecipeActions id={recipe.id} title={recipe.title} isOwner />
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function ResultsLoading() {
+  return (
+    <div aria-busy="true" role="status" className="space-y-4 text-sm text-subtle">
+      <p>Loading recipes…</p>
+      <div aria-hidden="true" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="aspect-[4/3] rounded-2xl border border-line bg-sage motion-safe:animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+async function RecipeResults({ collection, query, page, signedIn }: {
+  collection: Collection;
+  query: string;
+  page: number;
+  signedIn: boolean;
+}) {
+  if (!signedIn && collection !== "explore") {
+    return (
+      <div className="site-panel space-y-3">
+        <p>Sign in to view {collection === "mine" ? "your recipes" : "your saved recipes"}.</p>
+        <Link className="site-button" href="/account">Sign in</Link>
+      </div>
+    );
+  }
+
+  const result = await listRecipes({ collection, query, page }).catch(() => null);
+  if (!result) {
+    return (
+      <div className="site-panel space-y-3">
+        <p role="alert" className="font-semibold">Recipes couldn’t be loaded.</p>
+        <p className="text-sm text-subtle">Try refreshing the page in a moment.</p>
+      </div>
+    );
+  }
+
+  if (result.total === 0) {
+    const emptyMessage = collection === "mine" ? "You haven’t created any recipes yet."
+      : collection === "saved" ? "You haven’t saved any recipes yet." : "No public recipes have been shared yet.";
+    return (
+      <div className="site-panel space-y-3">
+        <p className="font-semibold wrap-anywhere">{query ? `No recipes match “${query}”.` : emptyMessage}</p>
+        {query && <Link className="site-button-outline" href={collectionHref(collection)}>Clear search</Link>}
+        {!query && collection === "mine" && <Link className="site-button" href="/recipes/new">Create a recipe</Link>}
+        {!query && collection === "saved" && <Link className="site-button-outline" href="/">Explore recipes</Link>}
+      </div>
+    );
+  }
+
+  const pageCount = Math.ceil(result.total / recipePageSize);
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-subtle" aria-live="polite">{result.total} {result.total === 1 ? "recipe" : "recipes"}</p>
+      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-6">
+        {result.rows.map((recipe) => <li key={recipe.id}><RecipeCard recipe={recipe} collection={collection} /></li>)}
+      </ul>
+      {pageCount > 1 && (
+        <nav aria-label="Recipe pages" className="flex flex-wrap items-center gap-3">
+          {result.page > 1 && <Link className="site-button-outline" href={`${collectionHref(collection, query, result.page - 1)}#recipes`}>Previous</Link>}
+          <span className="text-sm text-subtle">Page {result.page} of {pageCount}</span>
+          {result.page < pageCount && <Link className="site-button-outline" href={`${collectionHref(collection, query, result.page + 1)}#recipes`}>Next</Link>}
+        </nav>
+      )}
+    </div>
+  );
+}
+
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const [params, session] = await Promise.all([searchParams, readSession().catch(() => null)]);
+  const query = typeof params.q === "string" ? params.q.trim().slice(0, 160) : "";
+  const collection = params.collection === "mine" || params.collection === "saved" ? params.collection : "explore";
+  const page = typeof params.page === "string" ? Number(params.page) : 1;
+  const signedIn = Boolean(session);
+
+  return (
+    <>
+      <SiteHeader signedIn={signedIn} active={collection} />
+      <main id="main-content" tabIndex={-1} className="site-container space-y-9 py-6 sm:space-y-12 sm:py-9">
+        {params.error && (
+          <p role="alert" className="site-panel text-sm text-rust">
+            {params.error === "access_denied" ? "Google sign-in was canceled." : "Google sign-in couldn’t be completed."} Try signing in again.
+          </p>
+        )}
+        {collection === "explore" && (
+          <section aria-labelledby="discovery-title" className="grid overflow-hidden rounded-3xl border border-line bg-sage md:grid-cols-[1fr_1.05fr]">
+            <div className="flex flex-col justify-center gap-5 px-5 py-8 sm:p-9 lg:p-12">
+              <h1 id="discovery-title" className="site-heading text-[clamp(2.65rem,6vw,5rem)] leading-[1.02]">
+                Find your next recipe.
+              </h1>
+              <p className="max-w-[31ch] text-base leading-relaxed text-subtle sm:text-lg">
+                Discover recipes from home cooks and scale them to your table or pantry.
+              </p>
+              <RecipeSearch key={query} collection={collection} query={query} />
+            </div>
+            <div className="relative aspect-[2/1] md:aspect-auto md:min-h-96">
+              <Image src="/savor-discovery.webp" fill alt="" sizes="(min-width: 1248px) 625px, (min-width: 768px) 50vw, 100vw"
+                fetchPriority="high" className="object-cover" />
+            </div>
+          </section>
+        )}
+        <section id="recipes" aria-labelledby="collection-heading" className="space-y-5 scroll-mt-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            {collection === "explore" ? (
+              <h2 id="collection-heading" className="site-heading text-3xl sm:text-4xl">{collections[collection].heading}</h2>
+            ) : (
+              <h1 id="collection-heading" className="site-heading text-4xl sm:text-5xl">{collections[collection].heading}</h1>
+            )}
+            {collection === "explore" && !signedIn && getGoogleProviderOptions() && <AccountButton signedIn={false} />}
+          </div>
+          {collection !== "explore" && signedIn && <RecipeSearch key={`${collection}:${query}`} collection={collection} query={query} />}
+          <Suspense key={`${collection}:${query}:${page}`} fallback={<ResultsLoading />}>
+            <RecipeResults collection={collection} query={query} page={page} signedIn={signedIn} />
+          </Suspense>
+        </section>
+      </main>
+    </>
+  );
+}

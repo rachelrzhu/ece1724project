@@ -1,2 +1,67 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+
+@theme inline {
+  --color-canvas: #faf8f3;
+  --color-paper: #fffefa;
+  --color-ink: #252a22;
+  --color-subtle: #565e51;
+  --color-brand: #35513a;
+  --color-sage: #e6ecdf;
+  --color-line: #dfdfd3;
+  --color-rust: #a43c26;
+  --font-sans: system-ui, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
+:root {
+  color-scheme: light;
+  --accent: #35513a;
+  --accent-foreground: #fffefa;
+  --focus: #35513a;
+}
+
+body {
+  @apply min-h-screen bg-canvas font-sans text-ink antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 3px;
+}
+
+.site-container {
+  @apply mx-auto w-full max-w-[78rem] px-4 sm:px-7 lg:px-10;
+}
+
+.site-nav-link {
+  @apply inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold whitespace-nowrap text-subtle hover:bg-sage hover:text-brand sm:px-3;
+}
+
+.site-nav-link[aria-current="page"] {
+  @apply bg-sage text-brand;
+}
+
+.site-button {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-3.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-[#273e2c];
+}
+
+.site-button-outline {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-paper px-3.5 text-sm font-semibold text-brand hover:bg-sage;
+}
+
+.site-panel {
+  @apply min-w-0 rounded-2xl border border-line bg-paper p-4 sm:p-6;
+}
+
+.site-heading {
+  @apply font-serif font-bold tracking-tight text-ink wrap-anywhere;
+}
+
+.site-field {
+  @apply min-h-11 rounded-lg border border-line bg-paper px-3 text-base text-ink placeholder:text-subtle;
+}
+
+.site-field.recipe-search-input {
+  padding-inline-start: 2.25rem;
+}
