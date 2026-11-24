@@ -49,7 +49,7 @@ enum IngredientDiet {
 // Preserve the existing profile table. Authentication records are added separately.
 model User {
   id        String       @id(map: "users_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username  String       @unique(map: "users_username_unique") @default(dbgenerated("('cook_'::text || substr(replace((gen_random_uuid())::text, '-'::text, ''::text), 1, 20))"))
+  username  String       @unique(map: "users_username_unique") @default("")
   usernameChangeAvailableAt DateTime? @map("username_change_available_at") @db.Timestamptz(6)
   email     String       @unique(map: "users_email_unique")
   name      String?

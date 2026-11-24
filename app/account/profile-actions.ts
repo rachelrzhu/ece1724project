@@ -9,7 +9,8 @@ import { activeUsernameCooldown, usernameHint, usernamePattern } from "./profile
 
 const profileInput = z.strictObject({
   name: z.string().trim().min(1, "Enter a display name.").max(120, "Use up to 120 characters for your display name."),
-  username: z.string().trim().regex(new RegExp(`^${usernamePattern}$`), usernameHint).toLowerCase().optional(),
+  username: z.string().trim().normalize("NFKC").toLowerCase()
+    .regex(new RegExp(`^${usernamePattern}$`, "u"), usernameHint).optional(),
 });
 
 export async function saveProfile(input: unknown): Promise<{ name: string; username: string } | { error: string }> {

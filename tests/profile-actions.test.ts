@@ -53,9 +53,17 @@ it("requires a session and rejects a submitted account ID", async () => {
   expect(update).not.toHaveBeenCalled();
 });
 
-it.each(["ab", "x".repeat(33), "first last", "maría", "@cook"])("rejects the invalid username %s", async (username) => {
+it.each(["", "x".repeat(33), "first last", "🐟", "@cook"])("rejects the invalid username %s", async (username) => {
   expect(await saveProfile({ ...profile, username })).toHaveProperty("error");
   expect(update).not.toHaveBeenCalled();
+});
+
+it("accepts a single Unicode letter as a handle and normalizes fullwidth letters", async () => {
+  for (const [username, expected] of [["李", "李"], ["ＥＶＡ", "eva"]]) {
+    update.mockResolvedValueOnce({ username: expected });
+    expect(await saveProfile({ ...profile, username })).toMatchObject({ username: expected });
+    expect(update).toHaveBeenLastCalledWith(expect.objectContaining({ data: { name: "Home Cook", username: expected } }));
+  }
 });
 
 it("reports a conflicting username without saving other fields separately", async () => {

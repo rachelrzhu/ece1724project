@@ -23,7 +23,7 @@ Next.js serves the pages and API routes from the same process.
 
 - The Next.js App Router serves discovery at `/`, sign-in and registration at `/account`, the editor at `/recipes/new`, and recipe details at `/recipes/[id]`. Shared UI lives in `app/_components/`. Recipe mutations run through `app/actions.ts`.
 - Explore searches everyone’s public recipes by title or ingredient. Select a cook’s name or @username to browse their public recipes. Open **View my recipe page** in **Account** to see all your own recipes, including private ones. Your page link stays the same when you change your username.
-- In **Account**, choose a unique username, edit your display name, or upload an avatar. A username change starts a one-month cooldown. Cooks can share the same display name and change it any time.
+- Your starting username comes from your display name. For example, “Robin Lee” becomes `@robin_lee`. If another cook already has that username, you get a random number at the end. In **Account**, you can change your username once a month, edit your display name, or upload an avatar.
 - Sign in to create and manage recipes under **My recipes** and revisit bookmarks under **Saved**. New recipes are private until you publish them.
 - On a recipe page, scale the ingredient list by target servings or by the amount of one ingredient you have. Use **Undo** to recover the previous settings or **Reset** to return to the base recipe. The cooking instructions stay as written. See the [scaling workspace](docs/recipe-scaling.md).
 - Open a public recipe while signed in to make an editable private copy. It includes the original quantities, units, and ordered steps. You can edit it and upload your own cover from the recipe editor.

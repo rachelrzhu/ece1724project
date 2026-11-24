@@ -85,7 +85,7 @@ it("registers an email account with a generated username and signs it back in", 
   const registered = await request("sign-up/email", { ...credentials, name: "Email Cook" });
   expect(registered.status).toBe(200);
   const { user } = await registered.json();
-  expect(user.username).toMatch(/^cook_[0-9a-f]{20}$/);
+  expect(user.username).toBe("email_cook");
   const cookie = cookies(registered);
   expect((await readUserSession(cookie)).user.id).toBe(user.id);
   expect((await request("update-user", unsupported, cookie)).status).toBe(400);
@@ -161,7 +161,7 @@ it("imports the Google profile once and keeps local edits on later sign-ins", as
   const { user } = await readUserSession(cookie);
   expect(user).toMatchObject({
     email: profile.email, emailVerified: true, name: profile.name, image: profile.picture,
-    username: expect.stringMatching(/^cook_[0-9a-f]{20}$/),
+    username: "robin_lee",
   });
   const linkedAccounts = await getAuth().api.listUserAccounts({ headers: { Cookie: cookie } });
   expect(linkedAccounts).toEqual([

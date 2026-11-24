@@ -41,7 +41,7 @@ export default function ProfileForm({ name, username, lockedUntil }: { name: str
         <div className="grid gap-1">
           <label htmlFor="profile-username">Username</label>
           <input id="profile-username" name="username" className="site-field" autoComplete="username" autoCapitalize="none"
-            spellCheck={false} disabled={Boolean(lockedUntil)} required minLength={3} maxLength={32} pattern={usernamePattern}
+            spellCheck={false} disabled={Boolean(lockedUntil)} required pattern={usernamePattern}
             aria-describedby="profile-username-hint" title={usernameHint}
             value={draftUsername} onChange={event => setDraftUsername(event.target.value)} />
           <p id="profile-username-hint" className="text-sm text-subtle">
