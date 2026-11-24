@@ -11,6 +11,7 @@ export function safeReturnPath(value: unknown, fallback = "/my-recipes") {
     const url = new URL(value, "https://app.local");
     if (
       url.origin !== "https://app.local" ||
+      url.pathname.startsWith("//") ||
       /^\/sign-(in|up)(\/|$)/.test(url.pathname)
     )
       return fallback;

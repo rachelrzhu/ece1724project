@@ -1,6 +1,6 @@
 # Ingredient scaling in the recipe detail view
 
-`scaleRecipe(original, request)` runs synchronously in a Client Component or a Redux selector. Fetch the recipe in the detail Server Component with `getRecipe(id)` or the recipe service’s `getById(id)`. After the existing visibility check, pass the returned recipe to the client as a prop. Its decimal strings, ordered ingredient IDs, units, and notes already fit `ScalingRecipe`. [Engine](../lib/recipes/scaling.ts) · [Recipe detail service](../lib/recipes/service.ts)
+`scaleRecipe(original, request)` runs synchronously in a Client Component or a Redux selector. The detail Server Component calls `getRecipe(id)`, which enforces recipe visibility, then passes the original serving count and ordered ingredients to the client. Decimal strings, ingredient IDs, units, and notes fit `ScalingRecipe` directly. [Engine](../lib/recipes/scaling.ts) · [Recipe queries](../lib/product/queries.ts)
 
 ## Workspace state
 
@@ -9,6 +9,21 @@ The recipe detail route passes its authorized recipe snapshot to the [scaling wo
 The selector runs the engine against the original quantities after each input change. Switching to serving mode uses the current result’s implied servings. Switching to ingredient mode uses the selected row’s unrounded amount and a compatible unit. Changing a unit converts the available amount to keep the current batch size. The selected row’s ID distinguishes duplicate ingredient names.
 
 Undo restores the previous settings across the controls and preview. A continuous edit within one quantity field contributes one undo step. Reset restores the original servings and can itself be undone. Invalid input shows its error and the original quantities until the input is corrected.
+
+## Example requests
+
+For a four-serving recipe with 400 g of flour, these requests show how each mode uses the original recipe. Pass the flour row’s ID to select it even if the same ingredient appears twice.
+
+```ts
+const forSix = scaleRecipe(original, { mode: "servings", targetServings: 6 });
+// Six servings, 600 g of flour.
+const fromFlour = scaleRecipe(original, {
+  mode: "ingredient", ingredientId: flourId, availableQuantity: 0.2, availableUnit: "kg",
+});
+// Two servings, 200 g of flour.
+```
+
+`getScalingUnits(row)` returns compatible units with the recipe unit first, using its canonical spelling (for example, `mL` for a row stored in `ml`).
 
 ## Render the result
 

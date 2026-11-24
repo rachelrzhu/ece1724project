@@ -8,7 +8,7 @@ import { recipeIdSchema, recipeInputSchema } from "@/lib/recipes/schemas";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
 import { headers } from "next/headers";
 import { productImageStore } from "@/lib/product/storage";
-import { createImageService } from "@/lib/storage/service";
+import { createImageService, ImageCleanupError } from "@/lib/storage/service";
 
 export async function saveRecipe(id: string | null, input: unknown) {
   const parsed = recipeInputSchema.safeParse(input);
@@ -22,7 +22,7 @@ export async function saveRecipe(id: string | null, input: unknown) {
     };
   if (!(await readSession()))
     return {
-      error: "Your session ended. Sign in, then save your recipe again.",
+      error: "Sign in to save this recipe.",
     };
   try {
     const result = id
@@ -30,14 +30,13 @@ export async function saveRecipe(id: string | null, input: unknown) {
       : await recipes().create(parsed.data);
     if (!result)
       return {
-        error: "This recipe is unavailable or belongs to another cook.",
+        error: "You can’t edit this recipe.",
       };
     revalidatePath("/", "layout");
     return { id: result.id };
   } catch {
     return {
-      error:
-        "We couldn’t save your recipe. Your changes are still here. Please try again.",
+      error: "Couldn’t save your recipe. Try again.",
     };
   }
 }
@@ -66,10 +65,9 @@ export async function setBookmark(id: string, saved: boolean) {
     });
     if (!accessible) return { error: "This recipe is no longer available." };
     if (saved)
-      await db.bookmark.upsert({
-        where: { userId_recipeId: { userId: session.user.id, recipeId: id } },
-        create: { userId: session.user.id, recipeId: id },
-        update: {},
+      await db.bookmark.createMany({
+        data: { userId: session.user.id, recipeId: id },
+        skipDuplicates: true,
       });
     else
       await db.bookmark.deleteMany({
@@ -89,7 +87,7 @@ export async function uploadCover(data: FormData) {
   if (!(await readSession())) return { error: "Sign in to upload a photo." };
   const file = data.get("file");
   if (!(file instanceof File) || file.size === 0 || file.size > 3 * 1024 * 1024)
-    return { error: "Choose a JPEG, PNG or WebP photo under 3 MB." };
+    return { error: "Choose a JPEG, PNG or WebP photo up to 3 MiB." };
   try {
     const result = await createImageService({
       database: getDatabase,
@@ -100,10 +98,13 @@ export async function uploadCover(data: FormData) {
       bytes: new Uint8Array(await file.arrayBuffer()),
     });
     return { id: result.id };
-  } catch {
+  } catch (error) {
+    if (error instanceof ImageCleanupError) {
+      console.error("Cover cleanup retry required", { pathname: error.pathname });
+    }
     return {
       error:
-        "We couldn’t read that photo. Choose a still JPEG, PNG or WebP under 3 MB (16 megapixels max).",
+        "Upload failed. Try again with a still JPEG, PNG or WebP (up to 3 MiB and 16 megapixels).",
     };
   }
 }
