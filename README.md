@@ -50,6 +50,7 @@ Next.js runs the frontend and its server-side code together. **You only need one
 
 - The Next.js App Router serves discovery at `/`, sign-in and registration at `/account`, the editor at `/recipes/new`, and recipe details at `/recipes/[id]`. Shared UI lives in `app/_components/`. Recipe mutations run through `app/actions.ts`.
 - Explore searches public recipes by title or ingredient. Sign in to create and manage recipes under **My recipes** and revisit bookmarks under **Saved**. New recipes are private until you publish them.
+- On a recipe page, scale the ingredient list by target servings or by the amount of one ingredient you have. Use **Undo** to recover the previous settings or **Reset** to return to the base recipe. The cooking instructions stay as written. See the [scaling workspace](docs/recipe-scaling.md).
 - `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
 - `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
 - `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.

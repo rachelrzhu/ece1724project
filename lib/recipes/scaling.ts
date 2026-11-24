@@ -68,6 +68,19 @@ export function getScalingUnits(ingredient: ScalingIngredient): string[] {
   return [source.symbol, ...others.map((unit) => unit.symbol)];
 }
 
+function convertQuantity(quantity: number, source: typeof units[number], target: typeof units[number]): number {
+  return quantity * (source.size / target.size);
+}
+
+/** Convert a positive quantity between two units in the same supported dimension. */
+export function convertScalingQuantity(value: DecimalInput, from: string, to: string): number | null {
+  const quantity = positiveNumber(value);
+  const source = findUnit(from);
+  const target = findUnit(to);
+  if (quantity === null || !source || !target || source.dimension !== target.dimension) return null;
+  return positiveNumber(convertQuantity(quantity, source, target));
+}
+
 const displayFormat = new Intl.NumberFormat("en", { maximumSignificantDigits: 6, useGrouping: false });
 
 export function formatScaledQuantity(value: number): string {
@@ -103,7 +116,7 @@ function resolveScale(recipe: ScalingRecipe, request: ScalingRequest) {
   if (available === null) return failure("availableQuantity", "Enter a positive available quantity.", selected.id);
 
   // Express the recipe requirement in the user's unit before taking the ratio.
-  const requiredInAvailableUnit = required * (source.size / availableUnit.size);
+  const requiredInAvailableUnit = convertQuantity(required, source, availableUnit);
   const factor = available / requiredInAvailableUnit;
   return { ok: true as const, servings: baseServings * factor, factor };
 }

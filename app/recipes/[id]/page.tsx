@@ -6,6 +6,7 @@ import { RecipeCover } from "@/app/_components/recipe-cover";
 import { getRecipe } from "@/lib/product/queries";
 import RecipeActions from "../_components/recipe-actions";
 import RecipeEditor from "../_components/recipe-editor";
+import ScalingWorkspace from "../_components/scaling-workspace";
 
 export async function generateMetadata({ params, searchParams }: PageProps<"/recipes/[id]">): Promise<Metadata> {
   const [{ id }, options] = await Promise.all([params, searchParams]);
@@ -60,20 +61,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
         <RecipeCover fileId={recipe.coverFileId} className="aspect-[16/10] rounded-2xl border border-line md:aspect-auto md:min-h-72" />
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.08fr]">
-        <section aria-labelledby="ingredients-title" className="site-panel">
-          <h2 id="ingredients-title" className="site-heading text-3xl">Ingredients</h2>
-          <ul className="mt-3 divide-y divide-line">
-            {recipe.ingredients.map((item) => (
-              <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-3 py-3 wrap-anywhere">
-                <div>
-                  <p className="font-semibold">{item.name}</p>
-                  {item.note && <p className="text-sm text-subtle">{item.note}</p>}
-                </div>
-                {item.quantity !== null && <span className="text-end text-subtle">{item.quantity} {item.unit}</span>}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <ScalingWorkspace key={recipe.id} recipe={{ baseServings: recipe.baseServings, ingredients: recipe.ingredients }} />
         <section aria-labelledby="method-title" className="site-panel">
           <h2 id="method-title" className="site-heading text-3xl">Method</h2>
           <ol className="mt-3 divide-y divide-line">

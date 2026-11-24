@@ -71,10 +71,10 @@ The [official handout](https://www.eecg.utoronto.ca/~cying/courses/ece1724-web/p
 | Area | Planned evidence | Current status |
 | --- | --- | --- |
 | Required frontend/server stack | Responsive recipe views; Server Component reads, actions, and routes | Framework, HeroUI styles, internal recipe services, and a local integration test page exist; product interfaces remain planned. |
-| Relational persistence | Schema/migrations and database-backed recipe workflow | Recipe models/migrations and live Prisma operations verified in a disposable schema; application database adoption remains pending. |
-| Cloud file handling | Real photo upload, record association, authorized delivery | Internal image validation/upload/owner-read services and a live private Blob round trip pass; browser upload and recipe visibility-aware delivery remain planned. |
-| Advanced feature 1 | Session flows and two-user access-control demonstration | Better Auth absent. |
-| Advanced feature 2 | Shared scaling controls, selectors, mode changes, reset/undo, state tests | Engine/store absent. |
+| Relational persistence | Schema/migrations and database-backed recipe workflow | Database-backed product flows and migrations verified against disposable PostgreSQL. |
+| Cloud file handling | Real photo upload, record association, authorized delivery | Standalone Blob round trip and local browser upload and visibility checks passed. Integrated cloud verification remains open. |
+| Advanced feature 1 | Session flows and two-user access-control demonstration | Email sessions and two-account permissions verified in Chrome. Google callbacks covered by automated tests. |
+| Advanced feature 2 | Shared scaling controls, selectors, mode changes, reset/undo, state tests | Scaling engine, recipe-scoped Redux state, and controls covered by unit and local browser checks. |
 
 Do not count Google OAuth separately from authentication to satisfy the second feature. Image transformation could be a later additional feature, but is not needed for the proposed two-feature plan.
 
@@ -118,4 +118,6 @@ Final-report target: at most 5,000 words, clear setup and user guide, individual
 
 ## Implementation status
 
-The implementation includes Prisma configuration, mapped legacy models, recipe migration SQL, Zod contracts, internal recipe CRUD services, a local development tester, private-image validation/upload/owner-read services, environment setup, HeroUI styles, a liveness endpoint, automated checks, and shared Postman collections. Live Prisma CRUD/rollback and private Blob upload/read/delete passed in disposable test resources with verified cleanup. Public application tables and migration history remain unchanged. Authentication, product recipe interfaces/uploads, recipe visibility-aware media delivery, discovery/bookmark services, and scaling remain planned. GitHub Actions passed for the foundation; deployment verification remains outstanding. See the [architecture](architecture.md) and [CRUD review](crud-review.md) for current boundaries and verification results.
+The frontend is developed in stacked feature branches for discovery and navigation, recipe and account workflows, and the scaling workspace. Chrome checks against disposable PostgreSQL cover search and pagination, registration and sign-out, recipe editing and deletion, saved recipes, cover uploads and visibility changes, scaling controls, and layouts down to 350 px. The browser checks use the repository’s local media adapter. The standalone real Blob round trip and automated Google callback tests provide separate evidence for those service boundaries.
+
+The integrated preprod smoke test with Google OAuth and Vercel Blob remains open. Release through the [deployment workflow](deployment.md) and verify against preprod resources before promoting to production.
