@@ -9,7 +9,7 @@ Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeS
 3. Run `npm run setup`. On macOS you can also double-click `setup.command`, and on Windows you can double-click `setup.cmd`.
 4. When the terminal says **Ready**, open [From My Kitchen on localhost](http://localhost:3000). If Next.js selects another port, use the address printed in the terminal and match that origin in your Google OAuth configuration. Press **Ctrl+C** to stop the server.
 
-Setup installs the locked dependencies, generates the Prisma client, and creates `.env.local` if it's missing. You'll need internet access on the first run. You can open the homepage and run the unit tests without cloud credentials. If the database is unavailable, the homepage offers to reload the recipes. To try the API with seeded accounts and recipes, start in a fresh checkout and follow the [local database instructions](prisma/README.md#local-database-and-api-tests).
+Setup installs the locked dependencies, generates the Prisma client, prepares `.env.local`, and checks the format of configured values. On first setup it generates a local authentication secret. You'll need internet access on the first run. You can open the homepage and run the unit tests without cloud credentials. If the database is unavailable, the homepage offers to reload the recipes. To try the API with seeded accounts and recipes, start in a fresh checkout and follow the [local database instructions](prisma/README.md#local-database-and-api-tests).
 
 ## Project docs
 
@@ -33,7 +33,7 @@ Next.js serves the pages and API routes from the same process.
 - The homepage and account form offer **Continue with Google** when the provider is configured. Use **Account** to see the signed-in email after the callback. [Google sign-in setup](docs/deployment.md#google-sign-in)
 - `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads.
 
-An existing `.env.local` is left untouched. Setup copies `.env.example` only if `.env.local` is missing. Database features use `DATABASE_URL`; private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`.
+On subsequent runs, setup adds missing keys from `.env.example` and preserves existing values. Database features use `DATABASE_URL`. Private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`. If an older environment file has an empty secret, set it to a unique value of at least 32 characters before using authentication.
 
 Migrations are explicit. Read the [database workflow](prisma/README.md) before running `npm run db:migrate`, especially against an existing database with `users` and `files` tables. The automated tests use isolated in-memory PostgreSQL and do not access Neon or Blob.
 
@@ -49,6 +49,8 @@ Run `npm run dev` to start the app again. After a dependency change, stop the de
 | `npm run build` | Check the production build. |
 | `npm run setup -- --install-only` | Install dependencies without starting the app. |
 | `npm run dev -- --port 3002` | Start the dev server on a specific port. |
+| `npm run env:check` | Check local configuration and see which services have credentials configured. |
+| `npm run storage:probe` | Check read access to the configured development database and Blob store. |
 
 For the browser check, start the [seeded local app](prisma/README.md#local-database-and-api-tests) with `npm run poc:dev`. In a second terminal, run `npx playwright install chromium` once, then `npm run test:product`. The test creates a recipe and cover, searches by ingredient, bookmarks from two tabs, makes the recipe private, and verifies the reader loses access after refresh. It deletes the test recipe and signs out both accounts. The uploaded file remains eligible for the local cleanup command after 24 hours.
 
@@ -74,6 +76,8 @@ The test APIs are `GET/POST/PATCH/DELETE /api/backend-test/recipes` (use `?id=..
 For repeatable checks, use the [Postman collections](postman/README.md). The [November 8 CRUD review](docs/crud-review.md) records the requests, results, and fixes from that run.
 
 ## Manual live storage check
+
+For a read-only connectivity check, run `npm run storage:probe`. It checks access to the existing database tables and lists up to one Blob object without printing object names or credentials.
 
 With development database and Blob credentials configured, run `npm run storage:check`. It creates a temporary PostgreSQL schema, checks recipe writes and rollback, uploads and reads a sample image, then removes its test data. The database role needs permission to create schemas. The script writes its [results](docs/storage-test-results.json) to the repo.
 

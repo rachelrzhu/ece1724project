@@ -59,6 +59,12 @@ Leave `NODE_ENV` to Next.js: local `next dev` uses `development`; **both** Previ
 
 Database migrations stay manual and environment-specific. Installation, CI, and Vercel builds generate the Prisma client but never run `prisma migrate deploy`. Review SQL, verify the target database and backup, and follow [the database workflow](../prisma/README.md). Apply additive changes in dev, then preprod, then production; a code rollback cannot undo a database change.
 
+When rotating a nonproduction Neon password or Blob token, update the corresponding Vercel Preview values and any `preprod` branch overrides that reference the rotated credential. These values are copies of the provider credentials. Verify their branch scopes, redeploy each affected preview, and check its homepage and `/api/health` through authenticated preview access.
+
+### Isolation verification on November 8, 2026
+
+Dev and preprod each started with an empty Neon database and a separate private Blob store. The baseline and recipe migrations applied to both databases. All 17 live database and storage checks passed in each environment, and the checks removed their disposable schemas and objects. Both protected previews returned HTTP 200 for the homepage and health endpoint and HTTP 404 for the local-only backend tester. Production retained its existing database, store, and deployment throughout the verification.
+
 ## Google sign-in
 
 1. In Google Cloud Console, select the project and open **Google Auth Platform**. Under **Branding**, enter the app name and support and developer contact emails. Under **Audience**, choose **External** for testers from different Google domains. While using the **Testing** audience, add the demo accounts under **Test users**.
