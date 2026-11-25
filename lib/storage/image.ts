@@ -1,8 +1,9 @@
 import "server-only";
 
 import sharp from "sharp";
+import { MAX_IMAGE_BYTES } from "./limits";
 
-export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
+export { MAX_IMAGE_BYTES };
 export const MAX_IMAGE_PIXELS = 16_000_000;
 
 export class ImageValidationError extends Error {

@@ -1,8 +1,14 @@
 "use client";
 
 import { Button, Input } from "@/app/_components/material";
+import {
+  MAX_DISPLAY_NAME_LENGTH, MAX_EMAIL_LENGTH, MAX_EXISTING_PASSWORD_LENGTH,
+  MAX_NEW_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH,
+} from "@/lib/auth/limits";
 import { createAuthClient } from "better-auth/client";
 import { useState, useTransition, type FormEvent } from "react";
+import { saveAvatar } from "./avatar-actions";
+import AvatarUploadField from "./avatar-upload-field";
 
 const auth = createAuthClient();
 
@@ -15,6 +21,7 @@ type AccountFormProps = {
 export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: AccountFormProps) {
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [pending, startTransition] = useTransition();
   const submitLabel = signedInEmail ? "Sign out" : registering ? "Create account" : "Sign in";
   const pendingLabel = signedInEmail ? "Signing out…" : registering ? "Creating account…" : "Signing in…";
@@ -23,6 +30,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
     event.preventDefault();
     const fields = new FormData(event.currentTarget);
     setError("");
+    setNotice("");
 
     startTransition(async () => {
       try {
@@ -30,19 +38,40 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
           email: String(fields.get("email") ?? "").trim(),
           password: String(fields.get("password") ?? ""),
         };
-        const name = String(fields.get("name") ?? "").trim();
-        if (registering && !name) {
-          setError("Enter a display name.");
-          return;
-        }
-        const result = signedInEmail ? await auth.signOut()
-          : registering ? await auth.signUp.email({ ...credentials, name })
-            : await auth.signIn.email(credentials);
-        if (result.error) {
-          setError(signedInEmail ? "Couldn’t sign out. Please try again."
-            : registering ? "Couldn’t create your account. Check your details or try signing in."
-              : "Couldn’t sign in. Check your email and password and try again.");
-          return;
+        if (registering && !signedInEmail) {
+          const name = String(fields.get("name") ?? "").trim();
+          if (!name) {
+            setError("Enter a display name.");
+            return;
+          }
+          const result = await auth.signUp.email({ ...credentials, name });
+          if (result.error) {
+            setError("Couldn’t create your account. Check your details or try signing in.");
+            return;
+          }
+          if (!result.data.token) {
+            setRegistering(false);
+            setNotice("Check your email to finish signing up. After you sign in, you can upload your avatar in Account.");
+            return;
+          }
+          const photo = fields.get("photo");
+          if (photo instanceof File && photo.size > 0) {
+            const upload = new FormData();
+            upload.set("avatar", "upload");
+            upload.set("photo", photo);
+            const saved = await saveAvatar(upload, result.data.user.id).catch(() => null);
+            if (!saved || "error" in saved) {
+              const query = new URLSearchParams({ avatar: "retry", returnTo });
+              window.location.replace(`/account?${query}#avatar`);
+              return;
+            }
+          }
+        } else {
+          const result = signedInEmail ? await auth.signOut() : await auth.signIn.email(credentials);
+          if (result.error) {
+            setError(signedInEmail ? "Couldn’t sign out. Please try again." : "Couldn’t sign in. Check your email and password and try again.");
+            return;
+          }
         }
 
         window.location.replace(signedInEmail ? "/" : returnTo);
@@ -70,7 +99,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
 
   return (
     <div className="space-y-5">
-      <form className="grid w-full gap-4" onSubmit={submit}>
+      <form method="post" className="grid w-full gap-4" onSubmit={submit}>
         {signedInEmail ? (
           <p className="text-subtle wrap-anywhere">Signed in as <strong className="text-ink">{signedInEmail}</strong></p>
         ) : (
@@ -79,19 +108,21 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
             {registering && (
               <div className="grid gap-1.5">
                 <label htmlFor="account-name" className="text-sm font-medium">Display name</label>
-                <Input id="account-name" name="name" autoComplete="name" maxLength={120} required className="min-h-11 text-base" />
+                <Input id="account-name" name="name" autoComplete="name" maxLength={MAX_DISPLAY_NAME_LENGTH} required className="min-h-11 text-base" />
               </div>
             )}
             <div className="grid gap-1.5">
               <label htmlFor="account-email" className="text-sm font-medium">Email</label>
-              <Input id="account-email" name="email" type="email" autoComplete="email" required className="min-h-11 text-base" />
+              <Input id="account-email" name="email" type="email" autoComplete="email" maxLength={registering ? MAX_EMAIL_LENGTH : undefined} required className="min-h-11 text-base" />
             </div>
             <div className="grid gap-1.5">
-              <label htmlFor="account-password" className="text-sm font-medium">Password{registering && " (8–128 characters)"}</label>
+              <label htmlFor="account-password" className="text-sm font-medium">Password{registering && ` (${MIN_PASSWORD_LENGTH}–${MAX_NEW_PASSWORD_LENGTH} characters)`}</label>
               <Input id="account-password" name="password" type="password" required className="min-h-11 text-base"
                 autoComplete={registering ? "new-password" : "current-password"}
-                minLength={registering ? 8 : undefined} maxLength={128} />
+                minLength={registering ? MIN_PASSWORD_LENGTH : undefined}
+                maxLength={registering ? MAX_NEW_PASSWORD_LENGTH : MAX_EXISTING_PASSWORD_LENGTH} />
             </div>
+            {registering && <AvatarUploadField id="signup-avatar" label="Avatar photo (optional)" />}
           </>
         )}
         <Button type="submit" className="min-h-11 justify-self-start" disabled={pending}>
@@ -99,6 +130,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
         </Button>
       </form>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-rust">{error}</p>}
+      {notice && <p role="status" className="text-sm">{notice}</p>}
       {!signedInEmail && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
           {googleEnabled && (
@@ -109,6 +141,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
           <Button type="button" variant="ghost" className="min-h-11" disabled={pending} onClick={() => {
             setRegistering(!registering);
             setError("");
+            setNotice("");
           }}>
             {registering ? "Use an existing account" : "Create an account"}
           </Button>

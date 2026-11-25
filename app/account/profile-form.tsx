@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { Button, Input } from "@/app/_components/material";
+import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/auth/limits";
 import { saveProfile } from "./profile-actions";
 import { usernameHint, usernamePattern } from "./profile-options";
 
@@ -35,7 +36,7 @@ export default function ProfileForm({ name, username, lockedUntil }: { name: str
       <fieldset disabled={pending} className="grid gap-4">
         <div className="grid gap-1">
           <label htmlFor="profile-name" className="text-sm font-medium">Display name</label>
-          <Input id="profile-name" className="min-h-11 text-base" autoComplete="name" required maxLength={120} aria-describedby="profile-name-hint"
+          <Input id="profile-name" className="min-h-11 text-base" autoComplete="name" required maxLength={MAX_DISPLAY_NAME_LENGTH} aria-describedby="profile-name-hint"
             value={draftName} onChange={event => setDraftName(event.target.value)} />
           <p id="profile-name-hint" className="text-sm text-subtle">Shown on your recipes. You can use the same display name as another cook.</p>
         </div>

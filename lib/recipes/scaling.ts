@@ -1,3 +1,6 @@
+import { findUnit, units } from "./measurements";
+export { formatScaledQuantity } from "./measurements";
+
 // Recipe detail responses use decimal strings. Number inputs also work for form controls.
 type DecimalInput = number | string;
 
@@ -33,22 +36,6 @@ export type ScalingResult = ScalingFailure | {
   warnings: ScalingWarning[];
 };
 
-const units = [
-  { symbol: "g", dimension: "mass", size: 1, names: ["gram", "grams"] },
-  { symbol: "kg", dimension: "mass", size: 1000, names: ["kilogram", "kilograms"] },
-  { symbol: "mL", dimension: "volume", size: 1, names: ["milliliter", "milliliters", "millilitre", "millilitres"] },
-  { symbol: "L", dimension: "volume", size: 1000, names: ["liter", "liters", "litre", "litres"] },
-  { symbol: "tsp", dimension: "volume", size: 5, names: ["teaspoon", "teaspoons"] },
-  { symbol: "tbsp", dimension: "volume", size: 15, names: ["tablespoon", "tablespoons"] },
-  { symbol: "count", dimension: "count", size: 1, names: ["each"] },
-];
-
-function findUnit(name: string | null) {
-  const key = name?.trim().toLowerCase();
-  if (!key) return undefined;
-  return units.find((unit) => unit.symbol.toLowerCase() === key || unit.names.includes(key));
-}
-
 function positiveNumber(value: DecimalInput | null) {
   // Number() alone accepts empty strings and hexadecimal strings from text fields.
   if (typeof value === "string") {
@@ -79,13 +66,6 @@ export function convertScalingQuantity(value: DecimalInput, from: string, to: st
   const target = findUnit(to);
   if (quantity === null || !source || !target || source.dimension !== target.dimension) return null;
   return positiveNumber(convertQuantity(quantity, source, target));
-}
-
-const displayFormat = new Intl.NumberFormat("en", { maximumFractionDigits: 1, useGrouping: false });
-
-export function formatScaledQuantity(value: number): string {
-  const rounded = displayFormat.format(value);
-  return rounded === "0" && value > 0 ? "<0.1" : rounded;
 }
 
 function failure(field: ErrorField, message: string, ingredientId?: string): ScalingFailure {

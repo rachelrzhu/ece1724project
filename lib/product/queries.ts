@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { Prisma } from "@/generated/prisma/client";
+import type { RecipeDifficulty } from "@/generated/prisma/enums";
 import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
 import { readDietaryContext } from "@/lib/dietary/server";
@@ -27,6 +28,7 @@ const cardSelect = {
 } as const;
 export const recipePageSize = 6;
 
+export type RecipeSort = "recent" | "likes" | "saved";
 export type ReactionSummary = { likes: number; dislikes: number; viewerLikes: boolean | null };
 const noReactions: ReactionSummary = { likes: 0, dislikes: 0, viewerLikes: null };
 
@@ -51,7 +53,8 @@ export async function listRecipes({
   page = 1,
   collection = "explore",
   authorId,
-  difficulty = "",
+  difficulty,
+  sort = "recent",
   maxMinutes,
   hideDietaryConflicts = false,
   allergenFilter,
@@ -60,7 +63,8 @@ export async function listRecipes({
   page?: number;
   collection?: string;
   authorId?: string;
-  difficulty?: string;
+  difficulty?: RecipeDifficulty;
+  sort?: RecipeSort;
   maxMinutes?: number;
   hideDietaryConflicts?: boolean;
   allergenFilter?: ExploreAllergenFilter;
@@ -132,11 +136,7 @@ export async function listRecipes({
             }
           : {}),
       },
-      {
-        ...(["EASY", "MEDIUM", "HARD"].includes(difficulty)
-          ? { difficulty: difficulty as "EASY" | "MEDIUM" | "HARD" }
-          : {}),
-      },
+      ...(difficulty ? [{ difficulty }] : []),
     ],
   };
   const select = {
@@ -146,11 +146,14 @@ export async function listRecipes({
       select: { name: true, canonicalName: true },
     } : false as const,
   };
+  const orderBy: Prisma.RecipeOrderByWithRelationInput[] = [{ createdAt: "desc" }, { id: "desc" }];
+  if (sort === "likes") orderBy.unshift({ likes: { _count: "desc" } });
+  if (sort === "saved") orderBy.unshift({ bookmarks: { _count: "desc" } });
   function readPage(page: number) {
     return db.recipe.findMany({
       where,
       select,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy,
       skip: (page - 1) * recipePageSize,
       take: recipePageSize,
     });

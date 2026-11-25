@@ -7,6 +7,8 @@ import { RecipeCover } from "@/app/_components/recipe-cover";
 import { RecipeReactions } from "@/app/_components/recipe-reactions";
 import { getRecipe, type RecipeDetailData } from "@/lib/product/queries";
 import RecipeActions from "../_components/recipe-actions";
+import { formatScaledQuantity } from "@/lib/recipes/measurements";
+import { getUnitOptions } from "@/lib/recipes/unit-options";
 import RecipeEditor from "../_components/recipe-editor";
 import ScalingWorkspace from "../_components/scaling-workspace";
 
@@ -18,7 +20,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/rec
 }
 
 function recipeFacts(recipe: RecipeDetailData) {
-  const facts = [["Base servings", recipe.baseServings]];
+  const facts = [["Base servings", formatScaledQuantity(Number(recipe.baseServings))]];
   if (recipe.prepMinutes + recipe.cookMinutes === 0) {
     facts.push(["Total time", recipe.source?.time || "Unknown"]);
   } else {
@@ -39,7 +41,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
     if (!recipe.isOwner) notFound();
     return (
       <PageFrame title="Edit recipe" back={{ href, label: "Back to recipe" }}>
-        <RecipeEditor recipe={recipe} />
+        <RecipeEditor recipe={recipe} units={await getUnitOptions()} />
       </PageFrame>
     );
   }

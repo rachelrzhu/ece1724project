@@ -17,7 +17,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   // Keep bookmarked searches and collection links from the original home page usable.
   const params = await searchParams;
   const browseParams = new URLSearchParams();
-  for (const key of ["collection", "q", "page", "maxMinutes", "dietary", "allergen", "exclude", "view", "error"]) {
+  for (const key of ["collection", "q", "page", "maxMinutes", "difficulty", "sort", "dietary", "allergen", "exclude", "view", "error"]) {
     const value = params[key];
     if (typeof value === "string") browseParams.set(key, value);
     else if (Array.isArray(value)) value.forEach(item => browseParams.append(key, item));

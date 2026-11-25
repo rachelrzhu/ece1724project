@@ -1,8 +1,9 @@
 import "server-only";
+import { z } from "zod";
 
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
 import { visibleRecipeWhere } from "./access";
-import { recipeIdSchema, recipeInputSchema, type RecipeInput } from "./schemas";
+import { recipeEditSchema, recipeIdSchema, recipeInputSchema, type RecipeInput } from "./schemas";
 
 // The authentication module must supply a verified server session, never request-body data.
 export type SessionReader = () => Promise<{ user: { id: string } } | null>;
@@ -175,12 +176,34 @@ export function createRecipeService({
     async update(id: string, input: unknown) {
       const authorId = await requireOwner();
       const recipeId = recipeIdSchema.parse(id);
-      const recipe = recipeInputSchema.parse(input);
+      const recipe = recipeEditSchema.parse(input);
       return database().$transaction(async (transaction) => {
-        const owned = await transaction.recipe.findFirst({ where: { id: recipeId, authorId }, select: { id: true } });
+        const retainedIds = recipe.ingredients.flatMap(({ quantity }) =>
+          quantity && typeof quantity === "object" ? [quantity.fromIngredientId] : []);
+        const owned = await transaction.recipe.findFirst({
+          where: { id: recipeId, authorId },
+          select: { baseServings: true, ingredients: retainedIds.length > 0 && {
+            where: { id: { in: retainedIds } }, select: { id: true, unit: true, quantity: true },
+          } },
+        });
         if (!owned) return null;
         await checkCover(transaction, recipe.coverFileId, authorId, recipeId);
-        const data = recipeWriteData(recipe);
+        const data = recipeWriteData({
+          ...recipe,
+          baseServings: recipe.baseServings === "original" ? Number(owned.baseServings) : recipe.baseServings,
+          ingredients: recipe.ingredients.map((ingredient, index) => {
+            if (ingredient.quantity === null || typeof ingredient.quantity === "number") {
+              return { ...ingredient, quantity: ingredient.quantity };
+            }
+            const { fromIngredientId } = ingredient.quantity;
+            const original = owned.ingredients.find(row => row.id === fromIngredientId);
+            if (!original || (original.quantity === null && !ingredient.note)) {
+              throw new z.ZodError([{ code: "custom", path: ["ingredients", index, "quantity"],
+                message: "Check this ingredient’s measurement and note before saving." }]);
+            }
+            return { ...ingredient, unit: original.unit, quantity: original.quantity === null ? null : Number(original.quantity) };
+          }),
+        });
         return transaction.recipe.update({
           where: { id: recipeId, authorId },
           data: {

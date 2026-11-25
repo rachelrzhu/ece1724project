@@ -9,9 +9,11 @@ import { productImageStore } from "@/lib/product/storage";
 import { ImageValidationError, inspectRecipeImage, MAX_IMAGE_BYTES } from "@/lib/storage/image";
 import { createImageService, ImageCleanupError } from "@/lib/storage/service";
 
-export async function saveAvatar(data: FormData): Promise<{ image: string | null } | { error: string }> {
+export async function saveAvatar(data: FormData, expectedUserId?: string): Promise<{ image: string | null } | { error: string }> {
   const session = await readSession();
   if (!session) return { error: "Sign in to change your avatar." };
+  if (expectedUserId !== undefined && session.user.id !== expectedUserId)
+    return { error: "Sign in to the account you created to upload its avatar." };
   const choice = data.get("avatar");
   let image: string | null;
   try {

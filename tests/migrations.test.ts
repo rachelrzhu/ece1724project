@@ -66,6 +66,9 @@ beforeAll(async () => {
     "SELECT total_minutes FROM recipes WHERE id = $1", [recipeId],
   );
   migratedTotalMinutes = migratedRecipe.rows[0].total_minutes;
+  await database.exec(
+    readFileSync("prisma/migrations/20261125010000_recipe_likes_view/migration.sql", "utf8"),
+  );
   const migrated = await database.query<{ username: string }>(
     "SELECT username FROM users WHERE id IN ($1, $2)", [ownerId, otherUserId],
   );
@@ -149,6 +152,10 @@ describe("PostgreSQL migrations", () => {
     const insert = "INSERT INTO recipe_reactions (user_id, recipe_id, liked) VALUES ($1, $2, $3)";
     await database.query(insert, [ownerId, recipeId, true]);
     await database.query(insert, [otherUserId, recipeId, false]);
+    const likes = () => database.query("SELECT user_id FROM recipe_likes WHERE recipe_id = $1", [recipeId]);
+    expect((await likes()).rows).toEqual([{ user_id: ownerId }]);
+    await database.query("UPDATE recipe_reactions SET liked = false WHERE user_id = $1 AND recipe_id = $2", [ownerId, recipeId]);
+    expect((await likes()).rows).toEqual([]);
     await expect(database.query(insert, [otherUserId, recipeId, true])).rejects.toThrow(/recipe_reactions_pkey/);
     await database.query("DELETE FROM recipes WHERE id = $1", [recipeId]);
     expect((await database.query("SELECT * FROM recipe_reactions")).rows).toEqual([]);

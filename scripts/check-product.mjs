@@ -213,8 +213,18 @@ try {
   await owner.getByLabel("Prep time (min)", { exact: true }).fill("12");
   await owner.getByLabel("Cook time (min)", { exact: true }).fill("18");
   await owner.getByLabel("Name", { exact: true }).fill(ingredient);
-  await owner.getByLabel(/^Quantity \(optional\b/).fill("400");
-  await owner.getByLabel("Unit", { exact: true }).fill("g");
+  const baseServings = owner.getByLabel("Base servings", { exact: true });
+  const quantity = owner.getByLabel(/^Quantity \(optional\b/);
+  for (const invalid of ["0", "1.5", "101"]) {
+    await baseServings.fill(invalid);
+    assert.equal(await baseServings.evaluate(input => input.checkValidity()), false);
+  }
+  await baseServings.fill("1");
+  await quantity.fill("1.333333");
+  assert.equal(await quantity.evaluate(input => input.checkValidity()), false);
+  await quantity.fill("400");
+  assert.equal(await quantity.evaluate(input => input.checkValidity()), true);
+  await owner.getByLabel("Unit", { exact: true }).selectOption("g");
   await owner.getByLabel("Step 1", { exact: true }).fill("Stir and serve.");
   await owner.getByLabel("Choose a photo (optional)", { exact: true }).setInputFiles({ name: "smoke-" + runId, mimeType: "application/octet-stream", buffer: fixture });
   assert(await owner.getByRole("radio", { name: /^Private\b/ }).isChecked());
@@ -288,6 +298,10 @@ try {
 
   const authorLink = guest.getByRole("article").filter({ has: guest.getByRole("link", { name: title, exact: true }) })
     .locator('a[href^="/users/"]');
+  const ownerProfile = await ownerContext.request.get(origin + "/api/auth/get-session", { headers: previewHeaders });
+  assert.equal(ownerProfile.status(), 200);
+  const { user } = await ownerProfile.json();
+  assert.equal((await authorLink.innerText()).trim(), user.name);
   const cookPath = await authorLink.getAttribute("href");
   assert.match(cookPath, /^\/users\/[\da-f-]{36}$/);
   await authorLink.click();

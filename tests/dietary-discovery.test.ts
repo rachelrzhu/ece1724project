@@ -50,6 +50,20 @@ it("can reach the last page of a large public collection with a bounded database
   expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 60000, take: recipePageSize }));
 });
 
+it.each([
+  ["likes", { likes: { _count: "desc" } }],
+  ["saved", { bookmarks: { _count: "desc" } }],
+] as const)("orders all matching recipes by %s before taking a page", async (sort, firstOrder) => {
+  mocks.count.mockResolvedValue(recipePageSize + 1);
+  await listRecipes({ sort, difficulty: "HARD", page: 2 });
+  const { where } = mocks.count.mock.calls[0][0];
+  expect(where.AND).toContainEqual({ difficulty: "HARD" });
+  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
+    where, skip: recipePageSize, take: recipePageSize,
+    orderBy: [firstOrder, { createdAt: "desc" }, { id: "desc" }],
+  }));
+});
+
 it("keeps recipes visible when the cook has not opted into filtering", async () => {
   await listRecipes({});
   expect(mocks.allergenMatches).not.toHaveBeenCalled();

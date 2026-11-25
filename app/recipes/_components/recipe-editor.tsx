@@ -7,7 +7,8 @@ import { useEffect, useId, useRef, useState, useTransition, type FormEvent } fro
 import { RecipeCover } from "@/app/_components/recipe-cover";
 import { saveRecipe, uploadCover } from "@/app/actions";
 import type { RecipeDetailData } from "@/lib/product/queries";
-import { recipeInputSchema } from "@/lib/recipes/schemas";
+import { isValidBaseServings, MAX_SERVINGS, formatScaledQuantity } from "@/lib/recipes/measurements";
+import { recipeEditSchema, recipeInputSchema } from "@/lib/recipes/schemas";
 import IngredientFields from "./ingredient-fields";
 
 const emptyIngredient = { id: "first", name: "", quantity: null, unit: null, note: null };
@@ -29,7 +30,7 @@ function issueLabel(path: string) {
   return fieldLabels[section] ?? "Recipe";
 }
 
-export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) {
+export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailData; units: string[] }) {
   const router = useRouter();
   const formId = useId();
   const nextRow = useRef(0);
@@ -37,6 +38,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
   const feedbackRef = useRef<HTMLDivElement>(null);
   const [coverId, setCoverId] = useState(recipe?.coverFileId ?? null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [keepServings, setKeepServings] = useState(!!recipe && !isValidBaseServings(Number(recipe.baseServings)));
   const [saving, setSaving] = useState(false);
   const [navigating, startNavigation] = useTransition();
   const [feedback, setFeedback] = useState<EditorFeedback | null>(null);
@@ -65,10 +67,10 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
     if (pending) return;
     const data = new FormData(event.currentTarget);
     const file = fileInput.current?.files?.[0];
-    const parsed = recipeInputSchema.safeParse({
+    const parsed = (recipe ? recipeEditSchema : recipeInputSchema).safeParse({
       title: data.get("title"),
       description: data.get("description"),
-      baseServings: Number(data.get("baseServings")),
+      baseServings: keepServings ? "original" : Number(data.get("baseServings")),
       prepMinutes: Number(data.get("prepMinutes")),
       cookMinutes: Number(data.get("cookMinutes")),
       difficulty: data.get("difficulty"),
@@ -76,9 +78,10 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
       ingredients: ingredients.map(({ id }) => {
         const prefix = `ingredient-${id}`;
         const quantity = data.get(`${prefix}-quantity`);
+        const stored = data.get(`${prefix}-stored`);
         return {
           name: data.get(`${prefix}-name`),
-          quantity: quantity ? Number(quantity) : null,
+          quantity: stored ? { fromIngredientId: stored } : quantity ? Number(quantity) : null,
           unit: String(data.get(`${prefix}-unit`) ?? "").trim() || null,
           note: String(data.get(`${prefix}-note`) ?? "").trim() || null,
         };
@@ -166,14 +169,20 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
-              { name: "baseServings", label: "Base servings", min: "0.0001", max: "10000", step: "0.0001", initial: recipe?.baseServings ?? 1 },
+              { name: "baseServings", label: "Base servings", min: "1", max: String(MAX_SERVINGS), step: "1", initial: recipe && !isValidBaseServings(Number(recipe.baseServings)) ? "" : recipe?.baseServings ?? 1 },
               { name: "prepMinutes", label: "Prep time (min)", min: "0", max: "10080", step: "1", initial: recipe?.prepMinutes ?? 0 },
               { name: "cookMinutes", label: "Cook time (min)", min: "0", max: "10080", step: "1", initial: recipe?.cookMinutes ?? 0 },
             ].map(({ name, label, initial, ...bounds }) => (
               <div key={name} className="grid min-w-0 gap-1">
                 <label htmlFor={`${formId}-${name}`}>{label}</label>
-                <Input id={`${formId}-${name}`} name={name} type="number" defaultValue={initial}
-                  className="min-h-11 text-base" required {...bounds} />
+                {name === "baseServings" && keepServings ? (
+                  <Button id={`${formId}-${name}`} type="button" variant="outline" onClick={() => setKeepServings(false)}>
+                    Change original servings ({formatScaledQuantity(Number(recipe?.baseServings))})
+                  </Button>
+                ) : (
+                  <Input id={`${formId}-${name}`} name={name} type="number" defaultValue={initial}
+                    className="min-h-11 text-base" required {...bounds} />
+                )}
               </div>
             ))}
           </div>
@@ -197,7 +206,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
             <p className="text-sm text-subtle">Use a quantity and unit for measured ingredients. For unmeasured ingredients, add a note such as “to taste”.</p>
           </div>
           {ingredients.map((ingredient, index) => (
-            <IngredientFields key={ingredient.id} ingredient={ingredient} number={index + 1}
+            <IngredientFields key={ingredient.id} ingredient={ingredient} number={index + 1} units={units}
               canRemove={ingredients.length > 1}
               onRemove={() => setIngredients((rows) => rows.filter((row) => row.id !== ingredient.id))} />
           ))}

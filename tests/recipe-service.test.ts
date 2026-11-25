@@ -168,6 +168,24 @@ describe("recipe service boundaries", () => {
     expect(transaction.recipe.update).not.toHaveBeenCalled();
   });
 
+  it("retains the owner's legacy measurement and servings when editing other fields", async () => {
+    const { service, transaction } = setup();
+    transaction.recipe.findFirst.mockResolvedValue({ baseServings: "2.345", ingredients: [
+      { id: coverId, quantity: new Prisma.Decimal("0.25"), unit: "scoop" },
+    ] });
+    const input = { ...recipeInput(), baseServings: "original", ingredients: [
+      { name: "Spices", quantity: { fromIngredientId: coverId }, unit: null, note: "For the sauce" },
+    ] };
+    await service.update(recipeId, input);
+    const data = transaction.recipe.update.mock.calls[0][0].data;
+    expect(data.baseServings.toString()).toBe("2.345");
+    expect(data.ingredients.create[0].quantity.toString()).toBe("0.25");
+    expect(data.ingredients.create[0].unit).toBe("scoop");
+    await expect(service.create(input)).rejects.toThrow();
+    transaction.recipe.findFirst.mockResolvedValue({ baseServings: "2", ingredients: [] });
+    await expect(service.update(recipeId, input)).rejects.toThrow(/Check this ingredient/);
+  });
+
   it("does not edit an inaccessible recipe or inspect its cover", async () => {
     const { service, transaction } = setup(otherUserId);
     await expect(service.update(recipeId, { ...recipeInput(), coverFileId: coverId })).resolves.toBeNull();

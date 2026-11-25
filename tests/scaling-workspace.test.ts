@@ -11,7 +11,7 @@ const recipe: ScalingRecipe = {
     { id: "water", name: "Water", quantity: "200", unit: "mL", note: null },
     { id: "egg", name: "Egg", quantity: "1", unit: "count", note: null },
     { id: "salt", name: "Salt", quantity: null, unit: null, note: "to taste" },
-    { id: "oats", name: "Oats", quantity: "2", unit: "cups", note: null },
+    { id: "oats", name: "Oats", quantity: "2", unit: "scoop", note: null },
   ],
 };
 
@@ -54,6 +54,24 @@ describe("recipe scaling workspace", () => {
     expect(store.getState().current).toMatchObject({ mode: "ingredient", availableQuantity: "0.2", availableUnit: "kg" });
   });
 
+  it("validates typed amounts and preserves exact amounts behind rounded unit and mode controls", () => {
+    const store = makeScalingStore(recipe);
+    for (const value of ["1.33333", "0", "101", "1e1"]) {
+      store.dispatch(scalingActions.editQuantity({ field: "targetServings", value }));
+      expect(selectPreview(store.getState())).toMatchObject({ ok: false, error: { field: "targetServings" } });
+    }
+    store.dispatch(scalingActions.changeMode("ingredient"));
+    store.dispatch(scalingActions.editQuantity({ field: "availableQuantity", value: "177.777" }));
+    expect(selectPreview(store.getState())).toMatchObject({ ok: false, error: { field: "availableQuantity" } });
+    store.dispatch(scalingActions.editQuantity({ field: "availableQuantity", value: "177.8" }));
+    store.dispatch(scalingActions.chooseUnit("kg"));
+    expect(store.getState().current.availableQuantity).toBe("0.2");
+    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: expect.closeTo(1.778) });
+    store.dispatch(scalingActions.changeMode("servings"));
+    expect(store.getState().current.targetServings).toBe("1.8");
+    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: expect.closeTo(1.778) });
+  });
+
   it("updates the amount and unit when the selected ingredient changes", () => {
     const store = makeScalingStore(recipe);
     store.dispatch(scalingActions.changeMode("ingredient"));
@@ -74,14 +92,14 @@ describe("recipe scaling workspace", () => {
     store.dispatch(scalingActions.editQuantity({ field: "availableQuantity", value: "0" }));
     expect(selectPreview(store.getState())).toMatchObject({ ok: false, error: { field: "availableQuantity" } });
     store.dispatch(scalingActions.finishEditing());
-    store.dispatch(scalingActions.editQuantity({ field: "availableQuantity", value: "0.25" }));
+    store.dispatch(scalingActions.editQuantity({ field: "availableQuantity", value: "0.3" }));
     const prior = store.getState().current;
     store.dispatch(scalingActions.reset());
     expect(selectCanReset(store.getState())).toBe(false);
     expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 4, factor: 1 });
     store.dispatch(scalingActions.undo());
     expect(store.getState().current).toEqual(prior);
-    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 2.5, factor: 0.625 });
+    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: expect.closeTo(3), factor: expect.closeTo(0.75) });
     store.dispatch(scalingActions.undo());
     expect(store.getState().current.availableQuantity).toBe("0");
   });
@@ -111,9 +129,9 @@ describe("recipe scaling workspace", () => {
     store.dispatch(scalingActions.changeMode("ingredient"));
 
     expect(selectEligibleIngredients(store.getState())).toEqual([
-      { id: "flour", name: "Flour", units: ["g", "kg"] },
-      { id: "dusting", name: "Flour", units: ["g", "kg"] },
-      { id: "second-dough", name: "Flour", units: ["g", "kg"] },
+      { id: "flour", name: "Flour", units: ["g", "kg", "oz", "lb"] },
+      { id: "dusting", name: "Flour", units: ["g", "kg", "oz", "lb"] },
+      { id: "second-dough", name: "Flour", units: ["g", "kg", "oz", "lb"] },
     ]);
 
     store.dispatch(scalingActions.chooseIngredient("dusting"));
