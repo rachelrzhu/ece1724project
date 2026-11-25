@@ -27,7 +27,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/rec
 
 function recipeFacts(recipe: RecipeDetailData, locale: Locale) {
   const t = makeTranslator(locale, detailMessages);
-  const facts = [[t("Base servings"), formatScaledQuantity(Number(recipe.baseServings))]];
+  const facts = [[t("Base servings"), formatScaledQuantity(Number(recipe.baseServings), locale)]];
   if (recipe.prepMinutes + recipe.cookMinutes === 0) {
     facts.push([t("Total time"), recipe.source?.estimatedMinutes
       ? t("about {minutes} min", { minutes: recipe.source.estimatedMinutes }) : t("Unknown")]);

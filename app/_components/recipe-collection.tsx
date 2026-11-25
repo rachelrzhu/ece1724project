@@ -16,6 +16,7 @@ import { collections, SiteHeader, type Collection } from "@/app/_components/site
 import { getGoogleProviderOptions, readSession } from "@/lib/auth/server";
 import { parseAllergenFilter } from "@/lib/dietary/policy";
 import { readDietaryPreferences } from "@/lib/dietary/server";
+import { formatScaledQuantity } from "@/lib/recipes/measurements";
 import { parseMaxMinutes } from "@/lib/recipes/ready-in";
 import { listRecipes, recipePageSize, type PublicCook, type RecipeCardData, type RecipeSort } from "@/lib/product/queries";
 import GoogleSignInButton from "@/app/account/google-sign-in-button";
@@ -44,7 +45,7 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
         <div className={styles.body}>
           <ul className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-medium text-subtle">
             {duration && <li className="inline-flex items-center gap-1"><Icon name="clock" className="size-3.5" />{duration}</li>}
-            <li>{t("Serves {count}", { count: Number(recipe.baseServings).toLocaleString(locale, { maximumFractionDigits: 1 }) })}</li>
+            <li>{t("Serves {count}", { count: formatScaledQuantity(Number(recipe.baseServings), locale) })}</li>
             <li className="capitalize">{t(difficultyLabels[recipe.difficulty]).toLocaleLowerCase(locale)}</li>
             {recipe.source?.difficulty && <li>{t("Source difficulty {rating}", { rating: recipe.source.difficulty })}</li>}
             {collection === "mine" && <li className="capitalize">{t(recipe.visibility === "PRIVATE" ? "Private" : "Public").toLocaleLowerCase(locale)}</li>}

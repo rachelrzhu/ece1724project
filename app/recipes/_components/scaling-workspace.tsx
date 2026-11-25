@@ -183,13 +183,13 @@ function IngredientPreview() {
   const amounts = preview.ok
     ? preview.ingredients.map(({ scaledQuantity, ...item }) => ({ ...item, quantity: scaledQuantity }))
     : original.ingredients;
-  const servings = formatScaledQuantity(preview.ok ? preview.servings : Number(original.baseServings));
+  const servings = formatScaledQuantity(preview.ok ? preview.servings : Number(original.baseServings), locale);
 
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-y border-line bg-canvas px-3 py-2 text-sm text-ink" role="status">
         <p className="font-semibold wrap-anywhere">{t("Serves {servings}", { servings })}</p>
-        {scaled && <p className="wrap-anywhere">{t("×{factor} batch", { factor: formatScaledQuantity(preview.factor) })}</p>}
+        {scaled && <p className="wrap-anywhere">{t("×{factor} batch", { factor: formatScaledQuantity(preview.factor, locale) })}</p>}
       </div>
       <ul className="mt-2 divide-y divide-line" aria-label={t("Ingredient quantities")}>
         {amounts.map((item) => (
@@ -198,7 +198,7 @@ function IngredientPreview() {
               <p className="font-semibold" lang={language !== "original" && item.translations ? language : undefined}>{language === locale && !item.translations ? lookup(item.name) : item.name}</p>
               {item.note && <p className="text-sm text-subtle"><RecipeText text={item.note} /></p>}
             </div>
-            {item.quantity !== null && <span className="text-end text-subtle">{formatScaledQuantity(Number(item.quantity))} {item.unit ? unitLabel(item.unit) : ""}</span>}
+            {item.quantity !== null && <span className="text-end text-subtle">{formatScaledQuantity(Number(item.quantity), locale)} {item.unit ? unitLabel(item.unit) : ""}</span>}
           </li>
         ))}
       </ul>

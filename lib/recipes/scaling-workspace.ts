@@ -61,7 +61,8 @@ function calculate(recipe: ScalingRecipe, settings: Settings, locale: Locale = "
   }
   const servingsMode = settings.mode === "servings";
   const field = servingsMode ? "targetServings" : "availableQuantity";
-  const value = settings[field];
+  // Accept either decimal separator so a language change also preserves an in-progress amount.
+  const value = settings[field].replace(",", ".");
   const max = servingsMode ? MAX_SERVINGS : MAX_QUANTITY;
   if (!/^(?:\d+(?:\.\d?)?|\.\d)$/.test(value) || !isValidQuantity(Number(value), max)) {
     return { ok: false, error: { field,

@@ -70,7 +70,7 @@ function likelyLanguage(text: string): string | undefined {
 // All models and results live only for this view. Cook-authored strings never leave the browser.
 export async function translateRecipe(
   browser: BrowserLanguageTools, texts: readonly string[], target: Locale, signal: AbortSignal, beginDownload: BeginDownload,
-  fallbackSource?: Locale,
+  fallbackSource?: Locale, onTranslatedPair?: (strings: ReadonlyMap<string, string>) => void,
 ): Promise<TranslationResult | null> {
   const { LanguageDetector, Translator } = browser;
   signal.throwIfAborted();
@@ -151,6 +151,7 @@ export async function translateRecipe(
     } finally {
       translator.destroy();
     }
+    if (translated.size) onTranslatedPair?.(translated);
   }
   return groups.size && !completed ? null : { strings: translated, needsSource };
 }

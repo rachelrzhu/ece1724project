@@ -190,7 +190,7 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
                 <label htmlFor={`${formId}-${name}`}>{t(label)}</label>
                 {name === "baseServings" && keepServings ? (
                   <Button id={`${formId}-${name}`} type="button" variant="outline" onClick={() => setKeepServings(false)}>
-                    {t("Change original servings ({servings})", { servings: formatScaledQuantity(Number(recipe?.baseServings)) })}
+                    {t("Change original servings ({servings})", { servings: formatScaledQuantity(Number(recipe?.baseServings), locale) })}
                   </Button>
                 ) : (
                   <Input id={`${formId}-${name}`} name={name} type="number" defaultValue={initial}

@@ -32,7 +32,8 @@ export function RecipeTranslation({ texts, children }: { texts: readonly string[
   const target = useLocale();
   // Scope edits and language changes to a new translation job, without remounting the recipe's controls.
   const [state, setState] = useState<{ texts: readonly string[]; target: string; result: Translation } | null>(null);
-  const [original, setOriginal] = useState(false);
+  const [originalFor, setOriginalFor] = useState<{ texts: readonly string[]; target: Locale } | null>(null);
+  const original = originalFor?.texts === texts && originalFor.target === target;
   const [source, setSource] = useState<{ texts: readonly string[]; locale: Locale } | null>(null);
   const fallbackSource = source?.texts === texts ? source.locale : undefined;
   const result = state?.texts === texts && state.target === target ? state.result : { status: "working" as const };
@@ -40,8 +41,9 @@ export function RecipeTranslation({ texts, children }: { texts: readonly string[
   useEffect(() => {
     const job = new AbortController();
     const { signal } = job;
+    let partial: Map<string, string> | undefined;
     function update(result: Translation) {
-      if (!signal.aborted) setState({ texts, target, result });
+      if (!signal.aborted) setState({ texts, target, result: { strings: partial, ...result } });
     }
     // Invoke create() directly from the click handler while user activation is still available.
     const beginDownload: BeginDownload = (model, create, modelId) => new Promise((resolve, reject) => {
@@ -49,46 +51,43 @@ export function RecipeTranslation({ texts, children }: { texts: readonly string[
       let started = false;
       function cancel() {
         installedModels.removeEventListener(modelId, onInstalled);
-        reject(signal.reason);
+        if (!started) reject(signal.reason);
       }
-      function start(fromClick: boolean) {
+      async function start(fromClick: boolean) {
         if (started || signal.aborted) return;
         started = true;
         update({ status: "working" });
-        async function open() {
-          try {
-            const instance = await create();
-            installedModels.removeEventListener(modelId, onInstalled);
-            signal.removeEventListener("abort", cancel);
-            resolve(instance);
-            if (fromClick) installedModels.dispatchEvent(new Event(modelId));
-          } catch (error) {
-            if (!fromClick && !signal.aborted && error instanceof DOMException && error.name === "NotAllowedError") {
-              started = false;
-              update({ status: model, enable: () => start(true) });
-            } else {
-              installedModels.removeEventListener(modelId, onInstalled);
-              signal.removeEventListener("abort", cancel);
-              reject(error);
-            }
+        try {
+          const instance = await create();
+          resolve(instance);
+          if (fromClick) installedModels.dispatchEvent(new Event(modelId));
+        } catch (error) {
+          if (!fromClick && !signal.aborted && error instanceof DOMException && error.name === "NotAllowedError") {
+            started = false;
+            update({ status: model, enable: () => void start(true) });
+            return;
           }
+          reject(error);
         }
-        void open();
+        installedModels.removeEventListener(modelId, onInstalled);
+        signal.removeEventListener("abort", cancel);
       }
-      function onInstalled() { start(false); }
+      function onInstalled() { void start(false); }
       signal.addEventListener("abort", cancel, { once: true });
       installedModels.addEventListener(modelId, onInstalled);
-      update({ status: model, enable: () => start(true) });
+      update({ status: model, enable: () => void start(true) });
     });
-    translateRecipe(window as BrowserLanguageTools, texts, target, signal, beginDownload, fallbackSource)
-      .then(result => update(result ? { status: "ready", ...result } : { status: "unavailable" }))
+    translateRecipe(window as BrowserLanguageTools, texts, target, signal, beginDownload, fallbackSource, strings => {
+      partial = new Map(strings);
+      update({ status: "working" });
+    }).then(result => update(result ? { status: "ready", ...result } : { status: "unavailable" }))
       .catch(() => update({ status: "unavailable" }));
     return () => job.abort();
   }, [texts, target, fallbackSource]);
 
   return (
     <TranslationContext.Provider value={{
-      result, original, toggle: () => setOriginal(value => !value),
+      result, original, toggle: () => setOriginalFor(original ? null : { texts, target }),
       selectSource: result.needsSource ? locale => setSource({ texts, locale }) : undefined,
     }}>
       {children}
@@ -121,27 +120,31 @@ export function RecipeTranslationControls({ compact = false }: { compact?: boole
   const id = useId();
   if (!context) return null;
   const { result, original, toggle } = context;
-  if (result.enable) return (
-    <Button type="button" variant="outline" onClick={result.enable}>
-      {t(result.status === "detector" ? "Enable language detection" : "Enable recipe translation")}
-    </Button>
-  );
-  if (context.selectSource) return (
-    <div className="grid justify-items-start gap-1 text-sm">
-      <label htmlFor={id}>{t("Original recipe language")}</label>
-      <select id={id} className="site-field min-h-11" defaultValue="" onChange={event => {
-        const value = event.currentTarget.value;
-        if (isLocale(value)) context.selectSource?.(value);
-      }}>
-        <option value="" disabled>{t("Choose a language")}</option>
-        {Object.entries(languageNames).map(([value, name]) => <option key={value} value={value} lang={value}>{name}</option>)}
-      </select>
+  if (result.enable || context.selectSource || result.strings?.size) return (
+    <div className="flex flex-wrap items-end gap-2">
+      {result.enable && (
+        <Button type="button" variant="outline" onClick={result.enable}>
+          {t(result.status === "detector" ? "Enable language detection" : "Enable recipe translation")}
+        </Button>
+      )}
+      {context.selectSource && (
+        <div className="grid justify-items-start gap-1 text-sm">
+          <label htmlFor={id}>{t("Original recipe language")}</label>
+          <select id={id} className="site-field min-h-11" defaultValue="" onChange={event => {
+            const value = event.currentTarget.value;
+            if (isLocale(value)) context.selectSource?.(value);
+          }}>
+            <option value="" disabled>{t("Choose a language")}</option>
+            {Object.entries(languageNames).map(([value, name]) => <option key={value} value={value} lang={value}>{name}</option>)}
+          </select>
+        </div>
+      )}
+      {Boolean(result.strings?.size) && (
+        <Button type="button" variant="outline" onClick={toggle}>
+          {t(original ? "Show translation" : "Show original")}
+        </Button>
+      )}
     </div>
-  );
-  if (result.strings?.size) return (
-    <Button type="button" variant="outline" onClick={toggle}>
-      {t(original ? "Show translation" : "Show original")}
-    </Button>
   );
   if (compact || result.status === "ready") return null;
   return <p className="text-sm text-subtle" role="status">{t(result.status === "working"

@@ -20,7 +20,8 @@ export default function IngredientFields({
   canRemove: boolean;
   onRemove: () => void;
 }) {
-  const t = editorText(useLocale());
+  const locale = useLocale();
+  const t = editorText(locale);
   const legacy = (ingredient.quantity !== null && !isValidQuantity(Number(ingredient.quantity))) ||
     (ingredient.unit !== null && !units.includes(ingredient.unit));
   const [keepMeasurement, setKeepMeasurement] = useState(legacy);
@@ -42,7 +43,7 @@ export default function IngredientFields({
             <input type="hidden" name={`${prefix}-stored`} value={ingredient.id} />
             <p>{ingredient.quantity === null ? t("Original measurement")
               : t("Original measurement (about {quantity} {unit})", {
-                quantity: formatScaledQuantity(Number(ingredient.quantity)), unit: t(ingredient.unit ?? ""),
+                quantity: formatScaledQuantity(Number(ingredient.quantity), locale), unit: t(ingredient.unit ?? ""),
               })}</p>
             <Button type="button" variant="outline" className="justify-self-start" onClick={() => setKeepMeasurement(false)}>
               {t("Change measurement")}

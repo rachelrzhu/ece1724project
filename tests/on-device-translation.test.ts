@@ -26,7 +26,10 @@ describe("on-device recipe translation", () => {
   it("handles mixed French and Chinese fields and preserves text outside the supported languages", async () => {
     const { Translator, create } = installedTranslator();
     const fields = ["在碗里打散鸡蛋。", "Battez les œufs dans un bol.", "Добавьте молоко."];
-    const result = await translateRecipe({ Translator }, fields, "en", signal, noDownload);
+    const progress: string[][] = [];
+    const result = await translateRecipe({ Translator }, fields, "en", signal, noDownload, undefined,
+      strings => progress.push([...strings.keys()]));
+    expect(progress).toEqual([fields.slice(0, 1), fields.slice(0, 2)]);
     expect([...result!.strings.keys()]).toEqual(fields.slice(0, 2));
     expect(create).toHaveBeenCalledWith({ sourceLanguage: "zh", targetLanguage: "en", signal });
     expect(create).toHaveBeenCalledWith({ sourceLanguage: "fr", targetLanguage: "en", signal });
