@@ -75,7 +75,7 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
               )}
               {dietary.unknownIngredients.length > 0 && (
                 <span className="text-subtle">
-                  {t(dietary.unknownIngredients.length === 1 ? "{count} ingredient with incomplete information" : "{count} ingredients with incomplete information", { count: dietary.unknownIngredients.length })}
+                  {t("Some ingredients are unrecognized. Please check the ingredient list before cooking.")}
                 </span>
               )}
               {!dietary.conflicts.length && !dietary.unknownIngredients.length && (

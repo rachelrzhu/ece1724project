@@ -123,13 +123,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
               </div>
             ) : <p className="text-sm">{t("No known conflicts in mapped ingredients.")}</p>}
             {dietary.unknownIngredients.length > 0 && (
-              <div>
-                <h3 className="font-semibold">{t("Incomplete ingredient information")}</h3>
-                <p className="text-sm text-subtle">{t("These entries have missing or incomplete records for your settings.")}</p>
-                <ul className="list-disc ps-5 text-sm wrap-anywhere">
-                  {dietary.unknownIngredients.map((name, index) => <li key={index}><RecipeText text={name} translation={dietaryNames.get(name) ?? name} /></li>)}
-                </ul>
-              </div>
+              <p className="text-sm text-subtle">{t("Some ingredients are unrecognized. Please check the ingredient list before cooking.")}</p>
             )}
             <p className="text-sm text-subtle">{t("Flags use recorded ingredient information. Check product labels and preparation for possible cross-contact.")}</p>
           </section>

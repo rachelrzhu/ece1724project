@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { isDeepStrictEqual } from "node:util";
 
 const mappedIngredient = "milk chocolate with peanuts";
+const ingredientWarning = "Some ingredients are unrecognized. Please check the ingredient list before cooking.";
 
 async function readPreferences(page) {
   await page.goto("/account");
@@ -65,8 +66,8 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
 
     await reader.goto(detail);
     const flags = reader.getByRole("region", { name: "Your dietary flags", exact: true });
-    await flags.getByRole("heading", { name: "Incomplete ingredient information", exact: true }).waitFor();
-    await flags.getByText(ingredient, { exact: true }).waitFor();
+    await flags.getByText(ingredientWarning, { exact: true }).waitFor();
+    assert.equal(await flags.getByText(ingredient, { exact: true }).count(), 0);
     await reader.getByText("No known conflicts in mapped ingredients.", { exact: true }).waitFor();
     await reader.goto(results);
     await openMoreFilters(reader);
@@ -76,7 +77,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
       && url.searchParams.get("maxMinutes") === "30");
     await reader.reload();
     await link.waitFor();
-    await reader.getByText("1 ingredient with incomplete information", { exact: true }).waitFor();
+    await reader.getByText(ingredientWarning, { exact: true }).waitFor();
     await reader.getByRole("link", { name: "Remove dietary filter", exact: true }).click();
     await reader.waitForURL((url) => !url.searchParams.has("dietary") && url.searchParams.get("maxMinutes") === "30");
     passed("An unmapped ingredient stays visible and marked incomplete when time and dietary filters are combined");
@@ -156,7 +157,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await savePreferences(reader, { pattern: "VEGETARIAN", allergens: [] });
     await reader.goto(filtered);
     await link.waitFor();
-    await reader.getByText("1 ingredient with incomplete information", { exact: true }).waitFor();
+    await reader.getByText(ingredientWarning, { exact: true }).waitFor();
     await clearPreferences(reader);
     assert(isDeepStrictEqual(await readPreferences(owner), otherProfile), "Clearing preferences changed the other account.");
     await editIngredient(owner, detail, ingredient);

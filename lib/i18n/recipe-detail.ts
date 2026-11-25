@@ -1,4 +1,5 @@
 import type { Messages } from "@/lib/i18n";
+import { ingredientWarningMessages } from "./recipe-labels";
 
 export const detailMessages = {
   "Recipe": ["食谱", "Recette"],
@@ -27,10 +28,7 @@ export const detailMessages = {
   "Your dietary flags": ["饮食提醒", "Vos alertes alimentaires"],
   "Known conflicts": ["已知冲突", "Incompatibilités connues"],
   "No known conflicts in mapped ingredients.": ["已识别的食材中没有已知冲突。", "Aucune incompatibilité connue parmi les ingrédients répertoriés."],
-  "Incomplete ingredient information": ["食材信息不完整", "Informations incomplètes sur les ingrédients"],
-  "These entries have missing or incomplete records for your settings.": [
-    "根据你的饮食设置，这些食材的信息缺失或不完整。", "Les données sur ces ingrédients sont absentes ou incomplètes pour vos préférences.",
-  ],
+  ...ingredientWarningMessages,
   "Flags use recorded ingredient information. Check product labels and preparation for possible cross-contact.": [
     "提醒依据已记录的食材信息。请查看产品标签，并注意制作过程中可能发生的交叉接触。", "Ces alertes reposent sur les données disponibles. Vérifiez les étiquettes et les conditions de préparation pour évaluer les risques de contact croisé.",
   ],

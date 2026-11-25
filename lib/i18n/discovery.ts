@@ -1,6 +1,6 @@
 import { makeTranslator, type Locale, type Messages } from "@/lib/i18n";
 import { actionMessages } from "./action-messages";
-import { dietMessages, difficultyMessages } from "./recipe-labels";
+import { dietMessages, difficultyMessages, ingredientWarningMessages } from "./recipe-labels";
 
 export const homeMessages = {
   "What’s cooking tonight?": ["今晚做什么菜？", "Qu’est-ce qu’on cuisine ce soir ?"],
@@ -65,8 +65,7 @@ export const discoveryMessages = {
   "Home cook": ["家庭厨师", "Cuisinier amateur"],
   "{count} ingredient with known conflicts": ["{count} 种食材与饮食偏好冲突", "{count} ingrédient incompatible avec vos préférences"],
   "{count} ingredients with known conflicts": ["{count} 种食材与饮食偏好冲突", "{count} ingrédients incompatibles avec vos préférences"],
-  "{count} ingredient with incomplete information": ["{count} 种食材的信息不完整", "Informations incomplètes pour {count} ingrédient"],
-  "{count} ingredients with incomplete information": ["{count} 种食材的信息不完整", "Informations incomplètes pour {count} ingrédients"],
+  ...ingredientWarningMessages,
   "No known conflicts in mapped ingredients.": ["已识别的食材未发现饮食冲突。", "Aucune incompatibilité connue parmi les ingrédients identifiés."],
   "Edit {title}": ["编辑《{title}》", "Modifier « {title} »"],
   Edit: ["编辑", "Modifier"],

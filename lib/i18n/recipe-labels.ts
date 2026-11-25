@@ -1,5 +1,12 @@
 import type { Messages } from "@/lib/i18n";
 
+export const ingredientWarningMessages = {
+  "Some ingredients are unrecognized. Please check the ingredient list before cooking.": [
+    "有些食材未能识别。请在烹饪前自行核对食材清单。",
+    "Certains ingrédients n’ont pas été reconnus. Veuillez vérifier la liste des ingrédients avant de cuisiner.",
+  ],
+} as const satisfies Messages;
+
 export const dietMessages = {
   "No dietary preference": ["无饮食偏好", "Aucune préférence alimentaire"],
   Vegetarian: ["蛋奶素", "Végétarien"],
