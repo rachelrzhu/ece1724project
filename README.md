@@ -96,3 +96,7 @@ The separate `ai-session.md` with the team’s representative AI interactions is
 ## Video Demo
 
 <!-- Add the URL of the team's 2–5 minute narrated walkthrough here. -->
+
+## License
+
+The project code is licensed under the [MIT License](LICENSE). For third-party recipes and photographs, see the [source and attribution notes](public/images/SOURCES.md).
