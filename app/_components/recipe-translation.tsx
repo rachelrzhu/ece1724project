@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useId, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useState, type ReactNode } from "react";
 import { isLocale, languageNames, makeTranslator, type Locale } from "@/lib/i18n";
 import { translateRecipe, type BeginDownload, type BrowserLanguageTools } from "@/lib/i18n/on-device";
 import { useLocale } from "./language-provider";
@@ -25,10 +25,12 @@ type Translation = { status: Status; strings?: Map<string, string>; needsSource?
 const installedModels = new EventTarget();
 
 const TranslationContext = createContext<{
-  result: Translation; original: boolean; toggle: () => void; selectSource?: (source: Locale) => void;
+  result: Translation; hasCatalogTranslation: boolean; original: boolean; toggle: () => void; selectSource?: (source: Locale) => void;
 } | null>(null);
 
-export function RecipeTranslation({ texts, children }: { texts: readonly string[]; children: ReactNode }) {
+export function RecipeTranslation({ texts, hasCatalogTranslation = false, children }: {
+  texts: readonly string[]; hasCatalogTranslation?: boolean; children: ReactNode;
+}) {
   const target = useLocale();
   // Scope edits and language changes to a new translation job, without remounting the recipe's controls.
   const [state, setState] = useState<{ texts: readonly string[]; target: string; result: Translation } | null>(null);
@@ -87,7 +89,7 @@ export function RecipeTranslation({ texts, children }: { texts: readonly string[
 
   return (
     <TranslationContext.Provider value={{
-      result, original, toggle: () => setOriginalFor(original ? null : { texts, target }),
+      result, hasCatalogTranslation, original, toggle: () => setOriginalFor(original ? null : { texts, target }),
       selectSource: result.needsSource ? locale => setSource({ texts, locale }) : undefined,
     }}>
       {children}
@@ -97,10 +99,11 @@ export function RecipeTranslation({ texts, children }: { texts: readonly string[
 
 export function useRecipeTranslation() {
   const context = useContext(TranslationContext);
-  return {
-    original: context?.original ?? false,
-    lookup: (text: string) => context?.original ? text : context?.result.strings?.get(text) ?? text,
-  };
+  const original = context?.original ?? false;
+  const strings = context?.result.strings;
+  const lookup = useCallback((text: string, catalogLabel?: string) =>
+    original ? text : catalogLabel ?? strings?.get(text) ?? text, [original, strings]);
+  return { lookup };
 }
 
 export function useRecipeText(text: string) {
@@ -108,8 +111,8 @@ export function useRecipeText(text: string) {
 }
 
 export function RecipeText({ text, translation }: { text: string; translation?: string }) {
-  const { original, lookup } = useRecipeTranslation();
-  const value = original ? text : translation ?? lookup(text);
+  const { lookup } = useRecipeTranslation();
+  const value = lookup(text, translation);
   const target = useLocale();
   return value === text ? <>{text}</> : <span lang={target}>{value}</span>;
 }
@@ -120,7 +123,8 @@ export function RecipeTranslationControls({ compact = false }: { compact?: boole
   const id = useId();
   if (!context) return null;
   const { result, original, toggle } = context;
-  if (result.enable || context.selectSource || result.strings?.size) return (
+  const canToggle = context.hasCatalogTranslation || Boolean(result.strings?.size);
+  if (result.enable || context.selectSource || canToggle) return (
     <div className="flex flex-wrap items-end gap-2">
       {result.enable && (
         <Button type="button" variant="outline" onClick={result.enable}>
@@ -139,7 +143,7 @@ export function RecipeTranslationControls({ compact = false }: { compact?: boole
           </select>
         </div>
       )}
-      {Boolean(result.strings?.size) && (
+      {canToggle && (
         <Button type="button" variant="outline" onClick={toggle}>
           {t(original ? "Show translation" : "Show original")}
         </Button>

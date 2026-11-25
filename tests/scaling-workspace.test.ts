@@ -16,35 +16,42 @@ const recipe: ScalingRecipe = {
 };
 
 describe("recipe scaling workspace", () => {
-  it("translates the preview, warnings and pantry options without changing the batch or undo history", () => {
-    const egg = { ...recipe.ingredients[2], name: "雞蛋", translations: { en: "Egg", zh: "鸡蛋", fr: "Œuf" } };
-    const store = makeScalingStore({ baseServings: 4, ingredients: [egg, recipe.ingredients[4]] });
+  it("uses the page’s displayed ingredient names for the preview, warnings and pantry options", () => {
+    const egg = { ...recipe.ingredients[2], name: "雞蛋" };
+    const authoredRecipe = { baseServings: 4, ingredients: [egg, recipe.ingredients[4]] };
+    const store = makeScalingStore(authoredRecipe);
     store.dispatch(scalingActions.editQuantity({ field: "targetServings", value: "6" }));
     store.dispatch(scalingActions.changeMode("ingredient"));
-    const { current, history } = store.getState();
 
-    for (const [language, name] of [["fr", "Œuf"], ["en", "Egg"], ["zh", "鸡蛋"], ["original", "雞蛋"]] as const) {
-      store.dispatch(scalingActions.changeLanguage(language));
-      expect(store.getState().current).toEqual(current);
-      expect(store.getState().history).toEqual(history);
-      expect(selectPreview(store.getState())).toMatchObject({
+    for (const [locale, name, warning] of [
+      ["fr", "Œuf", "La quantité ajustée de Œuf correspond à une fraction d’une unité."],
+      ["en", "Egg", "Egg scales to a fraction of a whole item."],
+      ["zh", "鸡蛋", "调整后的鸡蛋用量不是整数个。"],
+      ["zh", "雞蛋", "调整后的雞蛋用量不是整数个。"],
+    ] as const) {
+      const displayed = { ...authoredRecipe, ingredients: [{ ...egg, name }, recipe.ingredients[4]] };
+      expect(selectPreview(store.getState(), displayed, locale)).toMatchObject({
         ok: true, servings: 6,
         ingredients: [{ id: "egg", name, scaledQuantity: 1.5 }, { name: "Oats", scaledQuantity: 3 }],
-        warnings: [{ message: `${name} scales to a fraction of a whole item.` }, { code: "cooking-conditions" }],
+        warnings: [{ message: warning }, { code: "cooking-conditions" }],
       });
-      expect(selectEligibleIngredients(store.getState())).toEqual([{ id: "egg", name, units: ["count"] }]);
+      expect(selectEligibleIngredients(store.getState(), displayed)).toEqual([{ id: "egg", name, units: ["count"] }]);
     }
+
+    store.dispatch(scalingActions.undo());
+    expect(store.getState().current).toMatchObject({ mode: "servings", targetServings: "6" });
+    store.dispatch(scalingActions.undo());
+    expect(store.getState().current.targetServings).toBe("4");
   });
 
-  it("scales a French decimal amount and keeps the result when changing the display language", () => {
-    const store = makeScalingStore(recipe, "fr", "fr");
+  it("scales a French decimal amount and keeps the result when changing the page language", () => {
+    const store = makeScalingStore(recipe);
     store.dispatch(scalingActions.editQuantity({ field: "targetServings", value: "1,5" }));
-    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 1.5 });
+    expect(selectPreview(store.getState(), recipe, "fr")).toMatchObject({ ok: true, servings: 1.5 });
     store.dispatch(scalingActions.changeMode("ingredient"));
-    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 1.5, factor: 0.375 });
-    store.dispatch(scalingActions.changeLocale("zh"));
+    expect(selectPreview(store.getState(), recipe, "fr")).toMatchObject({ ok: true, servings: 1.5, factor: 0.375 });
     store.dispatch(scalingActions.changeMode("servings"));
-    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 1.5, factor: 0.375 });
+    expect(selectPreview(store.getState(), recipe, "zh")).toMatchObject({ ok: true, servings: 1.5, factor: 0.375 });
   });
 
   it("derives all results from the recipe and groups a continuous input edit into one undo", () => {

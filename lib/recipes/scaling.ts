@@ -6,12 +6,10 @@ export { formatScaledQuantity } from "./measurements";
 
 // Recipe detail responses use decimal strings. Number inputs also work for form controls.
 type DecimalInput = number | string;
-export type IngredientTranslations = { en: string; zh: string; fr: string };
 
 export interface ScalingIngredient {
   id: string;
   name: string;
-  translations?: IngredientTranslations | null;
   quantity: DecimalInput | null;
   unit: string | null;
   note: string | null;
