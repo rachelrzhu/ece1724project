@@ -1,3 +1,4 @@
+import { findUnit } from "../lib/recipes/measurements";
 import nextEnv from "@next/env";
 import { constants } from "node:fs";
 import { copyFile, mkdir, stat } from "node:fs/promises";
@@ -95,7 +96,7 @@ for (const recipe of demoRecipes) {
                 name,
                 canonicalName: name.toLowerCase(),
                 quantity,
-                unit,
+                unit: findUnit(unit)?.symbol ?? unit,
                 note,
                 position,
               }),

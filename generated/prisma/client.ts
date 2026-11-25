@@ -87,6 +87,11 @@ export type StoredFile = Prisma.StoredFileModel
  */
 export type Recipe = Prisma.RecipeModel
 /**
+ * Model MeasurementUnit
+ * 
+ */
+export type MeasurementUnit = Prisma.MeasurementUnitModel
+/**
  * Model RecipeIngredient
  * 
  */
@@ -106,3 +111,8 @@ export type Bookmark = Prisma.BookmarkModel
  * 
  */
 export type RecipeReaction = Prisma.RecipeReactionModel
+/**
+ * Model RecipeLike
+ * 
+ */
+export type RecipeLike = Prisma.RecipeLikeModel

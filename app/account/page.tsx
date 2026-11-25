@@ -22,7 +22,15 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     <PageFrame title="Your account" back={{ href: "/recipes", label: "Explore recipes" }} narrow>
       {session && <ButtonLink href={`/users/${session.user.id}`} variant="outline" className="min-h-11">View my recipe page</ButtonLink>}
       {session && <ProfileForm name={session.user.name ?? ""} username={session.user.username} lockedUntil={lockedUntil} />}
-      {session && <AvatarForm name={session.user.name ?? ""} image={session.user.image ?? null} />}
+      {session && <section id="avatar" aria-label="Avatar settings" className="space-y-3">
+        {params.avatar === "retry" && (
+          <div className="site-panel space-y-2">
+            {!session.user.image && <p role="status">Your account was created. Your photo couldn’t be saved. Choose a photo below to try again.</p>}
+            <ButtonLink href={returnTo} variant="outline">Continue</ButtonLink>
+          </div>
+        )}
+        <AvatarForm name={session.user.name ?? ""} image={session.user.image ?? null} />
+      </section>}
       <div className="site-panel space-y-5">
         {params.error && (
           <p role="alert" className="text-sm text-rust">

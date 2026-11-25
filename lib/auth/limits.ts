@@ -1,0 +1,5 @@
+export const MIN_PASSWORD_LENGTH = 6;
+export const MAX_NEW_PASSWORD_LENGTH = 32;
+export const MAX_EXISTING_PASSWORD_LENGTH = 128;
+export const MAX_DISPLAY_NAME_LENGTH = 120;
+export const MAX_EMAIL_LENGTH = 254;

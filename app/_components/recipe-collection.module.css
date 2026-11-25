@@ -21,7 +21,7 @@
 
 .searchRow {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
   gap: .75rem;
 }
@@ -31,9 +31,12 @@
   min-width: 0;
 }
 
+.searchRow > button { grid-column: 1 / -1; }
+
 @media (min-width: 40rem) {
-  .searchRow { grid-template-columns: minmax(0, 1fr) 10rem auto; }
+  .searchRow { grid-template-columns: minmax(0, 1fr) 8.5rem 9rem auto; }
   .queryField { grid-column: auto; }
+  .searchRow > button { grid-column: auto; }
 }
 
 .fieldLabel {
@@ -256,4 +259,50 @@
 
 .layoutPicker a:hover {
   color: var(--color-brand);
+}
+
+.sortPicker {
+  position: relative;
+  font-size: .875rem;
+}
+
+.sortPicker summary {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .875rem;
+  cursor: pointer;
+  list-style: none;
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+.sortPicker summary::-webkit-details-marker { display: none; }
+.sortPicker[open] summary svg { transform: rotate(180deg); }
+
+.sortPicker nav {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + .25rem);
+  min-width: 100%;
+  padding: .25rem;
+  border: 1px solid var(--color-line);
+  border-radius: .75rem;
+  background: var(--color-paper);
+  box-shadow: 0 4px 12px #0001;
+}
+
+.sortPicker nav a {
+  display: block;
+  padding: .625rem;
+  border-radius: .5rem;
+}
+
+.sortPicker nav a:hover,
+.sortPicker nav a[aria-current] {
+  color: var(--color-brand);
+  background: var(--color-tint);
 }

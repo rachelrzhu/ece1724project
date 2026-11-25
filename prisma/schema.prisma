@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
+  previewFeatures = ["views"]
 }
 
 datasource db {
@@ -81,6 +82,7 @@ model IngredientProfile {
   canonicalName  String               @id @map("canonical_name") @db.VarChar(160)
   classification IngredientDiet
   allergens      IngredientAllergen[]
+  recipeIngredients RecipeIngredient[]
 
   @@map("ingredient_profiles")
 }
@@ -177,11 +179,20 @@ model Recipe {
   steps        RecipeStep[]
   bookmarks    Bookmark[]
   reactions    RecipeReaction[]
+  likes        RecipeLike[]
 
   @@index([authorId, updatedAt])
   @@index([visibility, createdAt, id])
   @@index([totalMinutes])
   @@map("recipes")
+}
+
+model MeasurementUnit {
+  symbol String @id @db.VarChar(32)
+  menuPosition Int? @unique @map("menu_position")
+  ingredients RecipeIngredient[]
+
+  @@map("measurement_units")
 }
 
 model RecipeIngredient {
@@ -196,6 +207,9 @@ model RecipeIngredient {
   recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([recipeId, position])
+  profile IngredientProfile @relation(fields: [canonicalName], references: [canonicalName], onDelete: Restrict, onUpdate: NoAction)
+  measurementUnit MeasurementUnit? @relation(fields: [unit], references: [symbol], onDelete: Restrict, onUpdate: Cascade)
+
   @@index([canonicalName])
   @@map("recipe_ingredients")
 }
@@ -233,4 +247,14 @@ model RecipeReaction {
   @@id([userId, recipeId])
   @@index([recipeId])
   @@map("recipe_reactions")
+}
+
+// Read-only subset for ordering recipes by positive reactions.
+view RecipeLike {
+  recipeId String @map("recipe_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+  recipe   Recipe @relation(fields: [recipeId], references: [id])
+
+  @@unique([userId, recipeId])
+  @@map("recipe_likes")
 }

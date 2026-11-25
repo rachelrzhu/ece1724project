@@ -54,6 +54,7 @@ it("stores a small metadata-free avatar and assigns its URL to the signed-in coo
 it("rejects unauthenticated, invalid and oversized uploads before writing", async () => {
   session.mockResolvedValueOnce(null);
   expect(await saveAvatar(avatarData("initial"))).toHaveProperty("error");
+  expect(await saveAvatar(avatarData("initial"), "different-account")).toHaveProperty("error");
   for (const bytes of [new Uint8Array(), new TextEncoder().encode("<svg/>"), new Uint8Array(3 * 1024 * 1024 + 1)]) {
     const photo = new File([bytes], "avatar.png", { type: "image/png" });
     expect(await saveAvatar(avatarData("upload", photo))).toHaveProperty("error");
