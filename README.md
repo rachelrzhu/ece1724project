@@ -8,15 +8,16 @@ From My Kitchen is a recipe-sharing app for home cooks. You can save a recipe on
 
 | What you want to do | How to do it |
 | --- | --- |
-| Find a recipe | Open **Explore** and search by title or ingredient. Switch between **Cards** and **List**, or select a cook’s name to see their public recipes. |
-| Choose a language | Use **English**, **中文**, or **Français** in the header. The site starts in a supported browser language and remembers your choice across visits. |
+| Find a recipe | Open **Find recipes** in the top navigation and search by title or ingredient. Switch between **Cards** and **List**, or select a cook’s name to see their public recipes. |
+| Choose a language | Use **EN**, **FR**, or **中** in the header. The site starts in a supported browser language and remembers your choice across visits. |
+| Change the appearance | The moon or sun button in the header switches between light and dark mode. The site follows your device setting until you choose one. On a phone, open the menu beside the site name to browse recipes or reach your account. |
 | Read a recipe in your language | On supported desktop Chrome installations, recipe titles, descriptions, notes and steps translate on your device. Chrome may ask you to enable a language model on first use. **Show original** restores the cook’s wording. If translation is unavailable, you can still read the original recipe. |
 | Find or exclude an ingredient | **Egg**, **鸡蛋**, and **œuf** match the same catalog ingredient in search and filters. Catalog ingredient names are available in all three languages, including when a device cannot translate recipe text. |
 | Find something quick | Enter your available minutes in **Ready in** and choose **Search**. A 30-minute limit includes 30 minutes exactly. The filter uses combined prep and cook time or a published total-time estimate. Recipes with unknown times appear when you leave the limit blank. |
 | Adjust a batch | Open a recipe and choose **By servings** or **By ingredient**. Enter your target servings or the quantity and unit you have. The measured ingredients update together. **Undo** restores the previous adjustment and **Reset** returns to the original quantities. Cooking times and instructions stay as written. |
-| Write and publish | Sign in, choose **New recipe**, and add servings, ingredients, ordered steps, and an optional cover photo. Recipes start private. Choose public visibility to share one, or open **My recipes** to edit or delete it. |
+| Write and publish | Sign in, choose **Share a recipe**, and add servings, ingredients, ordered steps, and an optional cover photo. Recipes start private. Choose public visibility to share one, or open **My recipes** to edit or delete it. |
 | Save or adapt someone’s recipe | Bookmark a public recipe to find it under **Saved**. Choose **Make an editable copy** to get a private copy of its ingredients and steps. You can edit the copy and add your own cover. Signed-in cooks can also like or dislike recipes. |
-| Filter ingredients | In **Explore**, open **More filters** to exclude allergens or an ingredient by name, then choose **Apply filters**. Saved dietary preferences from **Account** also appear here. Remove an applied filter individually or use **Clear filters** to reset the search and filters together. |
+| Filter ingredients | In **Find recipes**, open **More filters** to exclude allergens or an ingredient by name, then choose **Apply filters**. Saved dietary preferences from **Account** also appear here. Remove an applied filter individually or use **Clear filters** to reset the search and filters together. |
 | Manage your profile | Register with email and password, or use Google sign-in when configured. In **Account**, edit your display name, username, and avatar or open your recipe page. |
 
 ## Stack and architecture
@@ -59,7 +60,7 @@ npm run poc:dev
 
 ### 3. Try a recipe
 
-Open the app at **http://127.0.0.1:3100**. Choose **Explore** and open a recipe to try both scaling modes. To try publishing and bookmarks, choose **Sign in**. Use either local demo account, `rachel@savor.local` or `grace@savor.local`, with the password `SavorKitchen2026!`.
+Open the app at **http://127.0.0.1:3100**. Choose **Find recipes** and open a recipe to try both scaling modes. To try publishing and bookmarks, choose **Sign in**. Use either local demo account, `rachel@savor.local` or `grace@savor.local`, with the password `SavorKitchen2026!`.
 
 To stop, press **Ctrl+C** in the app terminal, then run `npm run poc:stop-db`. Recipes and images persist in `.local-poc/`. To resume, run `npm run poc:setup` followed by `npm run poc:dev`.
 

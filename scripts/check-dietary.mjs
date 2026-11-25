@@ -86,7 +86,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await link.waitFor();
     await reader.goto(detail);
     await flags.getByRole("heading", { name: "Known conflicts", exact: true }).waitFor();
-    await flags.getByText(mappedIngredient, { exact: true }).waitFor();
+    await flags.getByText("Milk chocolate with peanuts", { exact: true }).waitFor();
     await flags.getByText("Contains milk", { exact: true }).waitFor();
     await flags.getByText("Contains peanuts", { exact: true }).waitFor();
     await guest.goto(detail);

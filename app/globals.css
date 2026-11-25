@@ -1,41 +1,55 @@
 @import "tailwindcss" source(none);
 @source "./";
 @source "../node_modules/@material-tailwind/react/src/theme/{button,card,input,navbar,textarea}.ts";
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:where(html:not([data-theme]), html:not([data-theme]) *) { @slot; }
+  }
+}
 
-@theme inline {
-  --color-canvas: #f6f7f9;
-  --color-paper: #ffffff;
-  --color-ink: #191d24;
-  --color-subtle: #525a66;
-  --color-brand: #2549a3;
-  --color-tint: #edf2fc;
-  --color-line: #dce0e6;
-  --color-rust: #9b252e;
+@theme {
+  --color-canvas: light-dark(#f6f7f9, #10151d);
+  --color-paper: light-dark(#ffffff, #191f29);
+  --color-ink: light-dark(#191d24, #eef1f7);
+  --color-subtle: light-dark(#525a66, #b7c1d0);
+  --color-brand: light-dark(#2549a3, #a5bfff);
+  --color-tint: light-dark(#edf2fc, #22314c);
+  --color-line: light-dark(#dce0e6, #384252);
+  --color-rust: light-dark(#9b252e, #ffa8af);
+  --color-warning: light-dark(#724509, #efc783);
   --font-sans: system-ui, sans-serif;
   --color-primary: var(--color-brand);
-  --color-primary-dark: #1d3983;
-  --color-primary-light: #3056af;
-  --color-primary-foreground: #fff;
-  --color-secondary: #dce7ff;
-  --color-secondary-light: #e8efff;
-  --color-secondary-dark: #bfcee9;
-  --color-secondary-foreground: #18356c;
+  --color-primary-dark: light-dark(#1d3983, #8aa8ee);
+  --color-primary-light: light-dark(#3056af, #bfd1ff);
+  --color-primary-foreground: light-dark(#fff, #101d35);
+  --color-secondary: light-dark(#dce7ff, #344666);
+  --color-secondary-light: light-dark(#e8efff, #405372);
+  --color-secondary-dark: light-dark(#bfcee9, #2b3c58);
+  --color-secondary-foreground: light-dark(#18356c, #d4e2ff);
   --color-background: var(--color-paper);
   --color-foreground: var(--color-subtle);
   --color-surface: var(--color-line);
   --color-surface-light: var(--color-canvas);
-  --color-surface-dark: #bfc6d2;
+  --color-surface-dark: light-dark(#bfc6d2, #637086);
   --color-surface-foreground: var(--color-ink);
   --color-error: var(--color-rust);
 }
 
 :root {
+  color-scheme: light dark;
+}
+
+:root[data-theme="light"] {
   color-scheme: light;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
-  @apply min-h-screen bg-paper font-sans text-ink antialiased;
+  @apply min-h-screen bg-paper font-sans text-ink antialiased dark:bg-canvas;
 }
 
 :focus-visible {
@@ -47,24 +61,6 @@ body {
   @apply mx-auto w-full max-w-6xl px-4 sm:px-8;
 }
 
-.site-wordmark {
-  @apply inline-flex min-h-11 items-center gap-2 text-base font-semibold tracking-tight whitespace-nowrap text-white sm:text-lg;
-}
-
-.masthead-mark {
-  @apply grid size-7 shrink-0 place-items-center rounded-lg bg-white text-brand sm:size-8;
-}
-
-.site-nav-link {
-  @apply inline-flex min-h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium whitespace-nowrap text-white hover:bg-white/10 sm:px-3;
-}
-
-.site-nav-link[aria-current="page"] {
-  @apply bg-white/18 font-semibold;
-}
-
-.site-app-bar :focus-visible { outline-color: white; }
-
 .site-panel {
   @apply min-w-0 rounded-2xl border border-line bg-paper p-4 shadow-sm sm:p-6;
 }
@@ -75,47 +71,4 @@ body {
 
 .site-field {
   @apply min-h-11 rounded-lg border border-surface-dark bg-paper px-3 text-base text-ink placeholder:text-subtle focus:border-brand;
-}
-
-.site-header-grid {
-  display: grid;
-  grid-template-areas: "brand language account" "nav nav create";
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 0.125rem 0.5rem;
-  padding-block: 0.5rem;
-}
-
-.masthead-language { grid-area: language; justify-self: end; max-width: 100%; }
-.masthead-brand { grid-area: brand; justify-self: start; }
-.masthead-nav { grid-area: nav; }
-.masthead-account { grid-area: account; justify-self: end; }
-.masthead-create { grid-area: create; justify-self: end; }
-
-@media (max-width: 47.999rem) {
-  .masthead-home {
-    display: none;
-  }
-
-  .site-header-guest .site-header-grid {
-    grid-template-areas: "brand language account" "nav nav nav";
-  }
-}
-
-@media (min-width: 62rem) {
-  .site-header-grid {
-    grid-template-areas: "brand nav language account create";
-    grid-template-columns: max-content 1fr auto auto auto;
-    gap: 0 1rem;
-    min-height: 4.5rem;
-    padding-block: 0;
-  }
-}
-
-@media (max-width: 23.5rem) {
-  .site-header-guest .site-header-grid { column-gap: 0.25rem; }
-  .site-header-guest .masthead-brand { gap: 0.3rem; }
-  .site-header-guest .masthead-mark { width: 1.5rem; height: 1.5rem; }
-  .site-header-guest .masthead-nav .site-nav-link { padding-inline: 0.25rem; }
-  .site-header-guest .masthead-account svg { display: none; }
 }

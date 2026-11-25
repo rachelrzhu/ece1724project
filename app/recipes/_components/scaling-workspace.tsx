@@ -203,7 +203,7 @@ function IngredientPreview() {
         ))}
       </ul>
       {preview.ok && preview.warnings.length > 0 && (
-        <ul className="mt-2 list-disc space-y-1 rounded-lg border border-amber-200 bg-amber-50 p-3 ps-7 text-sm text-amber-950" aria-label={t("Scaling notes")}>
+        <ul className="mt-2 list-disc space-y-1 rounded-lg border border-warning/25 bg-warning/10 p-3 ps-7 text-sm text-warning" aria-label={t("Scaling notes")}>
           {preview.warnings.map((warning) => (
             <li key={warning.code === "fractional-count" ? warning.ingredientId : warning.code} className="wrap-anywhere">{warning.message}</li>
           ))}

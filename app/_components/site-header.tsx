@@ -1,58 +1,63 @@
 import Image from "next/image";
 import Link from "next/link";
-import { appName } from "@/lib/brand";
-import { publicAvatarImage } from "@/lib/product/avatar";
 import { makeTranslator } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { siteMessages } from "@/lib/i18n/site";
-import { LanguageSelect } from "./language-select";
+import { publicAvatarImage } from "@/lib/product/avatar";
 import { Icon } from "./icons";
-import { ButtonLink, Navbar } from "./material";
+import { LanguageSelect } from "./language-select";
+import { MobileNavigation } from "./mobile-navigation";
+import { SiteWordmark } from "./site-wordmark";
+import { ThemeSwitch } from "./theme-switch";
+import styles from "./site-header.module.css";
 
 export const collections = {
-  explore: { label: "Explore", heading: "Public recipes", href: "/recipes" },
-  mine: { label: "My recipes", heading: "My recipes", href: "/recipes?collection=mine" },
-  saved: { label: "Saved", heading: "Saved recipes", href: "/recipes?collection=saved" },
+  explore: { label: "Find recipes", heading: "Public recipes", href: "/recipes", icon: "search" },
+  mine: { label: "My recipes", heading: "My recipes", href: "/recipes?collection=mine", icon: "brand" },
+  saved: { label: "Saved", heading: "Saved recipes", href: "/recipes?collection=saved", icon: "bookmark" },
 } as const;
 
 export type Collection = keyof typeof collections;
+export type HeaderPage = Collection | "home" | "account" | "new";
 
-export async function SiteHeader({ user, active }: { user?: { name?: string | null; image?: string | null }; active?: Collection | "home" }) {
+export async function SiteHeader({ user, active }: { user?: { name?: string | null; image?: string | null }; active?: HeaderPage }) {
   const t = makeTranslator(await getLocale(), siteMessages);
-  const signedIn = Boolean(user);
   const image = publicAvatarImage(user?.image);
+  const initial = user?.name?.trim().charAt(0).toUpperCase();
+  const links = (
+    <>
+      <Link href="/" aria-current={active === "home" ? "page" : undefined}>
+        <Icon name="home" className={styles.linkIcon} />{t("Home")}
+      </Link>
+      {(Object.keys(collections) as Collection[]).filter((key) => user || key === "explore").map((key) => (
+        <Link key={key} href={collections[key].href} aria-current={active === key ? "page" : undefined}>
+          <Icon name={collections[key].icon} className={styles.linkIcon} />{t(collections[key].label)}
+        </Link>
+      ))}
+      <Link href="/recipes/new" className={styles.share} aria-current={active === "new" ? "page" : undefined}>
+        <Icon name="plus" className="size-4 shrink-0" />{t("Share a recipe")}
+      </Link>
+      <Link href="/account" className={styles.account} aria-current={active === "account" ? "page" : undefined}>
+        {image ? <Image src={image} unoptimized width={26} height={26} alt="" className="size-6 shrink-0 rounded-full object-cover" />
+          : initial ? <span aria-hidden="true" className={styles.initial}>{initial}</span>
+            : <Icon name="account" className="size-[1.125rem] shrink-0" />}
+        <span className={styles.desktopLabel}>{t(user ? "Account" : "Sign in")}</span>
+        <span className={styles.mobileLabel}>{t(user ? "Account settings" : "Sign in")}</span>
+      </Link>
+    </>
+  );
   return (
-    <Navbar as="header" color="primary" className={`site-app-bar overflow-visible rounded-none border-0 p-0 shadow-md ${signedIn ? "" : "site-header-guest"}`}>
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-paper focus:p-3">{t("Skip to content")}</a>
-      <div className="site-container site-header-grid">
-        <Link href="/" className="site-wordmark masthead-brand">
-          <span className="masthead-mark"><Icon name="brand" className="size-5" /></span>
-          {appName}
-        </Link>
-        <nav aria-label={t("Recipe navigation")} className="masthead-nav flex flex-wrap items-center gap-0.5 md:ms-4 md:gap-1">
-          <Link href="/" className="site-nav-link masthead-home" aria-current={active === "home" ? "page" : undefined}>{t("Home")}</Link>
-          {(Object.keys(collections) as Collection[]).filter((key) => signedIn || key === "explore").map((key) => (
-            <Link key={key} href={collections[key].href} className="site-nav-link"
-              aria-current={active === key ? "page" : undefined}>
-              {t(collections[key].label)}
-            </Link>
-          ))}
-        </nav>
-        <LanguageSelect />
-        <Link href="/account" className="site-nav-link masthead-account border border-white/60">
-          {image ? <Image src={image} unoptimized width={24} height={24} alt="" className="size-6 rounded-full object-cover" />
-            : user?.name ? <span aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-brand text-xs text-white">{user.name.trim().charAt(0).toUpperCase()}</span>
-              : <Icon name="account" className="size-4" />}
-          {t(signedIn ? "Account" : "Sign in")}
-        </Link>
-        {signedIn && (
-          <ButtonLink href="/recipes/new" aria-label={t("New recipe")} isPill color="secondary" className="masthead-create min-h-11 gap-2">
-            <Icon name="plus" className="size-4" />
-            <span className="sm:hidden">{t("New")}</span>
-            <span className="hidden sm:inline">{t("New recipe")}</span>
-          </ButtonLink>
-        )}
+    <header className={styles.header}>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-paper focus:p-3 focus:text-brand">{t("Skip to content")}</a>
+      <div className={`site-container ${styles.inner} ${user ? "" : styles.guest}`}>
+        <MobileNavigation label={t("Navigation menu")}>{links}</MobileNavigation>
+        <SiteWordmark />
+        <nav aria-label={t("Recipe navigation")} className={styles.desktopNav}>{links}</nav>
+        <div className={styles.tools}>
+          <LanguageSelect />
+          <ThemeSwitch />
+        </div>
       </div>
-    </Navbar>
+    </header>
   );
 }

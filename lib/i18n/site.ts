@@ -8,6 +8,8 @@ export const siteMessages = {
   ],
   "Skip to content": ["跳至正文", "Aller au contenu"],
   "Recipe navigation": ["食谱导航", "Navigation des recettes"],
+  "Navigation menu": ["导航菜单", "Menu de navigation"],
+  "Account settings": ["账户设置", "Paramètres du compte"],
   "Home": ["首页", "Accueil"],
   "Explore": ["探索", "Explorer"],
   "My recipes": ["我的食谱", "Mes recettes"],
@@ -18,4 +20,8 @@ export const siteMessages = {
   "New": ["新建", "Créer"],
   "Page unavailable": ["找不到页面", "Page introuvable"],
   "Explore recipes": ["浏览食谱", "Explorer les recettes"],
+  "Footer": ["页脚", "Pied de page"],
+  "Find recipes": ["查找食谱", "Trouver des recettes"],
+  "Share a recipe": ["分享食谱", "Partager une recette"],
+  "Your account": ["你的账户", "Votre compte"],
 } as const satisfies Messages;
