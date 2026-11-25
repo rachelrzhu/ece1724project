@@ -33,6 +33,16 @@ export type DietarySettings = Prisma.DietarySettingsModel
  */
 export type IngredientProfile = Prisma.IngredientProfileModel
 /**
+ * Model IngredientTranslation
+ * 
+ */
+export type IngredientTranslation = Prisma.IngredientTranslationModel
+/**
+ * Model IngredientAlias
+ * 
+ */
+export type IngredientAlias = Prisma.IngredientAliasModel
+/**
  * Model IngredientAllergen
  * 
  */
