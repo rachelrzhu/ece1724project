@@ -54,6 +54,8 @@ export const ModelName = {
   User: 'User',
   DietarySettings: 'DietarySettings',
   IngredientProfile: 'IngredientProfile',
+  IngredientTranslation: 'IngredientTranslation',
+  IngredientAlias: 'IngredientAlias',
   IngredientAllergen: 'IngredientAllergen',
   Session: 'Session',
   Account: 'Account',
@@ -115,6 +117,24 @@ export const IngredientProfileScalarFieldEnum = {
 } as const
 
 export type IngredientProfileScalarFieldEnum = (typeof IngredientProfileScalarFieldEnum)[keyof typeof IngredientProfileScalarFieldEnum]
+
+
+export const IngredientTranslationScalarFieldEnum = {
+  canonicalName: 'canonicalName',
+  en: 'en',
+  zh: 'zh',
+  fr: 'fr'
+} as const
+
+export type IngredientTranslationScalarFieldEnum = (typeof IngredientTranslationScalarFieldEnum)[keyof typeof IngredientTranslationScalarFieldEnum]
+
+
+export const IngredientAliasScalarFieldEnum = {
+  name: 'name',
+  canonicalName: 'canonicalName'
+} as const
+
+export type IngredientAliasScalarFieldEnum = (typeof IngredientAliasScalarFieldEnum)[keyof typeof IngredientAliasScalarFieldEnum]
 
 
 export const IngredientAllergenScalarFieldEnum = {

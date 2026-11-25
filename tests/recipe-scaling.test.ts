@@ -177,6 +177,9 @@ describe("recipe scaling", () => {
   it("shows at most one decimal place and identifies positive quantities below display precision", () => {
     expect(formatScaledQuantity(1 / 3)).toBe("0.3");
     expect(formatScaledQuantity(0.000001234567)).toBe("<0.1");
+    expect(formatScaledQuantity(0.01, "fr")).toBe("<0,1");
+    expect(formatScaledQuantity(1.25, "fr")).toBe("1,3");
+    expect(formatScaledQuantity(0.01, "zh")).toBe("<0.1");
     expect(formatScaledQuantity(0.05)).toBe("0.1");
     expect(formatScaledQuantity(1234.56)).toBe("1234.6");
     expect(formatScaledQuantity(125)).toBe("125");

@@ -5,7 +5,7 @@ import { SiteHeader, type HeaderPage } from "@/app/_components/site-header";
 import { readSession } from "@/lib/auth/server";
 
 export default async function PageFrame({ title, back, children, narrow = false, active }: {
-  title: string;
+  title: ReactNode;
   back?: { href: string; label: string };
   children: ReactNode;
   narrow?: boolean;

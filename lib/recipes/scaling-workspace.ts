@@ -1,15 +1,19 @@
+import { makeTranslator, type Locale } from "@/lib/i18n";
+import { scalingMessages } from "@/lib/i18n/recipe-detail";
 import { formatScaledQuantity, isValidQuantity, MAX_QUANTITY, MAX_SERVINGS } from "./measurements";
 import { configureStore, createSelector, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
   convertScalingQuantity,
   getScalingUnits,
   scaleRecipe,
+  type IngredientTranslations,
   type ScalingRecipe,
   type ScalingResult,
 } from "./scaling";
 
 type Mode = "servings" | "ingredient";
 type QuantityField = "targetServings" | "availableQuantity";
+export type IngredientLanguage = "original" | keyof IngredientTranslations;
 
 type Settings = {
   mode: Mode;
@@ -24,6 +28,8 @@ type Settings = {
 
 type Workspace = {
   recipe: ScalingRecipe;
+  language: IngredientLanguage;
+  locale: Locale;
   current: Settings;
   history: Settings[];
   editing: QuantityField | null;
@@ -44,29 +50,32 @@ function originalSettings(recipe: ScalingRecipe): Settings {
   };
 }
 
-function initialize(recipe: ScalingRecipe): Workspace {
-  return { recipe, current: originalSettings(recipe), history: [], editing: null };
+function initialize(recipe: ScalingRecipe, locale: Locale = "en"): Workspace {
+  return { recipe, locale, language: "original", current: originalSettings(recipe), history: [], editing: null };
 }
 
-function calculate(recipe: ScalingRecipe, settings: Settings): ScalingResult {
+function calculate(recipe: ScalingRecipe, settings: Settings, locale: Locale = "en"): ScalingResult {
+  const t = makeTranslator(locale, scalingMessages);
   if (settings.derivedServings !== null) {
-    return scaleRecipe(recipe, { mode: "servings", targetServings: settings.derivedServings });
+    return scaleRecipe(recipe, { mode: "servings", targetServings: settings.derivedServings }, locale);
   }
   const servingsMode = settings.mode === "servings";
   const field = servingsMode ? "targetServings" : "availableQuantity";
-  const value = settings[field];
+  // Accept either decimal separator so a language change also preserves an in-progress amount.
+  const value = settings[field].replace(",", ".");
   const max = servingsMode ? MAX_SERVINGS : MAX_QUANTITY;
   if (!/^(?:\d+(?:\.\d?)?|\.\d)$/.test(value) || !isValidQuantity(Number(value), max)) {
     return { ok: false, error: { field,
-      message: `Enter ${servingsMode ? "servings" : "an available quantity"} from 0.1 to ${max.toLocaleString("en")} with at most one decimal place.`,
+      message: t(servingsMode ? "Enter servings from 0.1 to {max} with at most one decimal place."
+        : "Enter an available quantity from 0.1 to {max} with at most one decimal place.", { max: max.toLocaleString(locale) }),
     } };
   }
-  if (servingsMode) return scaleRecipe(recipe, { mode: "servings", targetServings: value });
+  if (servingsMode) return scaleRecipe(recipe, { mode: "servings", targetServings: value }, locale);
   const result = scaleRecipe(recipe, {
     mode: "ingredient", ingredientId: settings.ingredientId, availableQuantity: value, availableUnit: settings.availableUnit,
-  });
+  }, locale);
   if (result.ok && result.servings > MAX_SERVINGS) {
-    return { ok: false, error: { field, message: `Choose a quantity that yields at most ${MAX_SERVINGS} servings.` } };
+    return { ok: false, error: { field, message: t("Choose a quantity that yields at most {max} servings.", { max: MAX_SERVINGS }) } };
   }
   return result;
 }
@@ -121,6 +130,12 @@ const scaling = createSlice({
   name: "scaling",
   initialState: initialize({ baseServings: 1, ingredients: [] }),
   reducers: {
+    changeLocale(state, { payload }: PayloadAction<Locale>) {
+      state.locale = payload;
+    },
+    changeLanguage(state, { payload }: PayloadAction<IngredientLanguage>) {
+      state.language = payload;
+    },
     editQuantity(state, action: PayloadAction<{ field: QuantityField; value: string }>) {
       const { field, value } = action.payload;
       update(state, { ...state.current, [field]: value, derivedServings: null, roundedControl: false }, field);
@@ -170,20 +185,32 @@ const scaling = createSlice({
 
 export const scalingActions = scaling.actions;
 
-export function makeScalingStore(recipe: ScalingRecipe) {
-  return configureStore({ reducer: scaling.reducer, preloadedState: initialize(recipe) });
+export function makeScalingStore(recipe: ScalingRecipe, locale: Locale = "en", language: IngredientLanguage = "original") {
+  return configureStore({ reducer: scaling.reducer, preloadedState: { ...initialize(recipe, locale), language } });
 }
 
 export type ScalingStore = ReturnType<typeof makeScalingStore>;
 
+export const selectDisplayRecipe = createSelector(
+  [(state: Workspace) => state.recipe, (state: Workspace) => state.language],
+  (recipe, language): ScalingRecipe => {
+    if (language === "original") return recipe;
+    return {
+      ...recipe,
+      ingredients: recipe.ingredients.map(item =>
+        item.translations ? { ...item, name: item.translations[language] } : item),
+    };
+  },
+);
+
 export const selectPreview = createSelector(
-  [(state: Workspace) => state.recipe, (state: Workspace) => state.current],
+  [selectDisplayRecipe, (state: Workspace) => state.current, (state: Workspace) => state.locale],
   calculate,
 );
 
 export const selectEligibleIngredients = createSelector(
-  [(state: Workspace) => state.recipe.ingredients],
-  (ingredients) => ingredients.flatMap((item) => {
+  [selectDisplayRecipe],
+  (recipe) => recipe.ingredients.flatMap((item) => {
     const units = getScalingUnits(item);
     return units.length ? [{ id: item.id, name: item.name, units }] : [];
   }),

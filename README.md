@@ -9,6 +9,9 @@ From My Kitchen is a recipe-sharing app for home cooks. You can save a recipe on
 | What you want to do | How to do it |
 | --- | --- |
 | Find a recipe | Open **Explore** and search by title or ingredient. Switch between **Cards** and **List**, or select a cook’s name to see their public recipes. |
+| Choose a language | Use **English**, **中文**, or **Français** in the header. The site starts in a supported browser language and remembers your choice across visits. |
+| Read a recipe in your language | On supported desktop Chrome installations, recipe titles, descriptions, notes and steps translate on your device. Chrome may ask you to enable a language model on first use. **Show original** restores the cook’s wording. If translation is unavailable, you can still read the original recipe. |
+| Find or exclude an ingredient | **Egg**, **鸡蛋**, and **œuf** match the same catalog ingredient in search and filters. Catalog ingredient names are available in all three languages, including when a device cannot translate recipe text. |
 | Find something quick | Enter your available minutes in **Ready in** and choose **Search**. A 30-minute limit includes 30 minutes exactly. The filter uses combined prep and cook time or a published total-time estimate. Recipes with unknown times appear when you leave the limit blank. |
 | Adjust a batch | Open a recipe and choose **By servings** or **By ingredient**. Enter your target servings or the quantity and unit you have. The measured ingredients update together. **Undo** restores the previous adjustment and **Reset** returns to the original quantities. Cooking times and instructions stay as written. |
 | Write and publish | Sign in, choose **New recipe**, and add servings, ingredients, ordered steps, and an optional cover photo. Recipes start private. Choose public visibility to share one, or open **My recipes** to edit or delete it. |
@@ -96,3 +99,7 @@ The separate `ai-session.md` with the team’s representative AI interactions is
 ## Video Demo
 
 <!-- Add the URL of the team's 2–5 minute narrated walkthrough here. -->
+
+## License
+
+The project code is licensed under the [MIT License](LICENSE). For third-party recipes and photographs, see the [source and attribution notes](public/images/SOURCES.md).

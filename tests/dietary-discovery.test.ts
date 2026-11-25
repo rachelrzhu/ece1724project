@@ -5,13 +5,14 @@ import { ownerId, otherUserId } from "./fixtures";
 
 const mocks = vi.hoisted(() => ({
   context: vi.fn(), findMany: vi.fn(), count: vi.fn(), findUser: vi.fn(),
-  session: vi.fn(), allergenMatches: vi.fn(),
+  session: vi.fn(), allergenMatches: vi.fn(), matchingNames: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth/server", () => ({ readSession: mocks.session }));
 vi.mock("@/lib/dietary/server", () => ({ readDietaryContext: mocks.context }));
 vi.mock("@/lib/db/client", () => ({
   getDatabase: () => ({
+    $queryRaw: mocks.matchingNames,
     recipe: { findMany: mocks.findMany, count: mocks.count },
     user: { findUnique: mocks.findUser },
     ingredientAllergen: { findMany: mocks.allergenMatches },
@@ -22,6 +23,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.findMany.mockResolvedValue([]);
   mocks.count.mockResolvedValue(1);
+  mocks.matchingNames.mockResolvedValue([]);
   mocks.session.mockResolvedValue({ user: { id: otherUserId } });
   mocks.context.mockResolvedValue({ conflictNames: ["milk"], summarize: vi.fn() });
 });
@@ -107,6 +109,8 @@ it.each([false, true])("combines Explore allergens with search and optional save
     { canonicalName: "soy sauce" }, { canonicalName: "peanuts" },
     { canonicalName: "mixed sauce" }, { canonicalName: "mixed sauce" },
   ]);
+  mocks.matchingNames.mockImplementation(async (_sql, text) =>
+    text === "100% 花椒" ? [{ canonical_name: "custom spice" }] : [{ canonical_name: "rice" }]);
   mocks.count.mockResolvedValue(recipePageSize + 1);
   await listRecipes({
     query: "rice", allergenFilter: { allergens: ["SOY", "PEANUT"], ingredient: "100% 花椒" },
@@ -116,11 +120,13 @@ it.each([false, true])("combines Explore allergens with search and optional save
     where: { allergen: { in: ["SOY", "PEANUT"] } }, select: { canonicalName: true },
   });
   const { where } = mocks.count.mock.calls[0][0];
-  const names = ["soy sauce", "peanuts", "mixed sauce", ...(signedIn ? ["milk"] : [])];
+  const names = ["custom spice", "soy sauce", "peanuts", "mixed sauce", ...(signedIn ? ["milk"] : [])];
   expect(where.AND).toEqual(expect.arrayContaining([
     { visibility: "PUBLIC" }, { ingredients: { none: { canonicalName: { in: names } } } },
-    { ingredients: { none: { canonicalName: { contains: "100\\% 花椒", mode: "insensitive" } } } },
-    expect.objectContaining({ OR: expect.any(Array) }),
+    { OR: [
+      { title: { contains: "rice", mode: "insensitive" } },
+      { ingredients: { some: { canonicalName: { in: ["rice"] } } } },
+    ] },
   ]));
   expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: recipePageSize }));
 });
