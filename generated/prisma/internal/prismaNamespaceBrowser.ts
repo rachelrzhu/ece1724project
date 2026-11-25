@@ -62,7 +62,8 @@ export const ModelName = {
   Recipe: 'Recipe',
   RecipeIngredient: 'RecipeIngredient',
   RecipeStep: 'RecipeStep',
-  Bookmark: 'Bookmark'
+  Bookmark: 'Bookmark',
+  RecipeReaction: 'RecipeReaction'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -187,6 +188,7 @@ export const RecipeScalarFieldEnum = {
   baseServings: 'baseServings',
   prepMinutes: 'prepMinutes',
   cookMinutes: 'cookMinutes',
+  totalMinutes: 'totalMinutes',
   difficulty: 'difficulty',
   visibility: 'visibility',
   sourceRecipeId: 'sourceRecipeId',
@@ -229,6 +231,15 @@ export const BookmarkScalarFieldEnum = {
 } as const
 
 export type BookmarkScalarFieldEnum = (typeof BookmarkScalarFieldEnum)[keyof typeof BookmarkScalarFieldEnum]
+
+
+export const RecipeReactionScalarFieldEnum = {
+  userId: 'userId',
+  recipeId: 'recipeId',
+  liked: 'liked'
+} as const
+
+export type RecipeReactionScalarFieldEnum = (typeof RecipeReactionScalarFieldEnum)[keyof typeof RecipeReactionScalarFieldEnum]
 
 
 export const SortOrder = {

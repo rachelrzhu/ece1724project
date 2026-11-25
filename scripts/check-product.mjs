@@ -119,7 +119,7 @@ async function signOut(page) {
 }
 
 async function search(page, term, count, collection = "explore") {
-  await page.goto(collection === "explore" ? "/" : "/?collection=" + collection);
+  await page.goto(collection === "explore" ? "/recipes" : "/recipes?collection=" + collection);
   await page.getByRole("searchbox").fill(term);
   await page.getByRole("button", { name: "Search", exact: true }).click();
   await page.waitForURL((url) =>
@@ -177,12 +177,12 @@ async function deleteFixture(page, path) {
   assert([title, copyTitle].includes(fixtureTitle), "Unexpected fixture title.");
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Delete recipe: " + fixtureTitle, exact: true }).click();
-  await page.waitForURL((url) => url.pathname === "/" && url.searchParams.get("collection") === "mine");
+  await page.waitForURL((url) => url.pathname === "/recipes" && url.searchParams.get("collection") === "mine");
 }
 
 async function clearOwnedFixtures(page) {
   // Navigation can fail after creation committed but before we received the new ID.
-  await page.goto("/?collection=mine&q=" + runId);
+  await page.goto("/recipes?collection=mine&q=" + runId);
   const list = page.getByRole("list", { name: "My recipes", exact: true });
   const empty = page.getByText(`No recipes match “${runId}”.`, { exact: true });
   if (await page.getByRole("link", { name: "Sign in", exact: true }).count()) return false;
@@ -198,12 +198,20 @@ async function clearOwnedFixtures(page) {
 }
 
 try {
+  await guest.goto("/");
+  await guest.getByRole("main").getByRole("link", { name: "Explore recipes", exact: true }).click();
+  await guest.waitForURL((url) => url.pathname === "/recipes");
+  await guest.getByRole("searchbox").waitFor();
+  passed("A visitor can enter the recipe browser from the landing page");
+
   await Promise.all([signIn(owner, ownerEmail, ownerPassword), signIn(reader, readerEmail, readerPassword)]);
   passed("Two independent email/password sessions survive refresh");
 
   await owner.goto("/recipes/new");
   await owner.getByLabel("Title", { exact: true }).fill(title);
   await owner.getByLabel("Description", { exact: true }).fill("Disposable browser verification recipe.");
+  await owner.getByLabel("Prep time (min)", { exact: true }).fill("12");
+  await owner.getByLabel("Cook time (min)", { exact: true }).fill("18");
   await owner.getByLabel("Name", { exact: true }).fill(ingredient);
   await owner.getByLabel(/^Quantity \(optional\b/).fill("400");
   await owner.getByLabel("Unit", { exact: true }).fill("g");
@@ -225,6 +233,59 @@ try {
 
   await saveVisibility("Public");
   await Promise.all([search(reader, title, 1), search(guest, ingredient.toUpperCase(), 1)]);
+  const cards = reader.getByRole("link", { name: "Cards", exact: true });
+  const list = reader.getByRole("link", { name: "List", exact: true });
+  assert.equal(await cards.getAttribute("aria-current"), "page");
+  await list.click();
+  await reader.waitForURL((url) => url.searchParams.get("view") === "list" && url.searchParams.get("q") === title);
+  await reader.reload();
+  assert.equal(await list.getAttribute("aria-current"), "page");
+
+  const readyIn = reader.getByRole("spinbutton", { name: "Ready in", exact: true });
+  const submitSearch = reader.getByRole("button", { name: "Search", exact: true });
+  await readyIn.fill("29");
+  await submitSearch.click();
+  await reader.getByText(`No recipes match “${title}”.`, { exact: true }).waitFor();
+  assert.equal(new URL(reader.url()).searchParams.get("maxMinutes"), "29");
+  await readyIn.fill("30");
+  await submitSearch.click();
+  await reader.getByRole("link", { name: title, exact: true }).waitFor();
+  await reader.reload();
+  assert.equal(await readyIn.inputValue(), "30");
+  assert.equal(await list.getAttribute("aria-current"), "page");
+
+  const like = reader.getByRole("button", { name: "Like " + title, exact: true });
+  const dislike = reader.getByRole("button", { name: "Dislike " + title, exact: true });
+  await like.click();
+  await reader.getByRole("button", { name: "Like " + title, exact: true, pressed: true }).waitFor();
+  await cards.click();
+  await reader.waitForURL((url) => !url.searchParams.has("view") && url.searchParams.get("maxMinutes") === "30");
+  await reader.getByRole("button", { name: "Like " + title, exact: true, pressed: true }).waitFor();
+  await like.getByText("1", { exact: true }).waitFor();
+  await reader.getByRole("link", { name: "Remove 30 min limit", exact: true }).click();
+  await reader.waitForURL((url) => url.searchParams.get("q") === title && !url.searchParams.has("maxMinutes"));
+  assert.equal(await readyIn.inputValue(), "");
+  passed("Ready in includes the exact prep and cook total, survives refresh and layout changes, and clears independently");
+  await reader.getByRole("link", { name: title, exact: true }).click();
+  await reader.waitForURL((url) => url.pathname === detail);
+  await dislike.click();
+  await reader.getByRole("button", { name: "Dislike " + title, exact: true, pressed: true }).waitFor();
+  const ownerLike = owner.getByRole("button", { name: "Like " + title, exact: true });
+  await owner.reload();
+  assert.equal(await owner.getByRole("button", { name: "Dislike " + title, exact: true }).getAttribute("aria-pressed"), "false");
+  await ownerLike.click();
+  await ownerLike.getByText("1", { exact: true }).waitFor();
+  await reader.reload();
+  assert.equal(await like.getAttribute("aria-pressed"), "false");
+  await like.getByText("1", { exact: true }).waitFor();
+  assert.equal(await dislike.getAttribute("aria-pressed"), "true");
+  await dislike.getByText("1", { exact: true }).waitFor();
+  await dislike.click();
+  await reader.getByRole("button", { name: "Dislike " + title, exact: true, pressed: false }).waitFor();
+  await dislike.getByText("0", { exact: true }).waitFor();
+  await guest.getByRole("link", { name: "Sign in to like " + title, exact: true }).waitFor();
+  passed("Cards and list retain the search, votes stay scoped to each cook, and changes on recipe detail update totals");
+
   const authorLink = guest.getByRole("article").filter({ has: guest.getByRole("link", { name: title, exact: true }) })
     .locator('a[href^="/users/"]');
   const cookPath = await authorLink.getAttribute("href");

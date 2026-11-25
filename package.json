@@ -39,8 +39,7 @@
     "node": "24.x"
   },
   "dependencies": {
-    "@heroui/react": "3.2.7",
-    "@heroui/styles": "3.2.7",
+    "@material-tailwind/react": "3.0.0-beta.24",
     "@next/env": "16.4.5",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",

@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@heroui/react/button";
-import Link from "next/link";
+import { Button, ButtonLink } from "@/app/_components/material";
 
 export default function RecipeError({ retry }: { retry: () => void }) {
   return (
@@ -9,8 +8,8 @@ export default function RecipeError({ retry }: { retry: () => void }) {
       <div className="site-panel space-y-4" role="alert">
         <h1 className="site-heading text-3xl">Recipe couldn’t be loaded</h1>
         <div className="flex flex-wrap gap-2">
-          <Button className="site-button" onPress={retry}>Try again</Button>
-          <Link href="/" className="site-button-outline">Explore recipes</Link>
+          <Button className="min-h-11" onClick={retry}>Try again</Button>
+          <ButtonLink href="/recipes" variant="outline" className="min-h-11">Explore recipes</ButtonLink>
         </div>
       </div>
     </main>

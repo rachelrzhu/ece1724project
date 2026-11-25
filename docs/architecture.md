@@ -47,7 +47,7 @@ Server Components can call recipe queries directly. Server Actions handle edits,
 | Responsibility | Technology | Rationale |
 | --- | --- | --- |
 | Application runtime | Node.js 24, Next.js 16, React 19, TypeScript | One application for interface rendering and server operations. |
-| Interface | Tailwind CSS 4 and HeroUI 3 | Shared styling and accessible component primitives. HeroUI 3 styles load after Tailwind. |
+| Interface | Material Tailwind React and Tailwind CSS 4 | The app uses Material navigation, cards, buttons, and form fields. Tailwind scans the library’s themes and supplies the app’s blue palette. |
 | Relational persistence | Neon PostgreSQL and Prisma 7 | Typed queries, relational constraints, and versioned migrations. |
 | Database transport | `@prisma/adapter-pg` and `pg` | PostgreSQL connections with interactive transaction support. Runtime pools have bounded size and connection timeouts. |
 | Authentication | Better Auth | Email/password accounts and database-backed sessions. Google sign-in requires OAuth credentials and a verified callback. |
@@ -141,7 +141,7 @@ Detail queries include visibility in the database predicate: an anonymous viewer
 
 Only the author can edit or delete a recipe. Edits replace the ingredient and step rows in the same transaction. The tester can list up to 50 owned recipes at a time.
 
-Product queries return six recipes per page. Discovery searches public recipe titles and ingredient names and can filter by difficulty. The owned collection filters by author. The saved collection checks both the viewer’s bookmark and their current access to the recipe. A bookmarked recipe disappears from another cook’s results as soon as its author makes it private.
+Product queries return six recipes per page. Discovery searches public recipe titles and ingredient names and can filter by difficulty. The optional ready-in limit uses an indexed, database-computed prep and cook total. When both times are zero, a recipe can qualify through a published time estimate. The time limit applies before counting and pagination. The owned collection filters by author. The saved collection checks both the viewer’s bookmark and their current access to the recipe. A bookmarked recipe disappears from another cook’s results as soon as its author makes it private.
 
 ### Cover photographs
 
@@ -194,5 +194,5 @@ Local UI checks covered recipe editing, scaling controls, warnings, undo and res
 - [Next.js data access and security](https://nextjs.org/docs/app/guides/data-security)
 - [Prisma 7 configuration and adapters](https://docs.prisma.io/docs/guides/upgrade-prisma-orm/v7)
 - [Prisma migration baselining](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/baselining)
-- [HeroUI 3 setup](https://heroui.com/en/docs/react/getting-started/quick-start)
+- [Material Tailwind React setup](https://www.material-tailwind.com/docs/v3/react/installation)
 - [Project proposal](proposal.md) and [requirements](requirements.md)

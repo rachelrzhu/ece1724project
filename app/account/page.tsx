@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ButtonLink } from "@/app/_components/material";
 import PageFrame from "@/app/_components/page-frame";
 import { getGoogleProviderOptions, readSession, safeReturnPath } from "@/lib/auth/server";
 import { readDietaryPreferences } from "@/lib/dietary/server";
@@ -19,8 +19,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const lockedUntil = activeUsernameCooldown(session?.user.usernameChangeAvailableAt)
     ?.toLocaleString("en-US", { dateStyle: "long", timeStyle: "long", timeZone: "UTC" }) ?? null;
   return (
-    <PageFrame title="Your account" back={{ href: "/", label: "Explore recipes" }} narrow>
-      {session && <Link href={`/users/${session.user.id}`} className="site-button-outline">View my recipe page</Link>}
+    <PageFrame title="Your account" back={{ href: "/recipes", label: "Explore recipes" }} narrow>
+      {session && <ButtonLink href={`/users/${session.user.id}`} variant="outline" className="min-h-11">View my recipe page</ButtonLink>}
       {session && <ProfileForm name={session.user.name ?? ""} username={session.user.username} lockedUntil={lockedUntil} />}
       {session && <AvatarForm name={session.user.name ?? ""} image={session.user.image ?? null} />}
       <div className="site-panel space-y-5">
