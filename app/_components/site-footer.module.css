@@ -1,0 +1,40 @@
+.footer {
+  margin-top: auto;
+  background: #172b53;
+  color: white;
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem 2rem;
+  padding-block: clamp(1.25rem, 3vw, 2rem);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: clamp(0.75rem, 2.5vw, 2rem);
+}
+
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: #dce7ff;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.links a:hover {
+  color: white;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.footer a:focus-visible {
+  outline-color: white;
+}

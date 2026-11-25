@@ -1,20 +1,21 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon } from "@/app/_components/icons";
-import { SiteHeader } from "@/app/_components/site-header";
+import { SiteHeader, type HeaderPage } from "@/app/_components/site-header";
 import { readSession } from "@/lib/auth/server";
 
-export default async function PageFrame({ title, back, children, narrow = false }: {
+export default async function PageFrame({ title, back, children, narrow = false, active }: {
   title: string;
   back?: { href: string; label: string };
   children: ReactNode;
   narrow?: boolean;
+  active?: HeaderPage;
 }) {
   const session = await readSession().catch(() => null);
 
   return (
     <>
-      <SiteHeader user={session?.user} />
+      <SiteHeader user={session?.user} active={active} />
       <main id="main-content" tabIndex={-1} className={`site-container space-y-6 py-6 sm:space-y-8 sm:py-9 ${narrow ? "max-w-xl!" : ""}`}>
         <header className="space-y-2">
           {back && (

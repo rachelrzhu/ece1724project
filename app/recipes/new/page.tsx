@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Create recipe" };
 export default async function NewRecipePage() {
   if (!(await readSession())) redirect("/account?returnTo=%2Frecipes%2Fnew");
   return (
-    <PageFrame title="Create recipe" back={{ href: "/recipes?collection=mine", label: "My recipes" }}>
+    <PageFrame title="Create recipe" active="new" back={{ href: "/recipes?collection=mine", label: "My recipes" }}>
       <RecipeEditor units={await getUnitOptions()} />
     </PageFrame>
   );

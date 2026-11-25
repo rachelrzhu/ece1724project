@@ -19,7 +19,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const lockedUntil = activeUsernameCooldown(session?.user.usernameChangeAvailableAt)
     ?.toLocaleString("en-US", { dateStyle: "long", timeStyle: "long", timeZone: "UTC" }) ?? null;
   return (
-    <PageFrame title="Your account" back={{ href: "/recipes", label: "Explore recipes" }} narrow>
+    <PageFrame title="Your account" active="account" back={{ href: "/recipes", label: "Explore recipes" }} narrow>
       {session && <ButtonLink href={`/users/${session.user.id}`} variant="outline" className="min-h-11">View my recipe page</ButtonLink>}
       {session && <ProfileForm name={session.user.name ?? ""} username={session.user.username} lockedUntil={lockedUntil} />}
       {session && <section id="avatar" aria-label="Avatar settings" className="space-y-3">

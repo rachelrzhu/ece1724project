@@ -1,0 +1,120 @@
+.inner {
+  display: grid;
+  reading-flow: grid-rows;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.25rem;
+  padding-top: 0.625rem;
+}
+
+.nav {
+  grid-column: 1 / -1;
+  display: flex;
+  align-self: stretch;
+  gap: 0.25rem;
+}
+
+.nav a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+  color: var(--color-subtle);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nav a:hover, .nav a[aria-current] {
+  color: var(--color-brand);
+}
+
+.nav a[aria-current]::after {
+  position: absolute;
+  inset: auto 0.75rem 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: currentColor;
+  content: "";
+}
+
+.nav a:focus-visible {
+  outline-offset: -4px;
+}
+
+.actions {
+  grid-area: 1 / 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.account {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 2rem;
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.account:hover, .account[aria-current] {
+  border-color: var(--color-brand);
+  background: var(--color-tint);
+  color: var(--color-brand);
+}
+
+.initial {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-tint);
+  color: var(--color-brand);
+  font-size: 0.8125rem;
+}
+
+.create[aria-current] {
+  box-shadow: 0 0 0 2px white, 0 0 0 3px var(--color-brand);
+}
+
+@media (min-width: 34rem) {
+  .guest {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0 clamp(1rem, 3.5vw, 3rem);
+    min-height: 4.5rem;
+    padding-top: 0;
+  }
+  .guest .nav, .guest .actions { grid-area: auto; }
+}
+
+@media (min-width: 54rem) {
+  .inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0 clamp(1rem, 3.5vw, 3rem);
+    min-height: 4.5rem;
+    padding-top: 0;
+  }
+  .nav, .actions { grid-area: auto; }
+}
+
+@media (max-width: 33.999rem) {
+  .nav a { flex: 1; padding-inline: 0.25rem; }
+  .inner:not(.guest) .account { width: 2.75rem; padding: 0; }
+  .inner:not(.guest) .accountLabel, .recipeLabel { display: none; }
+  .actions .create { padding-inline: 0.625rem; }
+}
+
+@media (max-width: 21.999rem) {
+  .create svg { display: none; }
+}
