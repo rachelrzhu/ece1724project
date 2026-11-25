@@ -5,6 +5,7 @@ import { coverId, otherUserId, ownerId, recipeId } from "./fixtures";
 
 let database: PGlite;
 let originalBeforeCopies: { id: string; source_recipe_id: string | null };
+let migratedTotalMinutes: number | null;
 let migratedUsernames: string[];
 
 beforeAll(async () => {
@@ -55,6 +56,16 @@ beforeAll(async () => {
   await database.exec(
     readFileSync("prisma/migrations/20261124020000_name_based_usernames/migration.sql", "utf8"),
   );
+  await database.exec(
+    readFileSync("prisma/migrations/20261124030000_recipe_reactions/migration.sql", "utf8"),
+  );
+  await database.exec(
+    readFileSync("prisma/migrations/20261124040000_recipe_total_minutes/migration.sql", "utf8"),
+  );
+  const migratedRecipe = await database.query<{ total_minutes: number | null }>(
+    "SELECT total_minutes FROM recipes WHERE id = $1", [recipeId],
+  );
+  migratedTotalMinutes = migratedRecipe.rows[0].total_minutes;
   const migrated = await database.query<{ username: string }>(
     "SELECT username FROM users WHERE id IN ($1, $2)", [ownerId, otherUserId],
   );
@@ -74,6 +85,17 @@ beforeEach(async () => {
 });
 
 describe("PostgreSQL migrations", () => {
+  it("computes ready-in totals for existing recipes and keeps edited times in sync", async () => {
+    expect(migratedTotalMinutes).toBe(40);
+    for (const [prep, cook, total] of [[10, 20, 30], [0, 12, 12], [8, 0, 8], [0, 0, null]]) {
+      const result = await database.query(
+        "UPDATE recipes SET prep_minutes = $1, cook_minutes = $2 WHERE id = $3 RETURNING total_minutes",
+        [prep, cook, recipeId],
+      );
+      expect(result.rows).toEqual([{ total_minutes: total }]);
+    }
+  });
+
   it("preserves existing profile and file rows when adding recipe tables", async () => {
     const { rows } = await database.query(
       "SELECT id, owner_id, size FROM files WHERE id = $1",
@@ -121,6 +143,15 @@ describe("PostgreSQL migrations", () => {
         [otherUserId, recipeId],
       ),
     ).rejects.toThrow(/bookmarks_pkey/);
+  });
+
+  it("allows one reaction per cook and recipe and removes votes with the recipe", async () => {
+    const insert = "INSERT INTO recipe_reactions (user_id, recipe_id, liked) VALUES ($1, $2, $3)";
+    await database.query(insert, [ownerId, recipeId, true]);
+    await database.query(insert, [otherUserId, recipeId, false]);
+    await expect(database.query(insert, [otherUserId, recipeId, true])).rejects.toThrow(/recipe_reactions_pkey/);
+    await database.query("DELETE FROM recipes WHERE id = $1", [recipeId]);
+    expect((await database.query("SELECT * FROM recipe_reactions")).rows).toEqual([]);
   });
 
   it("rolls back recipe and ingredient rows when a later step fails", async () => {

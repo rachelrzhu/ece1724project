@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@heroui/react/button";
+import { Button } from "@/app/_components/material";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { copyRecipe, deleteRecipe, setBookmark } from "@/app/actions";
@@ -42,22 +42,22 @@ export default function RecipeActions({ id, title, saved, canCopy, isOwner, afte
   return (
     <>
       {saved !== undefined && (
-        <Button variant="secondary" className="site-button-outline" isDisabled={pending} onPress={() => submit("bookmark")}>
+        <Button variant="outline" className="min-h-11" disabled={pending} onClick={() => submit("bookmark")}>
           {saved ? "Remove bookmark" : "Bookmark recipe"}
         </Button>
       )}
       {canCopy && (
-        <Button variant="secondary" className="site-button-outline" aria-describedby="copy-details" isDisabled={pending} onPress={() => submit("copy")}>
+        <Button variant="outline" className="min-h-11" aria-describedby="copy-details" disabled={pending} onClick={() => submit("copy")}>
           Make an editable copy
         </Button>
       )}
       {isOwner && (
         <Button
           aria-label={`Delete recipe: ${title}`}
-          variant="danger-soft"
+          variant="ghost" color="error"
           className="min-h-11"
-          isDisabled={pending}
-          onPress={() => submit("delete")}
+          disabled={pending}
+          onClick={() => submit("delete")}
         >
           Delete recipe
         </Button>

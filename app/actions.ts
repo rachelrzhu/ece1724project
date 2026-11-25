@@ -96,6 +96,35 @@ export async function signOut() {
   await getAuth().api.signOut({ headers: await headers() });
   revalidatePath("/", "layout");
 }
+export async function setRecipeReaction(id: string, liked: boolean | null) {
+  const session = await readSession();
+  if (!session) return { error: "Sign in to react to recipes." };
+  if (!recipeIdSchema.safeParse(id).success || (liked !== null && typeof liked !== "boolean"))
+    return { error: "Invalid recipe reaction." };
+  const userId = session.user.id;
+  try {
+    const db = getDatabase();
+    const accessible = await db.recipe.findFirst({
+      where: { id, ...visibleRecipeWhere(userId) },
+      select: { id: true },
+    });
+    if (!accessible) return { error: "This recipe is no longer available." };
+    const key = { userId, recipeId: id };
+    if (liked === null) {
+      await db.recipeReaction.deleteMany({ where: key });
+    } else {
+      await db.recipeReaction.upsert({
+        where: { userId_recipeId: key },
+        create: { ...key, liked },
+        update: { liked },
+      });
+    }
+    revalidatePath("/", "layout");
+    return { success: true };
+  } catch {
+    return { error: "Couldn’t update your reaction. Please try again." };
+  }
+}
 export async function uploadCover(data: FormData) {
   if (!(await readSession())) return { error: "Sign in to upload a photo." };
   const file = data.get("file");

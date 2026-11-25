@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@heroui/react/button";
+import { Button } from "@/app/_components/material";
 import { useState, useTransition } from "react";
 import { saveDietaryPreferences } from "@/app/dietary-actions";
 import { allergenChoices, dietChoices, type DietaryPreferences } from "@/lib/dietary/policy";
@@ -62,9 +62,9 @@ export default function DietaryPreferencesForm({ preferences }: { preferences: D
         </fieldset>
         <p className="text-sm text-subtle">Ingredient records can be incomplete. Check product labels and preparation for possible cross-contact.</p>
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" className="site-button" isDisabled={pending}>{pending ? "Saving…" : "Save preferences"}</Button>
-          <Button type="button" className="site-button-outline" isDisabled={pending}
-            onPress={() => persist({ diet: "NONE", allergens: [] }, true)}>Clear preferences</Button>
+          <Button type="submit" className="min-h-11" disabled={pending}>{pending ? "Saving…" : "Save preferences"}</Button>
+          <Button type="button" variant="outline" className="min-h-11" disabled={pending}
+            onClick={() => persist({ diet: "NONE", allergens: [] }, true)}>Clear preferences</Button>
         </div>
       </fieldset>
       {feedback.message && (

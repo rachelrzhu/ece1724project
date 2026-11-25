@@ -1,8 +1,7 @@
 "use client";
 
-import { Button, Form, Input, Label, Radio, RadioGroup, TextArea, TextField } from "@heroui/react";
+import { Button, ButtonLink, Input, Textarea } from "@/app/_components/material";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition, type FormEvent } from "react";
 import { RecipeCover } from "@/app/_components/recipe-cover";
@@ -44,7 +43,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
   const [ingredients, setIngredients] = useState(recipe?.ingredients ?? [emptyIngredient]);
   const [steps, setSteps] = useState(recipe?.steps ?? [{ id: "first", instruction: "" }]);
   const pending = saving || navigating;
-  const cancelHref = recipe ? `/recipes/${recipe.id}` : "/?collection=mine";
+  const cancelHref = recipe ? `/recipes/${recipe.id}` : "/recipes?collection=mine";
 
   useEffect(() => {
     if (feedback) feedbackRef.current?.focus();
@@ -142,7 +141,7 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
   }
 
   return (
-    <Form onSubmit={submit} aria-label={recipe ? "Edit recipe" : "Create recipe"} className="max-w-3xl">
+    <form onSubmit={submit} aria-label={recipe ? "Edit recipe" : "Create recipe"} className="max-w-3xl">
       {feedback && (
         <div ref={feedbackRef} tabIndex={-1} role="alert" className="mb-4 w-full rounded-md border border-red-200 bg-red-50 p-4 text-rust">
           <p className="font-semibold">{feedback.message}</p>
@@ -156,14 +155,15 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
       <fieldset className="grid w-full min-w-0 gap-6" disabled={pending} aria-label="Recipe fields">
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-basics">
           <h2 id="recipe-basics" className="site-heading text-xl">Recipe details</h2>
-          <TextField name="title" defaultValue={recipe?.title} fullWidth isRequired>
-            <Label>Title</Label>
-            <Input className="site-field" maxLength={160} />
-          </TextField>
-          <TextField name="description" defaultValue={recipe?.description} fullWidth isRequired>
-            <Label>Description</Label>
-            <TextArea className="site-field py-2" rows={3} maxLength={5000} />
-          </TextField>
+          <div className="grid gap-1">
+            <label htmlFor={`${formId}-title`}>Title</label>
+            <Input id={`${formId}-title`} name="title" defaultValue={recipe?.title} className="min-h-11 text-base" maxLength={160} required />
+          </div>
+          <div className="grid gap-1">
+            <label htmlFor={`${formId}-description`}>Description</label>
+            <Textarea id={`${formId}-description`} name="description" defaultValue={recipe?.description}
+              className="text-base" rows={3} maxLength={5000} resize required />
+          </div>
           <div className="grid gap-3 sm:grid-cols-3">
             {[
               { name: "baseServings", label: "Base servings", min: "0.0001", max: "10000", step: "0.0001", initial: recipe?.baseServings ?? 1 },
@@ -171,23 +171,24 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
               { name: "cookMinutes", label: "Cook time (min)", min: "0", max: "10080", step: "1", initial: recipe?.cookMinutes ?? 0 },
             ].map(({ name, label, initial, ...bounds }) => (
               <div key={name} className="grid min-w-0 gap-1">
-                <Label htmlFor={`${formId}-${name}`}>{label}</Label>
+                <label htmlFor={`${formId}-${name}`}>{label}</label>
                 <Input id={`${formId}-${name}`} name={name} type="number" defaultValue={initial}
-                  className="site-field" fullWidth required {...bounds} />
+                  className="min-h-11 text-base" required {...bounds} />
               </div>
             ))}
           </div>
-          <RadioGroup name="difficulty" orientation="horizontal" defaultValue={recipe?.difficulty ?? "EASY"}>
-            <Label>Difficulty</Label>
-            {["EASY", "MEDIUM", "HARD"].map((option) => (
-              <Radio key={option} value={option}>
-                <Radio.Content>
-                  <Radio.Control><Radio.Indicator /></Radio.Control>
-                  <Label className="capitalize">{option.toLowerCase()}</Label>
-                </Radio.Content>
-              </Radio>
-            ))}
-          </RadioGroup>
+          <fieldset role="radiogroup">
+            <legend>Difficulty</legend>
+            <div className="flex flex-wrap gap-x-5">
+              {["EASY", "MEDIUM", "HARD"].map((option) => (
+                <label key={option} className="inline-flex min-h-11 items-center gap-2 capitalize">
+                  <input type="radio" name="difficulty" value={option} defaultChecked={option === (recipe?.difficulty ?? "EASY")}
+                    className="size-4 accent-brand" />
+                  {option.toLowerCase()}
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </section>
 
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-ingredients">
@@ -200,8 +201,8 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
               canRemove={ingredients.length > 1}
               onRemove={() => setIngredients((rows) => rows.filter((row) => row.id !== ingredient.id))} />
           ))}
-          <Button type="button" variant="secondary" className="site-button-outline justify-self-start"
-            isDisabled={ingredients.length >= maxRows} onPress={() => {
+          <Button type="button" variant="outline" className="min-h-11 justify-self-start"
+            disabled={ingredients.length >= maxRows} onClick={() => {
               const id = `new-${nextRow.current++}`;
               setIngredients((rows) => [...rows, { ...emptyIngredient, id }]);
             }}>
@@ -213,19 +214,20 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
           <h2 id="recipe-method" className="site-heading text-xl">Method</h2>
           {steps.map((step, index) => (
             <div key={step.id} className="grid min-w-0 gap-2">
-              <TextField name={`step-${step.id}`} defaultValue={step.instruction} fullWidth isRequired>
-                <Label>Step {index + 1}</Label>
-                <TextArea className="site-field py-2" rows={2} maxLength={4000} />
-              </TextField>
+              <div className="grid gap-1">
+                <label htmlFor={`${formId}-step-${step.id}`}>Step {index + 1}</label>
+                <Textarea id={`${formId}-step-${step.id}`} name={`step-${step.id}`} defaultValue={step.instruction}
+                  className="text-base" rows={2} maxLength={4000} resize required />
+              </div>
               <Button type="button" variant="ghost" size="sm" className="justify-self-start"
-                isDisabled={steps.length === 1} aria-label={`Remove step ${index + 1}`}
-                onPress={() => setSteps((rows) => rows.filter((row) => row.id !== step.id))}>
+                disabled={steps.length === 1} aria-label={`Remove step ${index + 1}`}
+                onClick={() => setSteps((rows) => rows.filter((row) => row.id !== step.id))}>
                 Remove step
               </Button>
             </div>
           ))}
-          <Button type="button" variant="secondary" className="site-button-outline justify-self-start"
-            isDisabled={steps.length >= maxRows} onPress={() => {
+          <Button type="button" variant="outline" className="min-h-11 justify-self-start"
+            disabled={steps.length >= maxRows} onClick={() => {
               const id = `new-${nextRow.current++}`;
               setSteps((rows) => [...rows, { id, instruction: "" }]);
             }}>
@@ -245,15 +247,15 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
             )
           )}
           <div className="grid min-w-0 gap-1.5">
-            <Label htmlFor={`${formId}-cover`}>Choose a photo (optional)</Label>
-            <Input id={`${formId}-cover`} type="file" ref={fileInput}
-              className="max-w-full file:me-2 file:rounded-md file:border-0 file:bg-canvas file:px-2 file:py-0.5 file:text-ink"
-              fullWidth accept="image/jpeg,image/png,image/webp" aria-describedby={`${formId}-cover-help`}
+            <label htmlFor={`${formId}-cover`}>Choose a photo (optional)</label>
+            <input id={`${formId}-cover`} type="file" ref={fileInput}
+              className="site-field w-full py-2 file:me-2 file:rounded-md file:border-0 file:bg-canvas file:px-2 file:py-0.5 file:text-ink"
+              accept="image/jpeg,image/png,image/webp" aria-describedby={`${formId}-cover-help`}
               onChange={(event) => chooseCover(event.currentTarget.files?.[0])} />
             <p id={`${formId}-cover-help`} className="text-sm text-subtle">JPEG, PNG, or WebP up to 3 MiB.</p>
           </div>
           {(preview || coverId) && (
-            <Button type="button" variant="secondary" className="site-button-outline justify-self-start" onPress={() => {
+            <Button type="button" variant="outline" className="min-h-11 justify-self-start" onClick={() => {
               if (!preview) setCoverId(null);
               clearSelection();
             }}>
@@ -264,25 +266,28 @@ export default function RecipeEditor({ recipe }: { recipe?: RecipeDetailData }) 
 
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-publishing">
           <h2 id="recipe-publishing" className="site-heading text-xl">Visibility</h2>
-          <RadioGroup name="visibility" aria-labelledby="recipe-publishing" defaultValue={recipe?.visibility ?? "PRIVATE"}>
+          <div role="radiogroup" aria-labelledby="recipe-publishing" className="grid gap-2">
             {[
               { value: "PRIVATE", label: "Private", detail: "Only you can view this recipe." },
               { value: "PUBLIC", label: "Public", detail: "Anyone can find, view, and bookmark this recipe." },
             ].map(({ value, label, detail }) => (
-              <Radio key={value} value={value}>
-                <Radio.Content>
-                  <Radio.Control><Radio.Indicator /></Radio.Control>
-                  <div className="space-y-1"><Label>{label}</Label><p className="text-sm text-subtle">{detail}</p></div>
-                </Radio.Content>
-              </Radio>
+              <label key={value} className="flex min-h-11 items-start gap-2.5">
+                <input type="radio" name="visibility" value={value} defaultChecked={value === (recipe?.visibility ?? "PRIVATE")}
+                  className="mt-1 size-4 shrink-0 accent-brand" aria-labelledby={`${formId}-${value}-label`}
+                  aria-describedby={`${formId}-${value}-hint`} />
+                <span>
+                  <span id={`${formId}-${value}-label`}>{label}</span>
+                  <span id={`${formId}-${value}-hint`} className="block text-sm text-subtle">{detail}</span>
+                </span>
+              </label>
             ))}
-          </RadioGroup>
+          </div>
         </section>
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-5">
-          <Button type="submit" className="site-button" isDisabled={pending}>{pending ? "Saving…" : "Save recipe"}</Button>
-          <Link href={cancelHref} className="site-button-outline">Cancel</Link>
+          <Button type="submit" className="min-h-11" disabled={pending}>{pending ? "Saving…" : "Save recipe"}</Button>
+          <ButtonLink href={cancelHref} variant="outline" className="min-h-11">Cancel</ButtonLink>
         </div>
       </fieldset>
-    </Form>
+    </form>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@heroui/react/button";
+import { Button } from "@/app/_components/material";
 import { createAuthClient } from "better-auth/client";
 import { useState, useTransition } from "react";
 
@@ -16,8 +16,8 @@ export default function GoogleSignInButton() {
       try {
         const { error } = await auth.signIn.social({
           provider: "google",
-          callbackURL: "/",
-          errorCallbackURL: "/",
+          callbackURL: "/recipes",
+          errorCallbackURL: "/recipes",
         });
         setFailed(Boolean(error));
       } catch {
@@ -28,7 +28,7 @@ export default function GoogleSignInButton() {
 
   return (
     <div className="space-y-2">
-      <Button type="button" className="site-button-outline" onPress={signIn} isDisabled={pending}>
+      <Button type="button" variant="outline" className="min-h-11" onClick={signIn} disabled={pending}>
         {pending ? "Connecting to Google…" : "Continue with Google"}
       </Button>
       {failed && <p role="alert" className="text-sm text-rust">Couldn’t connect to Google. Try again.</p>}

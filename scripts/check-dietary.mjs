@@ -43,13 +43,18 @@ async function editIngredient(owner, detail, name) {
   await owner.getByRole("listitem").filter({ hasText: name }).first().waitFor();
 }
 
+async function openMoreFilters(page) {
+  const filters = page.locator("details").filter({ has: page.locator("summary", { hasText: "More filters" }) });
+  if (await filters.getAttribute("open") === null) await filters.locator("summary").click();
+}
+
 export async function checkDietaryPreferences({ owner, reader, guest, title, detail, ingredient, passed }) {
   const [original, otherProfile] = await Promise.all([readPreferences(reader), readPreferences(owner)]);
-  const results = "/?" + new URLSearchParams({ q: title });
+  const results = "/recipes?" + new URLSearchParams({ q: title, maxMinutes: "30" });
   const filtered = results + "&dietary=1";
   const link = reader.getByRole("link", { name: title, exact: true });
-  const noMatch = reader.getByText(`No recipes match “${title}”.`, { exact: true });
-  const toggle = (name) => reader.getByRole("link", { name, exact: true });
+  const noMatch = (page) => page.getByText(`No recipes match “${title}”.`, { exact: true }).filter({ visible: true });
+  const applyFilters = (page) => page.getByRole("button", { name: "Apply filters", exact: true }).click();
 
   try {
     await savePreferences(reader, { pattern: "VEGAN", allergens: ["MILK", "PEANUT"] });
@@ -64,13 +69,17 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await flags.getByText(ingredient, { exact: true }).waitFor();
     await reader.getByText("No known conflicts in mapped ingredients.", { exact: true }).waitFor();
     await reader.goto(results);
-    await toggle("Hide known conflicts").click();
-    await reader.waitForURL((url) => url.searchParams.get("q") === title && url.searchParams.get("dietary") === "1");
+    await openMoreFilters(reader);
+    await reader.getByRole("checkbox", { name: "Hide known conflicts", exact: true }).check();
+    await applyFilters(reader);
+    await reader.waitForURL((url) => url.searchParams.get("q") === title && url.searchParams.get("dietary") === "1"
+      && url.searchParams.get("maxMinutes") === "30");
     await reader.reload();
     await link.waitFor();
     await reader.getByText("1 ingredient with incomplete information", { exact: true }).waitFor();
-    await toggle("Show all recipes").waitFor();
-    passed("An unmapped ingredient stays visible and marked incomplete when the dietary filter survives refresh");
+    await reader.getByRole("link", { name: "Remove dietary filter", exact: true }).click();
+    await reader.waitForURL((url) => !url.searchParams.has("dietary") && url.searchParams.get("maxMinutes") === "30");
+    passed("An unmapped ingredient stays visible and marked incomplete when time and dietary filters are combined");
 
     await editIngredient(owner, detail, mappedIngredient);
     await reader.goto(results);
@@ -84,20 +93,38 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     assert.equal(await guest.getByRole("heading", { name: "Your dietary flags", exact: true }).count(), 0);
     await guest.goto(filtered);
     await guest.getByRole("link", { name: title, exact: true }).waitFor();
-    await guest.getByText("Filter by allergen", { exact: true }).click();
+    await openMoreFilters(guest);
     await guest.getByRole("checkbox", { name: "Milk", exact: true }).check();
     await guest.getByRole("checkbox", { name: "Peanuts", exact: true }).check();
-    await guest.getByRole("button", { name: "Apply allergen filter" }).click();
-    await guest.getByText(`No recipes match “${title}”.`, { exact: true }).waitFor();
+    await applyFilters(guest);
+    await noMatch(guest).waitFor();
     assert.deepEqual(new URL(guest.url()).searchParams.getAll("allergen"), ["MILK", "PEANUT"]);
     await guest.reload();
-    await guest.getByRole("link", { name: "Clear allergen filter" }).click();
+    await guest.getByRole("link", { name: "Remove Milk exclusion", exact: true }).click();
+    await guest.waitForURL((url) => url.searchParams.getAll("allergen").join(",") === "PEANUT");
+    await noMatch(guest).waitFor();
+    await guest.getByRole("link", { name: "Remove Peanuts exclusion", exact: true }).click();
     await guest.getByRole("link", { name: title, exact: true }).waitFor();
-    await guest.getByText("Filter by allergen", { exact: true }).click();
+    assert.equal(new URL(guest.url()).searchParams.get("maxMinutes"), "30");
+    await openMoreFilters(guest);
     await guest.getByLabel("Ingredient name to exclude").fill("CHOCOLATE");
-    await guest.getByRole("button", { name: "Apply allergen filter" }).click();
-    await guest.getByText(`No recipes match “${title}”.`, { exact: true }).waitFor();
-    passed("A guest can exclude multiple allergens, refresh the results, and clear the filter while keeping their search");
+    await applyFilters(guest);
+    await noMatch(guest).waitFor();
+    await guest.getByRole("link", { name: "Remove ingredient exclusion", exact: true }).click();
+    await guest.getByRole("link", { name: title, exact: true }).waitFor();
+    passed("A guest can remove individual allergen and ingredient exclusions while keeping the search and time limit");
+
+    await reader.goto(filtered + "&allergen=MILK&allergen=PEANUT&exclude=chocolate&page=2&view=list");
+    await noMatch(reader).waitFor();
+    await reader.getByRole("button", { name: "Clear filters", exact: true }).click();
+    await reader.waitForURL((url) => url.pathname === "/recipes" && url.searchParams.toString() === "view=list");
+    await link.waitFor();
+    assert.equal(await reader.getByRole("searchbox").inputValue(), "");
+    assert.equal(await reader.getByRole("spinbutton", { name: "Ready in", exact: true }).inputValue(), "");
+    assert.equal(await reader.getByRole("link", { name: "List", exact: true }).getAttribute("aria-current"), "page");
+    assert.equal(await reader.locator('input[name="allergen"]:checked').count(), 0);
+    assert.equal(await reader.getByLabel("Ingredient name to exclude").inputValue(), "");
+    passed("Clear filters removes the search, time limit and dietary exclusions, resets pagination and keeps list view");
 
     // Each restriction must exclude the same known ingredient independently.
     for (const profile of [
@@ -107,7 +134,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     ]) {
       await savePreferences(reader, profile);
       await reader.goto(filtered);
-      await noMatch.waitFor();
+      await noMatch(reader).waitFor();
       assert.equal(await link.count(), 0);
     }
     await savePreferences(reader, { pattern: "VEGETARIAN", allergens: [] });

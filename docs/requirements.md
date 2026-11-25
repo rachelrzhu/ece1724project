@@ -49,7 +49,7 @@ Personalization must describe detected conflicts and data limitations. Do not la
 
 ## Engineering constraints
 
-- Keep server and browser application code in TypeScript. Reuse Tailwind/HeroUI and existing root-level application conventions.
+- Keep server and browser application code in TypeScript. Reuse Material Tailwind and existing root-level application conventions.
 - Use Prisma for database types and migrations. Validate incoming recipe data with Zod.
 - Authenticate and authorize at every service boundary. Derive user identity from verified sessions; ignore client-supplied owner IDs.
 - Keep secrets out of Git, client bundles, URLs, logs, and screenshots. List the required variable names in `.env.example` with any secret values blank.

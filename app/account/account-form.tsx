@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Form, Input, Label, TextField } from "@heroui/react";
+import { Button, Input } from "@/app/_components/material";
 import { createAuthClient } from "better-auth/client";
 import { useState, useTransition, type FormEvent } from "react";
 
@@ -70,42 +70,43 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
 
   return (
     <div className="space-y-5">
-      <Form className="grid w-full gap-4" onSubmit={submit}>
+      <form className="grid w-full gap-4" onSubmit={submit}>
         {signedInEmail ? (
           <p className="text-subtle wrap-anywhere">Signed in as <strong className="text-ink">{signedInEmail}</strong></p>
         ) : (
           <>
             <h2 className="site-heading text-xl">{registering ? "Create an account" : "Sign in with email"}</h2>
             {registering && (
-              <TextField name="name" autoComplete="name" fullWidth isRequired>
-                <Label>Display name</Label>
-                <Input className="site-field" maxLength={120} />
-              </TextField>
+              <div className="grid gap-1.5">
+                <label htmlFor="account-name" className="text-sm font-medium">Display name</label>
+                <Input id="account-name" name="name" autoComplete="name" maxLength={120} required className="min-h-11 text-base" />
+              </div>
             )}
-            <TextField name="email" type="email" autoComplete="email" fullWidth isRequired>
-              <Label>Email</Label>
-              <Input className="site-field" />
-            </TextField>
-            <TextField name="password" type="password" fullWidth isRequired
-              autoComplete={registering ? "new-password" : "current-password"}>
-              <Label>Password{registering && " (8–128 characters)"}</Label>
-              <Input className="site-field" minLength={registering ? 8 : undefined} maxLength={128} />
-            </TextField>
+            <div className="grid gap-1.5">
+              <label htmlFor="account-email" className="text-sm font-medium">Email</label>
+              <Input id="account-email" name="email" type="email" autoComplete="email" required className="min-h-11 text-base" />
+            </div>
+            <div className="grid gap-1.5">
+              <label htmlFor="account-password" className="text-sm font-medium">Password{registering && " (8–128 characters)"}</label>
+              <Input id="account-password" name="password" type="password" required className="min-h-11 text-base"
+                autoComplete={registering ? "new-password" : "current-password"}
+                minLength={registering ? 8 : undefined} maxLength={128} />
+            </div>
           </>
         )}
-        <Button type="submit" className="site-button justify-self-start" isDisabled={pending}>
+        <Button type="submit" className="min-h-11 justify-self-start" disabled={pending}>
           {pending ? pendingLabel : submitLabel}
         </Button>
-      </Form>
+      </form>
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-rust">{error}</p>}
       {!signedInEmail && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
           {googleEnabled && (
-            <Button type="button" variant="secondary" className="site-button-outline" isDisabled={pending} onPress={continueWithGoogle}>
+            <Button type="button" variant="outline" className="min-h-11" disabled={pending} onClick={continueWithGoogle}>
               Continue with Google
             </Button>
           )}
-          <Button type="button" variant="ghost" isDisabled={pending} onPress={() => {
+          <Button type="button" variant="ghost" className="min-h-11" disabled={pending} onClick={() => {
             setRegistering(!registering);
             setError("");
           }}>

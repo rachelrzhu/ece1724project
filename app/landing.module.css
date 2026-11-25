@@ -1,0 +1,150 @@
+.landing {
+  padding-block: clamp(1.25rem, 3.5vw, 2.75rem) 4rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1.04fr;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  border-color: var(--color-line);
+  background: var(--color-tint);
+}
+
+.intro {
+  align-self: center;
+  padding: clamp(2rem, 4.5vw, 4rem);
+}
+
+.intro h1 {
+  font-size: clamp(2.45rem, 4.8vw, 3.55rem);
+  font-weight: 700;
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.intro p {
+  max-width: 34ch;
+  margin-top: 1.5rem;
+  color: var(--color-subtle);
+  font-size: clamp(1rem, 1.5vw, 1.125rem);
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.75rem;
+}
+
+.explore {
+  gap: 0.75rem;
+  padding-inline: 1.15rem;
+  border-radius: 2rem;
+  min-height: 2.95rem;
+}
+
+.heroPhoto {
+  position: relative;
+  min-height: clamp(25rem, 38vw, 30rem);
+  background: var(--color-canvas);
+}
+
+.heroPhoto img, .ingredientPhoto img {
+  object-fit: cover;
+}
+
+.heroPhoto img {
+  object-position: 68% center;
+}
+
+.photoLink {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 2rem;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.pantry {
+  margin-top: clamp(2.5rem, 5vw, 4rem);
+}
+
+.pantry h2 {
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.ingredients {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.85rem, 2vw, 1.5rem);
+  margin-top: 1.5rem;
+}
+
+.ingredientCard {
+  border-radius: 1rem;
+  transition: box-shadow 160ms ease;
+}
+
+.ingredientCard:hover, .ingredientCard:focus-within {
+  box-shadow: 0 3px 10px #14265424;
+}
+
+.ingredient {
+  display: block;
+}
+
+.ingredient:focus-visible {
+  outline-offset: -3px;
+}
+
+.ingredientPhoto {
+  position: relative;
+  aspect-ratio: 1.85;
+  overflow: hidden;
+  background: var(--color-canvas);
+}
+
+.ingredientLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ingredientLabel svg {
+  color: var(--color-brand);
+}
+
+.ingredient:hover, .photoLink:hover {
+  color: var(--color-brand);
+}
+
+@media (max-width: 47.999rem) {
+  .hero { grid-template-columns: 1fr; }
+  .intro { padding: 2rem clamp(1.4rem, 6vw, 3rem); }
+  .intro h1 { font-size: clamp(2.25rem, 8vw, 3.25rem); }
+  .heroPhoto { min-height: 0; aspect-ratio: 1.95; }
+}
+
+@media (max-width: 39.999rem) {
+  .ingredients { grid-template-columns: 1fr; }
+  .ingredientPhoto { aspect-ratio: 2.3; }
+}

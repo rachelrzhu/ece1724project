@@ -77,3 +77,8 @@ export type RecipeStep = Prisma.RecipeStepModel
  * 
  */
 export type Bookmark = Prisma.BookmarkModel
+/**
+ * Model RecipeReaction
+ * 
+ */
+export type RecipeReaction = Prisma.RecipeReactionModel

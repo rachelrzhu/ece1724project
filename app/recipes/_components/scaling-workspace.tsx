@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, Label } from "@heroui/react";
+import { Button, Input } from "@/app/_components/material";
 import { useId, useState } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { formatScaledQuantity, type ScalingRecipe } from "@/lib/recipes/scaling";
@@ -43,14 +43,14 @@ function ScalingControls() {
   return (
     <div className="grid gap-4 rounded-md border border-line bg-canvas p-3 sm:p-4">
       <div role="group" aria-label="Scale by" className="flex flex-wrap gap-2">
-        <Button type="button" className={settings.mode === "servings" ? "site-button" : "site-button-outline"}
-          aria-pressed={settings.mode === "servings"} onPress={() => dispatch(scalingActions.changeMode("servings"))}>
+        <Button type="button" className="min-h-11" variant={settings.mode === "servings" ? "solid" : "outline"}
+          aria-pressed={settings.mode === "servings"} onClick={() => dispatch(scalingActions.changeMode("servings"))}>
           By servings
         </Button>
-        <Button type="button" className={settings.mode === "ingredient" ? "site-button" : "site-button-outline"}
-          aria-pressed={settings.mode === "ingredient"} isDisabled={!allowIngredientMode}
+        <Button type="button" className="min-h-11" variant={settings.mode === "ingredient" ? "solid" : "outline"}
+          aria-pressed={settings.mode === "ingredient"} disabled={!allowIngredientMode}
           aria-describedby={allowIngredientMode ? undefined : ingredientHelpId}
-          onPress={() => dispatch(scalingActions.changeMode("ingredient"))}>
+          onClick={() => dispatch(scalingActions.changeMode("ingredient"))}>
           By ingredient
         </Button>
       </div>
@@ -62,16 +62,16 @@ function ScalingControls() {
       )}
       {settings.mode === "servings" ? (
         <div className="grid gap-1">
-          <Label htmlFor={`${id}-servings`}>Target servings</Label>
+          <label htmlFor={`${id}-servings`}>Target servings</label>
           <Input id={`${id}-servings`} type="text" inputMode="decimal" maxLength={32}
-            className="site-field max-w-48" value={settings.targetServings}
+            className="min-h-11 max-w-48 text-base" value={settings.targetServings}
             onChange={(event) => dispatch(scalingActions.editQuantity({ field: "targetServings", value: event.target.value }))}
             onBlur={() => dispatch(scalingActions.finishEditing())} {...invalidProps("targetServings")} />
         </div>
       ) : (
         <div className="grid min-w-0 gap-3">
           <div className="grid min-w-0 gap-1">
-            <Label htmlFor={`${id}-ingredient`}>Ingredient on hand</Label>
+            <label htmlFor={`${id}-ingredient`}>Ingredient on hand</label>
             <select id={`${id}-ingredient`} className="site-field w-full min-w-0 truncate" value={settings.ingredientId}
               onChange={(event) => dispatch(scalingActions.chooseIngredient(event.target.value))}
               {...invalidProps("ingredientId", showIngredientHelp ? ingredientHelpId : undefined)}>
@@ -80,14 +80,14 @@ function ScalingControls() {
           </div>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-2">
             <div className="grid min-w-0 gap-1">
-              <Label htmlFor={`${id}-available`}>Available quantity</Label>
-              <Input id={`${id}-available`} type="text" inputMode="decimal" maxLength={32} fullWidth
-                className="site-field min-w-0" value={settings.availableQuantity}
+              <label htmlFor={`${id}-available`}>Available quantity</label>
+              <Input id={`${id}-available`} type="text" inputMode="decimal" maxLength={32}
+                className="min-h-11 min-w-0 text-base" value={settings.availableQuantity}
                 onChange={(event) => dispatch(scalingActions.editQuantity({ field: "availableQuantity", value: event.target.value }))}
                 onBlur={() => dispatch(scalingActions.finishEditing())} {...invalidProps("availableQuantity")} />
             </div>
             <div className="grid min-w-0 gap-1">
-              <Label htmlFor={`${id}-unit`}>Unit</Label>
+              <label htmlFor={`${id}-unit`}>Unit</label>
               <select id={`${id}-unit`} className="site-field w-full" value={settings.availableUnit}
                 onChange={(event) => dispatch(scalingActions.chooseUnit(event.target.value))} {...invalidProps("availableUnit")}>
                 {selected?.units.map((unit) => <option key={unit} value={unit}>{unit}</option>)}
@@ -98,8 +98,8 @@ function ScalingControls() {
       )}
       {error && <p id={errorId} role="alert" className="text-sm text-rust">{error.message} Showing original amounts.</p>}
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" className="site-button-outline" isDisabled={!canUndo} onPress={() => dispatch(scalingActions.undo())}>Undo</Button>
-        <Button type="button" className="site-button-outline" isDisabled={!canReset} onPress={() => dispatch(scalingActions.reset())}>Reset</Button>
+        <Button type="button" variant="outline" className="min-h-11" disabled={!canUndo} onClick={() => dispatch(scalingActions.undo())}>Undo</Button>
+        <Button type="button" variant="outline" className="min-h-11" disabled={!canReset} onClick={() => dispatch(scalingActions.reset())}>Reset</Button>
       </div>
     </div>
   );
