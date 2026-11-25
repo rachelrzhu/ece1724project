@@ -411,6 +411,7 @@ export const ModelName = {
   RecipeStep: 'RecipeStep',
   Bookmark: 'Bookmark',
   RecipeReaction: 'RecipeReaction',
+  WriteRateLimit: 'WriteRateLimit',
   RecipeLike: 'RecipeLike'
 } as const
 
@@ -427,7 +428,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "dietarySettings" | "ingredientProfile" | "ingredientAllergen" | "session" | "account" | "verification" | "storedFile" | "recipe" | "measurementUnit" | "recipeIngredient" | "recipeStep" | "bookmark" | "recipeReaction" | "recipeLike"
+    modelProps: "user" | "dietarySettings" | "ingredientProfile" | "ingredientAllergen" | "session" | "account" | "verification" | "storedFile" | "recipe" | "measurementUnit" | "recipeIngredient" | "recipeStep" | "bookmark" | "recipeReaction" | "writeRateLimit" | "recipeLike"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1467,6 +1468,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    WriteRateLimit: {
+      payload: Prisma.$WriteRateLimitPayload<ExtArgs>
+      fields: Prisma.WriteRateLimitFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.WriteRateLimitFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.WriteRateLimitFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>
+        }
+        findFirst: {
+          args: Prisma.WriteRateLimitFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.WriteRateLimitFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>
+        }
+        findMany: {
+          args: Prisma.WriteRateLimitFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>[]
+        }
+        create: {
+          args: Prisma.WriteRateLimitCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>
+        }
+        createMany: {
+          args: Prisma.WriteRateLimitCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.WriteRateLimitCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>[]
+        }
+        delete: {
+          args: Prisma.WriteRateLimitDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>
+        }
+        update: {
+          args: Prisma.WriteRateLimitUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>
+        }
+        deleteMany: {
+          args: Prisma.WriteRateLimitDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.WriteRateLimitUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.WriteRateLimitUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>[]
+        }
+        upsert: {
+          args: Prisma.WriteRateLimitUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$WriteRateLimitPayload>
+        }
+        aggregate: {
+          args: Prisma.WriteRateLimitAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateWriteRateLimit>
+        }
+        groupBy: {
+          args: Prisma.WriteRateLimitGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WriteRateLimitGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.WriteRateLimitCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.WriteRateLimitCountAggregateOutputType> | number
+        }
+      }
+    }
     RecipeLike: {
       payload: Prisma.$RecipeLikePayload<ExtArgs>
       fields: Prisma.RecipeLikeFieldRefs
@@ -1710,6 +1785,16 @@ export const RecipeReactionScalarFieldEnum = {
 } as const
 
 export type RecipeReactionScalarFieldEnum = (typeof RecipeReactionScalarFieldEnum)[keyof typeof RecipeReactionScalarFieldEnum]
+
+
+export const WriteRateLimitScalarFieldEnum = {
+  policy: 'policy',
+  slot: 'slot',
+  used: 'used',
+  expiresAt: 'expiresAt'
+} as const
+
+export type WriteRateLimitScalarFieldEnum = (typeof WriteRateLimitScalarFieldEnum)[keyof typeof WriteRateLimitScalarFieldEnum]
 
 
 export const RecipeLikeScalarFieldEnum = {
@@ -2061,6 +2146,7 @@ export type GlobalOmitConfig = {
   recipeStep?: Prisma.RecipeStepOmit
   bookmark?: Prisma.BookmarkOmit
   recipeReaction?: Prisma.RecipeReactionOmit
+  writeRateLimit?: Prisma.WriteRateLimitOmit
   recipeLike?: Prisma.RecipeLikeOmit
 }
 

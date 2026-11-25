@@ -4,27 +4,45 @@ import { z } from "zod";
 import { readSession, getAuth } from "@/lib/auth/server";
 import { getDatabase } from "@/lib/db/client";
 import { recipes } from "@/lib/product/queries";
-import { recipeEditSchema, recipeIdSchema, recipeInputSchema } from "@/lib/recipes/schemas";
+import { MAX_RECIPE_ITEMS, recipeEditSchema, recipeIdSchema, recipeInputSchema } from "@/lib/recipes/schemas";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
 import { headers } from "next/headers";
 import { productImageStore } from "@/lib/product/storage";
 import { createImageService, ImageCleanupError } from "@/lib/storage/service";
+import { MAX_IMAGE_BYTES } from "@/lib/storage/limits";
+import { takeLimit } from "@/lib/security/rate-limit";
+import { CapacityError } from "@/lib/security/capacity";
+import { activityLimitMessage, takeUploadLimit, uploadLimitMessage } from "@/lib/security/action-limits";
 
-export async function saveRecipe(id: string | null, input: unknown) {
-  const parsed = (id ? recipeEditSchema : recipeInputSchema).safeParse(input);
-  if (!parsed.success)
-    return {
-      error: "Check the highlighted recipe details.",
-      fields: parsed.error.issues.map((i) => ({
-        path: i.path.join("."),
-        message: i.message,
-      })),
-    };
-  if (!(await readSession()))
-    return {
-      error: "Sign in to save this recipe.",
-    };
+type SaveRecipeResult =
+  | { id: string; error?: never; fields?: never }
+  | { error: string; fields?: { path: string; message: string }[]; id?: never };
+
+function recipeValidationError(error: z.ZodError) {
+  return {
+    error: "Check the highlighted recipe details.",
+    fields: error.issues.slice(0, 20).map(issue => ({
+      path: issue.path.join("."),
+      message: issue.code === "unrecognized_keys" ? "Submit only the recipe fields shown." : issue.message.slice(0, 250),
+    })),
+  };
+}
+
+export async function saveRecipe(id: string | null, input: unknown): Promise<SaveRecipeResult> {
+  const session = await readSession();
+  if (!session) return { error: "Sign in to save this recipe." };
+  if (id !== null && !recipeIdSchema.safeParse(id).success) return { error: "Invalid recipe." };
   try {
+    if (!(await takeLimit("recipe", session.user.id))) return { error: activityLimitMessage };
+    // Check lengths before Zod visits each submitted ingredient and step.
+    if (input && typeof input === "object" &&
+        (("ingredients" in input && Array.isArray(input.ingredients) && input.ingredients.length > MAX_RECIPE_ITEMS) ||
+         ("steps" in input && Array.isArray(input.steps) && input.steps.length > MAX_RECIPE_ITEMS))) {
+      return { error: `Use up to ${MAX_RECIPE_ITEMS} ingredients and ${MAX_RECIPE_ITEMS} steps per recipe.` };
+    }
+    const parsed = (id ? recipeEditSchema : recipeInputSchema).safeParse(input);
+    if (!parsed.success) return recipeValidationError(parsed.error);
+    if (!(await takeLimit("recipeContent", "global"))) return { error: activityLimitMessage };
     const result = id
       ? await recipes().update(id, parsed.data)
       : await recipes().create(parsed.data);
@@ -35,10 +53,8 @@ export async function saveRecipe(id: string | null, input: unknown) {
     revalidatePath("/", "layout");
     return { id: result.id };
   } catch (error) {
-    if (error instanceof z.ZodError) return {
-      error: "Check the highlighted recipe details.",
-      fields: error.issues.map(issue => ({ path: issue.path.join("."), message: issue.message })),
-    };
+    if (error instanceof CapacityError) return { error: error.message };
+    if (error instanceof z.ZodError) return recipeValidationError(error);
     return {
       error: "Couldn’t save your recipe. Try again.",
     };
@@ -47,20 +63,26 @@ export async function saveRecipe(id: string | null, input: unknown) {
 export async function copyRecipe(id: string) {
   if (!recipeIdSchema.safeParse(id).success)
     return { error: "This recipe is unavailable." };
-  if (!(await readSession())) return { error: "Sign in to copy this recipe." };
+  const session = await readSession();
+  if (!session) return { error: "Sign in to copy this recipe." };
   try {
+    if (!(await takeLimit("recipe", session.user.id)) || !(await takeLimit("recipeContent", "global")))
+      return { error: activityLimitMessage };
     const copy = await recipes().copyPublic(id);
     if (!copy) return { error: "This recipe is unavailable." };
     revalidatePath("/", "layout");
     return { id: copy.id };
-  } catch {
+  } catch (error) {
+    if (error instanceof CapacityError) return { error: error.message };
     return { error: "Couldn’t copy this recipe. Please try again." };
   }
 }
 export async function deleteRecipe(id: string) {
-  if (!z.uuid().safeParse(id).success || !(await readSession()))
-    return { error: "Sign in to manage your recipes." };
+  if (!recipeIdSchema.safeParse(id).success) return { error: "Invalid recipe." };
+  const session = await readSession();
+  if (!session) return { error: "Sign in to manage your recipes." };
   try {
+    if (!(await takeLimit("recipe", session.user.id))) return { error: activityLimitMessage };
     if (!(await recipes().remove(id)))
       return { error: "This recipe is no longer available." };
     revalidatePath("/", "layout");
@@ -74,8 +96,9 @@ export async function setBookmark(id: string, saved: boolean) {
   if (!session) return { error: "Sign in to save recipes." };
   if (!recipeIdSchema.safeParse(id).success || typeof saved !== "boolean")
     return { error: "Invalid recipe." };
-  const db = getDatabase();
   try {
+    if (!(await takeLimit("social", session.user.id))) return { error: activityLimitMessage };
+    const db = getDatabase();
     const accessible = await db.recipe.findFirst({
       where: { id, ...visibleRecipeWhere(session.user.id) },
       select: { id: true },
@@ -107,6 +130,7 @@ export async function setRecipeReaction(id: string, liked: boolean | null) {
     return { error: "Invalid recipe reaction." };
   const userId = session.user.id;
   try {
+    if (!(await takeLimit("social", userId))) return { error: activityLimitMessage };
     const db = getDatabase();
     const accessible = await db.recipe.findFirst({
       where: { id, ...visibleRecipeWhere(userId) },
@@ -130,11 +154,13 @@ export async function setRecipeReaction(id: string, liked: boolean | null) {
   }
 }
 export async function uploadCover(data: FormData) {
-  if (!(await readSession())) return { error: "Sign in to upload a photo." };
-  const file = data.get("file");
-  if (!(file instanceof File) || file.size === 0 || file.size > 3 * 1024 * 1024)
+  const session = await readSession();
+  if (!session) return { error: "Sign in to upload a photo." };
+  const file = data instanceof FormData ? data.get("file") : null;
+  if (!(file instanceof File) || file.size === 0 || file.size > MAX_IMAGE_BYTES)
     return { error: "Choose a JPEG, PNG or WebP photo up to 3 MiB." };
   try {
+    if (!(await takeUploadLimit(session.user.id))) return { error: uploadLimitMessage };
     const result = await createImageService({
       database: getDatabase,
       readSession,
@@ -145,6 +171,7 @@ export async function uploadCover(data: FormData) {
     });
     return { id: result.id };
   } catch (error) {
+    if (error instanceof CapacityError) return { error: error.message };
     if (error instanceof ImageCleanupError) {
       console.error("Cover cleanup retry required", { pathname: error.pathname });
     }

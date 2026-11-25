@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/lib/security/rate-limit", () => ({ takeLimit: async () => true }));
 vi.mock("@/lib/auth/server", () => ({ readSession: mocks.readSession }));
 vi.mock("@/lib/db/client", () => ({
   getDatabase: () => ({

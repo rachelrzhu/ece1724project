@@ -112,6 +112,11 @@ export type Bookmark = Prisma.BookmarkModel
  */
 export type RecipeReaction = Prisma.RecipeReactionModel
 /**
+ * Model WriteRateLimit
+ * 
+ */
+export type WriteRateLimit = Prisma.WriteRateLimitModel
+/**
  * Model RecipeLike
  * 
  */

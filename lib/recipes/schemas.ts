@@ -2,6 +2,7 @@ import { z } from "zod";
 import { findUnit, MAX_QUANTITY, MAX_SERVINGS, MIN_QUANTITY } from "./measurements";
 
 export const recipeIdSchema = z.uuid();
+export const MAX_RECIPE_ITEMS = 100;
 const visibilitySchema = z.enum(["PRIVATE", "PUBLIC"]);
 const difficultySchema = z.enum(["EASY", "MEDIUM", "HARD"]);
 
@@ -41,8 +42,8 @@ export const recipeInputSchema = z.strictObject({
   difficulty: difficultySchema,
   visibility: visibilitySchema.default("PRIVATE"),
   coverFileId: recipeIdSchema.nullable().default(null),
-  ingredients: z.array(ingredientInputSchema).min(1).max(100),
-  steps: z.array(z.strictObject({ instruction: z.string().trim().min(1).max(4000) })).min(1).max(100),
+  ingredients: z.array(ingredientInputSchema).min(1).max(MAX_RECIPE_ITEMS),
+  steps: z.array(z.strictObject({ instruction: z.string().trim().min(1).max(4000) })).min(1).max(MAX_RECIPE_ITEMS),
 });
 
 // An edit may keep an existing measurement verbatim. Only the owner's stored row supplies its value.
@@ -53,7 +54,7 @@ const storedIngredientSchema = z.strictObject({
 });
 export const recipeEditSchema = recipeInputSchema.extend({
   baseServings: z.union([baseServingsSchema, z.literal("original")]),
-  ingredients: z.array(z.union([ingredientInputSchema, storedIngredientSchema])).min(1).max(100),
+  ingredients: z.array(z.union([ingredientInputSchema, storedIngredientSchema])).min(1).max(MAX_RECIPE_ITEMS),
 });
 
 export type RecipeInput = z.infer<typeof recipeInputSchema>;

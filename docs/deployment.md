@@ -92,6 +92,14 @@ Dev and preprod each started with an empty Neon database and a separate private 
 4. In Vercel **Project Settings → Environment Variables**, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `BETTER_AUTH_URL` in each intended target. Use Preview with the **Git Branch** set to `dev` or `preprod`, and the production client with the Production target. Set `BETTER_AUTH_URL` to the origin in the matching table row (omit the callback path). Keep the client secret server-only and retain each target's database and auth secret.
 5. Redeploy the affected branch after saving its settings. Open its stable URL, authenticate to Vercel if Preview protection is enabled, and click **Continue with Google**. Confirm that the correct email appears after return and refresh, then sign out. Repeat with **Cancel** at Google's consent screen and confirm the app offers another attempt.
 
+## Submission and storage limits
+
+The Vercel Hobby firewall limits authentication and page POST requests to 60 per IP per minute in each region. Review the active rule and managed bot logs in the [project firewall](https://vercel.com/rachelrzhus-projects/ece1724project/firewall). The app also checks email registration with BotID Basic. A failed browser check leaves the account uncreated.
+
+PostgreSQL shares the write counters across application instances. Each account can make 20 recipe changes and eight image upload attempts per hour. Sitewide budgets allow 80 new accounts per hour, 150 recipe saves or copies per day, and 120 image upload attempts per day. A full recipe-content budget still permits deletions. The limiter uses fixed time windows that start with the first accepted request.
+
+An account can hold 200 recipes and up to 100 uploaded images totaling 64 MiB. All accounts together can store up to 4,096 images totaling 512 MiB. Cover and avatar uploads share these limits, including unattached images. Existing records count toward capacity. The limits apply when adding data. Image reconciliation can reclaim unattached uploads via the existing [cleanup procedure](../prisma/README.md).
+
 ## Rollback
 
 If a production release fails, open Vercel → Deployments and use **Instant Rollback** on the last known-good production deployment. Then fix the problem in dev and repeat the release flow. Avoid promoting an arbitrary dev/preprod build because its environment variables and resources can differ from production. Never force-push main as a rollback.

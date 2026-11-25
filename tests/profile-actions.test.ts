@@ -5,6 +5,8 @@ import { Prisma } from "@/generated/prisma/client";
 import { ownerId, otherUserId } from "./fixtures";
 
 const { session, update } = vi.hoisted(() => ({ session: vi.fn(), update: vi.fn() }));
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/security/rate-limit", () => ({ takeLimit: async () => true }));
 vi.mock("@/lib/auth/server", () => ({ readSession: session }));
 vi.mock("@/lib/db/client", () => ({ getDatabase: () => ({ user: { update } }) }));
 vi.mock("next/cache", () => ({ refresh: vi.fn() }));

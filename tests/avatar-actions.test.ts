@@ -9,8 +9,14 @@ vi.mock("server-only", () => ({}));
 const { session, create, update, put, remove } = vi.hoisted(() => ({
   session: vi.fn(), create: vi.fn(), update: vi.fn(), put: vi.fn(), remove: vi.fn(),
 }));
+vi.mock("@/lib/security/rate-limit", () => ({ takeLimit: async () => true }));
 vi.mock("@/lib/auth/server", () => ({ readSession: session }));
-vi.mock("@/lib/db/client", () => ({ getDatabase: () => ({ storedFile: { create }, user: { update } }) }));
+vi.mock("@/lib/db/client", () => ({ getDatabase: () => ({
+  $transaction: (action: (transaction: unknown) => unknown) => action({ storedFile: {
+    aggregate: async () => ({ _count: { _all: 0 }, _sum: { size: 0 } }), create,
+  } }),
+  user: { update },
+}) }));
 vi.mock("@/lib/product/storage", () => ({ productImageStore: () => ({ put, remove }) }));
 vi.mock("next/cache", () => ({ refresh: vi.fn() }));
 

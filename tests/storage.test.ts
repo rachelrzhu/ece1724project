@@ -5,13 +5,18 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { inspectRecipeImage, ImageValidationError, MAX_IMAGE_BYTES } from "@/lib/storage/image";
 import { createImageService, ImageAccessError, ImageCleanupError } from "@/lib/storage/service";
 import { coverId, ownerId } from "./fixtures";
+import { CapacityError, imageCapacity } from "@/lib/security/capacity";
 
 vi.mock("server-only", () => ({}));
 const sample = readFileSync("tests/fixtures/storage-sample.png");
 
 function setup(userId: string | null = ownerId) {
-  const storedFile = { create: vi.fn().mockResolvedValue({ id: coverId, name: "sample.png", contentType: "image/png", size: sample.byteLength }), findFirst: vi.fn().mockResolvedValue(null) };
-  const database = vi.fn(() => ({ storedFile }) as unknown as PrismaClient);
+  const storedFile = {
+    aggregate: vi.fn().mockResolvedValue({ _count: { _all: 0 }, _sum: { size: null } }),
+    create: vi.fn().mockResolvedValue({ id: coverId, name: "sample.png", contentType: "image/png", size: sample.byteLength }),
+    deleteMany: vi.fn(), findFirst: vi.fn().mockResolvedValue(null),
+  };
+  const database = vi.fn(() => ({ storedFile, $transaction: (callback: (tx: {storedFile: typeof storedFile}) => unknown) => callback({ storedFile }) }) as unknown as PrismaClient);
   const storage = { put: vi.fn().mockResolvedValue(undefined), read: vi.fn().mockResolvedValue(null), remove: vi.fn().mockResolvedValue(undefined) };
   const service = createImageService({ database, readSession: async () => userId ? { user: { id: userId } } : null, storage });
   return { service, storedFile, database, storage };
@@ -73,27 +78,40 @@ describe("private image service", () => {
     expect(storedFile.create.mock.calls[0][0].select).not.toHaveProperty("pathname");
   });
 
-  it("removes the uploaded object when metadata persistence fails", async () => {
+  it("skips the upload if it cannot reserve metadata", async () => {
     const { service, storage, storedFile } = setup();
     storedFile.create.mockRejectedValue(new Error("Database unavailable"));
-    await expect(service.upload({ name: "sample.png", bytes: sample })).rejects.toThrow("Could not save the image.");
-    expect(storage.remove).toHaveBeenCalledWith(storage.put.mock.calls[0][0]);
+    await expect(service.upload({ name: "sample.png", bytes: sample })).rejects.toThrow("Database unavailable");
+    expect(storage.put).not.toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
   });
 
-  it("cleans the unique path after an ambiguous upload failure without writing metadata", async () => {
+  it.each(["account", "site"] as const)("checks both byte and file limits at %s scope before writing to Blob", async (scope) => {
+    for (const [count, bytes] of [[imageCapacity[scope].files, 0], [1, imageCapacity[scope].bytes - sample.byteLength + 1]]) {
+      const { service, storedFile, storage } = setup();
+      if (scope === "site") storedFile.aggregate.mockResolvedValueOnce({ _count: { _all: 1 }, _sum: { size: 10 } });
+      storedFile.aggregate.mockResolvedValueOnce({ _count: { _all: count }, _sum: { size: bytes } });
+      await expect(service.upload({ name: "sample.png", bytes: sample })).rejects.toBeInstanceOf(CapacityError);
+      expect(storage.put).not.toHaveBeenCalled();
+      expect(storedFile.create).not.toHaveBeenCalled();
+    }
+  });
+
+  it("cleans the unique path and releases its reservation after an ambiguous upload failure", async () => {
     const { service, storage, storedFile } = setup();
     storage.put.mockRejectedValue(new Error("Connection lost"));
     await expect(service.upload({ name: "sample.png", bytes: sample })).rejects.toThrow();
     expect(storage.remove).toHaveBeenCalledWith(storage.put.mock.calls[0][0]);
-    expect(storedFile.create).not.toHaveBeenCalled();
+    expect(storedFile.deleteMany).toHaveBeenCalledWith({ where: { id: storedFile.create.mock.calls[0][0].data.id, ownerId } });
   });
 
   it("retains the exact path for retry when compensating cleanup fails", async () => {
     const { service, storage, storedFile } = setup();
-    storedFile.create.mockRejectedValue(new Error("Database unavailable"));
+    storage.put.mockRejectedValue(new Error("Connection lost"));
     storage.remove.mockRejectedValue(new Error("Storage unavailable"));
     const error = await service.upload({ name: "sample.png", bytes: sample }).catch((error: unknown) => error);
     expect(error).toBeInstanceOf(ImageCleanupError);
+    expect(storedFile.deleteMany).not.toHaveBeenCalled();
     expect((error as ImageCleanupError).pathname).toBe(storage.put.mock.calls[0][0]);
   });
 

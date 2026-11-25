@@ -3,6 +3,8 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { serializableTransaction } from "@/lib/db/serializable";
+import { CapacityError, imageCapacity } from "@/lib/security/capacity";
 import type { SessionReader } from "@/lib/recipes/service";
 import { privateImageStore, type PrivateImageStore } from "./blob";
 import { inspectRecipeImage } from "./image";
@@ -45,17 +47,34 @@ export function createImageService({
       const image = await inspectRecipeImage(bytes);
       const id = randomUUID();
       const pathname = `recipe-images/${owner}/${id}.${image.extension}`;
-
-      try {
-        await storage.put(pathname, image.bytes, image.contentType);
-        return await database().storedFile.create({
+      const db = database();
+      // Reserving the metadata first counts pending uploads across instances. The
+      // serializable transaction finishes before the external storage request.
+      const file = await serializableTransaction(db, async (transaction) => {
+        for (const scope of ["account", "site"] as const) {
+          const usage = await transaction.storedFile.aggregate({
+            where: scope === "account" ? { ownerId: owner } : {},
+            _count: { _all: true }, _sum: { size: true },
+          });
+          const limit = imageCapacity[scope];
+          if (usage._count._all >= limit.files || (usage._sum.size ?? 0) + image.size > limit.bytes)
+            throw new CapacityError(scope === "account"
+              ? "Your account has reached its image storage limit."
+              : "Image storage is full. You can still save recipes without a new photo.");
+        }
+        return transaction.storedFile.create({
           data: { id, ownerId: owner, name: fileName, pathname, contentType: image.contentType, size: image.size },
           select: { id: true, name: true, contentType: true, size: true },
         });
+      });
+      try {
+        await storage.put(pathname, image.bytes, image.contentType);
+        return file;
       } catch {
         // The random path belongs only to this attempt, including an ambiguous upload failure.
         try {
           await storage.remove(pathname);
+          await db.storedFile.deleteMany({ where: { id, ownerId: owner } });
         } catch {
           throw new ImageCleanupError(pathname);
         }

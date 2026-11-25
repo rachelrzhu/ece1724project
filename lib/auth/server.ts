@@ -2,12 +2,14 @@ import "server-only";
 import { cache } from "react";
 import { headers } from "next/headers";
 import { betterAuth } from "better-auth";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getIP } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { checkBotId } from "botid/server";
 import { appName } from "@/lib/brand";
 import { getDatabase } from "@/lib/db/client";
 import { avatars } from "@/lib/product/avatar";
+import { takeLimit } from "@/lib/security/rate-limit";
 import {
   MAX_DISPLAY_NAME_LENGTH, MAX_EMAIL_LENGTH, MAX_EXISTING_PASSWORD_LENGTH,
   MAX_NEW_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH,
@@ -32,6 +34,7 @@ function createAuth() {
       transaction: true,
     }),
     advanced: {
+      ipAddress: { ipAddressHeaders: process.env.VERCEL === "1" ? ["x-vercel-forwarded-for"] : [] },
       database: { generateId: () => crypto.randomUUID() },
       // Retain the session cookie namespace across display-name changes.
       cookiePrefix: "savor",
@@ -46,6 +49,20 @@ function createAuth() {
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         const signup = ctx.path === "/sign-up/email";
+        if (signup && ctx.request?.method === "POST" && process.env.VERCEL === "1") {
+          const verdict = await checkBotId({ advancedOptions: { checkLevel: "basic" } }).catch(() => null);
+          if (typeof verdict?.isBot !== "boolean")
+            throw APIError.from("SERVICE_UNAVAILABLE", { code: "SIGNUP_CHECK_UNAVAILABLE", message: "Browser verification is temporarily unavailable. Please try again shortly." });
+          if (verdict.isBot)
+            throw APIError.from("FORBIDDEN", { code: "SIGNUP_BROWSER_REQUIRED", message: "We couldn’t verify your browser. Allow JavaScript, reload the page, and try again." });
+        }
+        if (ctx.request?.method === "POST" && ctx.path !== "/sign-out") {
+          const identity = getIP(ctx.request, ctx.context.options) ?? "unknown";
+          const policy = signup ? "signup" : ctx.path.startsWith("/sign-in/") ? "signin" : "authWrite";
+          if (!await takeLimit(policy, identity)) {
+            throw APIError.from("TOO_MANY_REQUESTS", { code: "AUTH_RATE_LIMIT", message: "Too many attempts. Please try again later." });
+          }
+        }
         const password = signup ? ctx.body?.password : ctx.body?.newPassword;
         if (typeof password === "string" && password.length > MAX_NEW_PASSWORD_LENGTH)
           throw APIError.from("BAD_REQUEST", { code: "PASSWORD_TOO_LONG", message: `Use up to ${MAX_NEW_PASSWORD_LENGTH} characters for your password.` });

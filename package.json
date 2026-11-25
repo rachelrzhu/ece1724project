@@ -46,6 +46,7 @@
     "@reduxjs/toolkit": "2.15.0",
     "@vercel/blob": "2.8.2",
     "better-auth": "1.7.18",
+    "botid": "1.5.13",
     "next": "16.4.5",
     "pg": "8.23.1",
     "react": "19.2.4",

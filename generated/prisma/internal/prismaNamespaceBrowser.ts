@@ -65,6 +65,7 @@ export const ModelName = {
   RecipeStep: 'RecipeStep',
   Bookmark: 'Bookmark',
   RecipeReaction: 'RecipeReaction',
+  WriteRateLimit: 'WriteRateLimit',
   RecipeLike: 'RecipeLike'
 } as const
 
@@ -250,6 +251,16 @@ export const RecipeReactionScalarFieldEnum = {
 } as const
 
 export type RecipeReactionScalarFieldEnum = (typeof RecipeReactionScalarFieldEnum)[keyof typeof RecipeReactionScalarFieldEnum]
+
+
+export const WriteRateLimitScalarFieldEnum = {
+  policy: 'policy',
+  slot: 'slot',
+  used: 'used',
+  expiresAt: 'expiresAt'
+} as const
+
+export type WriteRateLimitScalarFieldEnum = (typeof WriteRateLimitScalarFieldEnum)[keyof typeof WriteRateLimitScalarFieldEnum]
 
 
 export const RecipeLikeScalarFieldEnum = {
