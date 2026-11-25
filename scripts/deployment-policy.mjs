@@ -42,6 +42,23 @@ export function validatePromotion(pullRequest) {
   }
 }
 
+async function catalogNeedsCovers(directUrl) {
+  const { Client } = await import("pg");
+  const db = new Client({ connectionString: directUrl });
+  await db.connect();
+  try {
+    const history = await db.query("SELECT to_regclass('public._prisma_migrations') AS table_name");
+    if (!history.rows[0].table_name) return true;
+    const applied = await db.query(
+      "SELECT 1 FROM public._prisma_migrations WHERE migration_name = $1 AND finished_at IS NOT NULL AND rolled_back_at IS NULL",
+      ["20261124050000_public_recipe_catalog"],
+    );
+    return applied.rowCount === 0;
+  } finally {
+    await db.end();
+  }
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     if (process.argv[2] === "build") {
@@ -49,6 +66,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     } else if (process.argv[2] === "migrate") {
       const directUrl = deploymentMigrationUrl(process.env);
       if (directUrl) {
+        // The SQL migration publishes cover metadata. Make the JPEGs available first.
+        if (await catalogNeedsCovers(directUrl)) {
+          execFileSync(process.execPath, ["--import", "tsx", "scripts/catalog-covers.ts"], { stdio: "inherit" });
+        }
         console.log(`Applying committed migrations for ${process.env.VERCEL_GIT_COMMIT_REF}.`);
         execFileSync("npm", ["run", "db:migrate"], {
           stdio: "inherit",
