@@ -2,16 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Icon } from "@/app/_components/icons";
+import { IngredientCarousel } from "@/app/_components/ingredient-carousel";
 import { ButtonLink, Card } from "@/app/_components/material";
 import { SiteHeader } from "@/app/_components/site-header";
 import { readSession } from "@/lib/auth/server";
 import styles from "./landing.module.css";
-
-const ingredients = [
-  { name: "Chickpeas", image: "/images/salad.jpg" },
-  { name: "Avocado", image: "/images/toast.jpg" },
-  { name: "Noodles", image: "/images/shaanxi-oil-noodles.jpg" },
-];
 
 export default async function Home({ searchParams }: PageProps<"/">) {
   // Keep bookmarked searches and collection links from the original home page usable.
@@ -48,23 +43,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
             </Link>
           </div>
         </Card>
-        <section aria-labelledby="ingredient-title" className={styles.pantry}>
-          <h2 id="ingredient-title">Start with an ingredient</h2>
-          <ul className={styles.ingredients}>
-            {ingredients.map(({ name, image }) => (
-              <Card as="li" key={name} className={styles.ingredientCard}>
-                <Link href={`/recipes?q=${encodeURIComponent(name.toLowerCase())}`} className={styles.ingredient}>
-                  <div className={styles.ingredientPhoto}>
-                    <Image src={image} alt="" fill sizes="(min-width: 72rem) 352px, (min-width: 40rem) 33vw, 100vw" />
-                  </div>
-                  <div className={styles.ingredientLabel}>
-                    <span>{name}</span><Icon name="forward" className="size-5" />
-                  </div>
-                </Link>
-              </Card>
-            ))}
-          </ul>
-        </section>
+        <IngredientCarousel />
       </main>
     </>
   );
