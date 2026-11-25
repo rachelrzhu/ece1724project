@@ -11,6 +11,19 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: migration_ci
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd "pg_isready -U postgres -d migration_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,5 +31,11 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Verify migrations against PostgreSQL
+        env:
+          DIRECT_URL: postgresql://postgres:ci@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/migration_ci
+        run: |
+          npm run db:migrate
+          npm run db:diff
       - run: npm run check
       - run: npm run build

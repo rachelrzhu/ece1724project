@@ -37,7 +37,7 @@ Next.js serves the pages and API routes from the same process.
 
 On subsequent runs, setup adds missing keys from `.env.example` and preserves existing values. Database features use `DATABASE_URL`. Private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`. If an older environment file has an empty secret, set it to a unique value of at least 32 characters before using authentication.
 
-Migrations are explicit. Read the [database workflow](prisma/README.md) before running `npm run db:migrate`, especially against an existing database with `users` and `files` tables. The automated tests use isolated in-memory PostgreSQL and do not access Neon or Blob.
+Commit migration SQL with each schema change. GitHub Actions tests the committed migrations on disposable PostgreSQL. Vercel applies pending migrations to the corresponding database when deploying `dev`, `preprod`, or `main`. See the [deployment guide](docs/deployment.md#automatic-database-migrations) for branch settings and the [database workflow](prisma/README.md) for local setup and existing databases.
 
 ## Everyday use
 
@@ -92,5 +92,5 @@ With development database and Blob credentials configured, run `npm run storage:
 | npm can't find `package.json` | Open a terminal in the extracted project folder. |
 | Server already running | Use the URL in the existing terminal, or stop that server with **Ctrl+C** before running setup. If a crash left a stale lock, confirm the server has stopped before removing `.next` and restarting. |
 | The page won't open | Check the **Local** URL in the terminal. Next.js can choose a different port if 3000 is busy. |
-| Email registration and Google sign-in both fail | Run `npm run db:status` against the app’s database. Both flows read the profile username and its next change date. Review and apply pending migrations using the [database workflow](prisma/README.md). |
+| Email registration and Google sign-in both fail | Check the latest deployment’s migration logs and run `npm run db:status` against the app’s database. Both flows read the profile username and its next change date. [Migration troubleshooting](docs/deployment.md#automatic-database-migrations) |
 | Package or font download fails | Check your connection or proxy, then rerun the command. |
