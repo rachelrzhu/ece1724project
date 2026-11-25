@@ -112,7 +112,7 @@ async function main() {
     const updatedRecipe = {
       title: "Updated storage test bread", description: "Disposable integration test recipe.",
       baseServings: 6, prepMinutes: 10, cookMinutes: 30, difficulty: "EASY",
-      ingredients: [{ name: "Flour", quantity: 600.123456, unit: "g" }],
+      ingredients: [{ name: "Flour", quantity: 600.1, unit: "g" }],
       steps: [{ instruction: "Mix the ingredients." }, { instruction: "Bake and cool." }],
     };
     let recipeId = "";
@@ -142,7 +142,7 @@ async function main() {
       const stored = await ownerRecipes.getById(recipeId);
       assert.equal(stored?.title, "Updated storage test bread");
       assert.equal(stored?.baseServings, "6");
-      assert.equal(stored?.ingredients[0].quantity, "600.123456");
+      assert.equal(stored?.ingredients[0].quantity, "600.1");
       assert.deepEqual(stored?.steps.map((step) => step.instruction), ["Mix the ingredients.", "Bake and cool."]);
       assert.equal((await client.user.findUnique({ where: { id: ownerId }, select: { name: true } }))?.name, "Updated test owner");
     });

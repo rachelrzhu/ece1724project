@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
+import { RecipeDifficulty } from "@/generated/prisma/enums";
 import { CookByline } from "@/app/_components/cook-byline";
 import { Icon } from "@/app/_components/icons";
 import { Button, ButtonLink, Card } from "@/app/_components/material";
@@ -11,7 +12,8 @@ import { getGoogleProviderOptions, readSession } from "@/lib/auth/server";
 import { parseAllergenFilter } from "@/lib/dietary/policy";
 import { readDietaryPreferences } from "@/lib/dietary/server";
 import { parseMaxMinutes } from "@/lib/recipes/ready-in";
-import { listRecipes, recipePageSize, type PublicCook, type RecipeCardData } from "@/lib/product/queries";
+import { formatScaledQuantity } from "@/lib/recipes/measurements";
+import { listRecipes, recipePageSize, type PublicCook, type RecipeCardData, type RecipeSort } from "@/lib/product/queries";
 import GoogleSignInButton from "@/app/account/google-sign-in-button";
 import RecipeActions from "@/app/recipes/_components/recipe-actions";
 import { collectionHref, RecipeFilters, type BrowseState } from "./recipe-filters";
@@ -25,7 +27,6 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo }: {
   returnTo: string;
 }) {
   const href = `/recipes/${recipe.id}`;
-  const difficulty = recipe.source ? recipe.source.difficulty : recipe.difficulty.toLowerCase();
   const dietary = recipe.dietary;
   return (
     <Card as="article" className={styles.entry}>
@@ -33,8 +34,9 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo }: {
       <div className={styles.body}>
         <ul className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-medium text-subtle">
           {recipe.durationLabel && <li className="inline-flex items-center gap-1"><Icon name="clock" className="size-3.5" />{recipe.durationLabel}</li>}
-          <li>Serves {recipe.baseServings}</li>
-          {difficulty && <li className="capitalize">{recipe.source && "Source difficulty "}{difficulty}</li>}
+          <li>Serves {formatScaledQuantity(Number(recipe.baseServings))}</li>
+          <li className="capitalize">{recipe.difficulty.toLowerCase()}</li>
+          {recipe.source?.difficulty && <li>Source difficulty {recipe.source.difficulty}</li>}
           {collection === "mine" && <li className="capitalize">{recipe.visibility.toLowerCase()}</li>}
           {recipe.saved && <li className="inline-flex items-center gap-1"><Icon name="bookmark" className="size-3.5" />Saved</li>}
         </ul>
@@ -49,7 +51,7 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo }: {
         )}
         {showAuthor && (
           <p className="text-xs text-subtle wrap-anywhere">{recipe.source ? "Shared by" : "By"}{" "}
-            <CookByline cook={recipe.author} />
+            <CookByline cook={recipe.author} displayNameOnly={collection === "explore"} />
           </p>
         )}
         {dietary && (
@@ -101,6 +103,26 @@ function ViewPicker({ state }: { state: BrowseState }) {
   );
 }
 
+const sortLabels: Record<RecipeSort, string> = {
+  recent: "Most recent",
+  likes: "Most liked",
+  saved: "Most saved",
+};
+
+function SortPicker({ state }: { state: BrowseState }) {
+  return (
+    <details className={styles.sortPicker} key={state.sort}>
+      <summary>Sort by {sortLabels[state.sort].toLowerCase()}<Icon name="chevron" className="size-3.5" /></summary>
+      <nav aria-label="Sort recipes">
+        {(Object.keys(sortLabels) as RecipeSort[]).map(sort => (
+          <Link key={sort} scroll={false} aria-current={state.sort === sort ? "true" : undefined}
+            href={collectionHref({ ...state, sort, page: 1 }) + "#recipes"}>{sortLabels[sort]}</Link>
+        ))}
+      </nav>
+    </details>
+  );
+}
+
 function ResultsLoading() {
   return (
     <div aria-busy="true" role="status" className="space-y-3 text-sm text-subtle">
@@ -118,7 +140,7 @@ function ResultsLoading() {
 }
 
 async function RecipeResults({ state, cookId, signedIn }: { state: BrowseState; cookId?: string; signedIn: boolean }) {
-  const { collection, query, page, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
+  const { collection, query, page, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
   const returnTo = collectionHref(state);
   if (!signedIn && collection !== "explore") {
     return (
@@ -129,7 +151,7 @@ async function RecipeResults({ state, cookId, signedIn }: { state: BrowseState; 
     );
   }
 
-  const result = await listRecipes({ collection, authorId: cookId, query, page, maxMinutes, hideDietaryConflicts, allergenFilter }).catch(() => null);
+  const result = await listRecipes({ collection, authorId: cookId, query, page, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter }).catch(() => null);
   if (!result) {
     return (
       <div className="site-panel space-y-3">
@@ -141,16 +163,19 @@ async function RecipeResults({ state, cookId, signedIn }: { state: BrowseState; 
 
   const pageCount = Math.ceil(result.total / recipePageSize);
   const hasExclusions = hideDietaryConflicts || Boolean(allergenFilter?.allergens.length || allergenFilter?.ingredient);
-  const filtered = Boolean(query || maxMinutes || hasExclusions);
-  const emptyMessage = maxMinutes && !hasExclusions ? `No recipes have a recorded time of ${maxMinutes} min or less.`
-    : hasExclusions ? "No recipes match these filters."
+  const filtered = Boolean(query || difficulty || maxMinutes || hasExclusions);
+  const emptyMessage = difficulty || hasExclusions ? "No recipes match these filters."
+    : maxMinutes ? `No recipes have a recorded time of ${maxMinutes} min or less.`
     : collection === "mine" ? "You haven’t created any recipes yet."
     : collection === "saved" ? "You haven’t saved any recipes yet." : "No public recipes have been shared yet.";
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-subtle" aria-live="polite">{result.total} {result.total === 1 ? "recipe" : "recipes"}</p>
-        <ViewPicker state={state} />
+        <div className="flex flex-wrap items-center gap-2">
+          <SortPicker state={state} />
+          <ViewPicker state={state} />
+        </div>
       </div>
       {result.total === 0 ? (
         <div className="site-panel space-y-3">
@@ -195,10 +220,12 @@ export default async function RecipeCollection({ searchParams, cook }: {
   const hasPreferences = Boolean(preferences && (preferences.diet !== "NONE" || preferences.allergens.length));
   const hideDietaryConflicts = hasPreferences && params.dietary === "1";
   const maxMinutes = parseMaxMinutes(typeof params.maxMinutes === "string" ? params.maxMinutes : undefined);
+  const difficulty = Object.values(RecipeDifficulty).find(value => value === params.difficulty);
+  const sort = params.sort === "likes" || params.sort === "saved" ? params.sort : "recent";
   const allergenFilter = !cook && collection === "explore" ? parseAllergenFilter(params.allergen, params.exclude) : undefined;
   const state: BrowseState = {
     path: cook ? `/users/${cook.id}` : "/recipes",
-    collection, query, page, maxMinutes, hideDietaryConflicts, allergenFilter,
+    collection, query, page, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter,
     view: params.view === "list" ? "list" : "cards",
   };
   const searchKey = collectionHref({ ...state, page: 1 });

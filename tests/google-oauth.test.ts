@@ -73,13 +73,16 @@ async function beginSignIn() {
   return { callback, headers: { Cookie: cookies(response) } };
 }
 
-it("registers an email account with a generated username and signs it back in", async () => {
-  const credentials = { email: "email-cook@example.test", password: "A test password" };
-  const request = (path: string, body: object, cookie = "") => POST(new Request(origin + "/api/auth/" + path, {
+function request(path: string, body: object, cookie = "") {
+  return POST(new Request(origin + "/api/auth/" + path, {
     method: "POST",
     headers: { Origin: origin, "Content-Type": "application/json", Cookie: cookie },
     body: JSON.stringify(body),
   }));
+}
+
+it("registers an email account with a generated username and signs it back in", async () => {
+  const credentials = { email: "email-cook@example.test", password: "A test password" };
   const unsupported = { image: "https://example.test/personal-photo.png" };
   expect((await request("sign-up/email", { ...credentials, name: "Email Cook", ...unsupported })).status).toBe(400);
   const registered = await request("sign-up/email", { ...credentials, name: "Email Cook" });
@@ -96,6 +99,33 @@ it("registers an email account with a generated username and signs it back in", 
   expect((await readUserSession(cookies(signedIn))).user).toMatchObject({
     id: user.id, username: user.username,
   });
+});
+
+it("enforces new account limits and lets existing cooks replace a legacy password", async () => {
+  const credentials = { email: "limits@example.test", password: "pepper", name: "  Chili Cook  " };
+  for (const invalid of [
+    { password: "short" }, { password: "x".repeat(33) }, { name: "  " },
+    { name: "x".repeat(121) }, { email: "x".repeat(250) + "@a.com" },
+  ]) {
+    await expect(getAuth().api.signUpEmail({ body: { ...credentials, ...invalid } }))
+      .rejects.toMatchObject({ statusCode: 400 });
+  }
+  const registered = await request("sign-up/email", credentials);
+  expect(registered.status).toBe(200);
+  const { user } = await registered.json();
+  expect(user.name).toBe("Chili Cook");
+  expect((await request("update-user", { name: "  " }, cookies(registered))).status).toBe(400);
+
+  const previous = "p".repeat(128);
+  const { password } = await getAuth().$context;
+  await getDatabase().account.updateMany({
+    where: { userId: user.id, providerId: "credential" }, data: { password: await password.hash(previous) },
+  });
+  const signedIn = await request("sign-in/email", { email: user.email, password: previous });
+  expect(signedIn.status).toBe(200);
+  const update = (newPassword: string) => request("change-password", { currentPassword: previous, newPassword }, cookies(signedIn));
+  expect((await update("p".repeat(33))).status).toBe(400);
+  expect((await update("p".repeat(32))).status).toBe(200);
 });
 
 async function readUserSession(sessionCookie: string) {

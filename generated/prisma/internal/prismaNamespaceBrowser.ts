@@ -60,10 +60,12 @@ export const ModelName = {
   Verification: 'Verification',
   StoredFile: 'StoredFile',
   Recipe: 'Recipe',
+  MeasurementUnit: 'MeasurementUnit',
   RecipeIngredient: 'RecipeIngredient',
   RecipeStep: 'RecipeStep',
   Bookmark: 'Bookmark',
-  RecipeReaction: 'RecipeReaction'
+  RecipeReaction: 'RecipeReaction',
+  RecipeLike: 'RecipeLike'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -200,6 +202,14 @@ export const RecipeScalarFieldEnum = {
 export type RecipeScalarFieldEnum = (typeof RecipeScalarFieldEnum)[keyof typeof RecipeScalarFieldEnum]
 
 
+export const MeasurementUnitScalarFieldEnum = {
+  symbol: 'symbol',
+  menuPosition: 'menuPosition'
+} as const
+
+export type MeasurementUnitScalarFieldEnum = (typeof MeasurementUnitScalarFieldEnum)[keyof typeof MeasurementUnitScalarFieldEnum]
+
+
 export const RecipeIngredientScalarFieldEnum = {
   id: 'id',
   recipeId: 'recipeId',
@@ -240,6 +250,14 @@ export const RecipeReactionScalarFieldEnum = {
 } as const
 
 export type RecipeReactionScalarFieldEnum = (typeof RecipeReactionScalarFieldEnum)[keyof typeof RecipeReactionScalarFieldEnum]
+
+
+export const RecipeLikeScalarFieldEnum = {
+  recipeId: 'recipeId',
+  userId: 'userId'
+} as const
+
+export type RecipeLikeScalarFieldEnum = (typeof RecipeLikeScalarFieldEnum)[keyof typeof RecipeLikeScalarFieldEnum]
 
 
 export const SortOrder = {

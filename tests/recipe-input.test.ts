@@ -10,14 +10,20 @@ describe("recipe input", () => {
     expect(result.coverFileId).toBeNull();
   });
 
-  it("preserves original fractional quantities", () => {
+  it("accepts tenths for measured quantities", () => {
     const input = recipeInput();
-    input.ingredients[0].quantity = 0.000001;
-    expect(recipeInputSchema.parse(input).ingredients[0].quantity).toBe(0.000001);
+    input.ingredients[0].quantity = 0.1;
+    expect(recipeInputSchema.parse(input).ingredients[0].quantity).toBe(0.1);
   });
 
-  it.each([0, -1, NaN, Infinity, 0.0000001, 1_000_001])("rejects invalid quantities: %s", (quantity) => {
+  it.each([0, -1, NaN, Infinity, 0.01, 1.333333, 1_000_001])("rejects invalid quantities: %s", (quantity) => {
     expect(recipeInputSchema.safeParse({ ...recipeInput(), ingredients: [{ name: "Flour", quantity, unit: "g" }] }).success).toBe(false);
+  });
+
+  it("canonicalizes measurement aliases and rejects free-text units", () => {
+    const input = (unit: string) => ({ ...recipeInput(), ingredients: [{ name: "Water", quantity: 1, unit }] });
+    expect(recipeInputSchema.parse(input("Millilitres")).ingredients[0].unit).toBe("mL");
+    expect(recipeInputSchema.safeParse(input("arbitrary")).success).toBe(false);
   });
 
   it("accepts a documented unmeasured ingredient", () => {
@@ -39,7 +45,7 @@ describe("recipe input", () => {
   it("bounds servings, times, text, and child counts", () => {
     for (const change of [
       { title: " " }, { title: "x".repeat(161) }, { baseServings: 0 },
-      { baseServings: 0.00001 }, { prepMinutes: -1 }, { cookMinutes: 0.5 },
+      { baseServings: 0.00001 }, { baseServings: 1.5 }, { baseServings: 101 }, { prepMinutes: -1 }, { cookMinutes: 0.5 },
       { ingredients: [] }, { steps: [] }, { steps: Array(101).fill({ instruction: "Mix" }) },
     ]) {
       expect(recipeInputSchema.safeParse({ ...recipeInput(), ...change }).success).toBe(false);

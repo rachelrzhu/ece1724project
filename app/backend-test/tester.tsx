@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState, type FormEvent } from "react";
+import { MAX_QUANTITY, MAX_SERVINGS, MIN_QUANTITY, unitSymbols } from "@/lib/recipes/measurements";
 import styles from "./tester.module.css";
 
 type Recipe = {
@@ -108,12 +109,18 @@ export default function BackendTester() {
       <fieldset disabled={busy}>
         <legend>Recipe</legend>
         <label>Title<input required maxLength={160} value={fields.title} onChange={(event) => field("title", event.target.value)} /></label>
-        <label>Servings<input required type="number" min="0.0001" max="10000" step="0.0001" value={fields.servings} onChange={(event) => field("servings", event.target.value)} /></label>
+        <label>Servings<input required type="number" min={1} max={MAX_SERVINGS} step={1} value={fields.servings} onChange={(event) => field("servings", event.target.value)} /></label>
         <h2>Ingredients</h2>
         {ingredients.map((ingredient, index) => <div key={ingredient.key} className={styles.ingredientRow}>
           <label className={styles.ingredientName}>Ingredient {index + 1}<input required maxLength={160} value={ingredient.name} onChange={(event) => ingredientField(ingredient.key, "name", event.target.value)} /></label>
-          <label>Quantity<input aria-label={`Quantity ${index + 1}`} type="number" min="0.000001" max="1000000" step="0.000001" value={ingredient.quantity} onChange={(event) => ingredientField(ingredient.key, "quantity", event.target.value)} /></label>
-          <label>Unit<input aria-label={`Unit ${index + 1}`} required={ingredient.quantity.trim() !== ""} maxLength={32} value={ingredient.unit} onChange={(event) => ingredientField(ingredient.key, "unit", event.target.value)} /></label>
+          <label>Quantity<input aria-label={`Quantity ${index + 1}`} type="number" min={MIN_QUANTITY} max={MAX_QUANTITY} step={MIN_QUANTITY} value={ingredient.quantity} onChange={(event) => ingredientField(ingredient.key, "quantity", event.target.value)} /></label>
+          <label>Unit
+            <select aria-label={`Unit ${index + 1}`} required={ingredient.quantity.trim() !== ""} value={ingredient.unit}
+              onChange={(event) => ingredientField(ingredient.key, "unit", event.target.value)}>
+              <option value="">Choose unit</option>
+              {unitSymbols.map(unit => <option key={unit} value={unit}>{unit}</option>)}
+            </select>
+          </label>
           <button type="button" className={styles.removeIngredient} aria-label={`Remove ingredient ${index + 1}`} disabled={ingredients.length === 1} onClick={() => setIngredients((current) => current.filter((row) => row.key !== ingredient.key))}>Remove</button>
           <label className={styles.ingredientNote}>Note<input aria-label={`Note ${index + 1}`} required={ingredient.quantity.trim() === ""} maxLength={300} value={ingredient.note} placeholder="Optional, or “to taste” when quantity is blank" onChange={(event) => ingredientField(ingredient.key, "note", event.target.value)} /></label>
         </div>)}

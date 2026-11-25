@@ -1,3 +1,4 @@
+import { formatScaledQuantity, isValidQuantity, MAX_QUANTITY, MAX_SERVINGS } from "./measurements";
 import { configureStore, createSelector, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
   convertScalingQuantity,
@@ -12,6 +13,9 @@ type QuantityField = "targetServings" | "availableQuantity";
 
 type Settings = {
   mode: Mode;
+  // Keep the exact batch when a mode or unit change rounds the editable display.
+  derivedServings: number | null;
+  roundedControl: boolean;
   targetServings: string;
   ingredientId: string;
   availableQuantity: string;
@@ -31,9 +35,11 @@ function originalSettings(recipe: ScalingRecipe): Settings {
   const firstMeasured = recipe.ingredients.find((item) => getScalingUnits(item).length > 0);
   return {
     mode: "servings",
-    targetServings: String(recipe.baseServings),
+    targetServings: formatScaledQuantity(Number(recipe.baseServings)),
+    derivedServings: Number(recipe.baseServings),
+    roundedControl: Number(formatScaledQuantity(Number(recipe.baseServings))) !== Number(recipe.baseServings),
     ingredientId: firstMeasured?.id ?? "",
-    availableQuantity: String(firstMeasured?.quantity ?? ""),
+    availableQuantity: firstMeasured?.quantity ? formatScaledQuantity(Number(firstMeasured.quantity)) : "",
     availableUnit: firstMeasured ? getScalingUnits(firstMeasured)[0] : "",
   };
 }
@@ -43,19 +49,30 @@ function initialize(recipe: ScalingRecipe): Workspace {
 }
 
 function calculate(recipe: ScalingRecipe, settings: Settings): ScalingResult {
-  if (settings.mode === "servings") {
-    return scaleRecipe(recipe, { mode: "servings", targetServings: settings.targetServings });
+  if (settings.derivedServings !== null) {
+    return scaleRecipe(recipe, { mode: "servings", targetServings: settings.derivedServings });
   }
-  return scaleRecipe(recipe, {
-    mode: "ingredient",
-    ingredientId: settings.ingredientId,
-    availableQuantity: settings.availableQuantity,
-    availableUnit: settings.availableUnit,
+  const servingsMode = settings.mode === "servings";
+  const field = servingsMode ? "targetServings" : "availableQuantity";
+  const value = settings[field];
+  const max = servingsMode ? MAX_SERVINGS : MAX_QUANTITY;
+  if (!/^(?:\d+(?:\.\d?)?|\.\d)$/.test(value) || !isValidQuantity(Number(value), max)) {
+    return { ok: false, error: { field,
+      message: `Enter ${servingsMode ? "servings" : "an available quantity"} from 0.1 to ${max.toLocaleString("en")} with at most one decimal place.`,
+    } };
+  }
+  if (servingsMode) return scaleRecipe(recipe, { mode: "servings", targetServings: value });
+  const result = scaleRecipe(recipe, {
+    mode: "ingredient", ingredientId: settings.ingredientId, availableQuantity: value, availableUnit: settings.availableUnit,
   });
+  if (result.ok && result.servings > MAX_SERVINGS) {
+    return { ok: false, error: { field, message: `Choose a quantity that yields at most ${MAX_SERVINGS} servings.` } };
+  }
+  return result;
 }
 
 function settingsMatch(current: Settings, next: Settings) {
-  return current.mode === next.mode && current.targetServings === next.targetServings
+  return current.mode === next.mode && current.derivedServings === next.derivedServings && current.targetServings === next.targetServings
     && current.ingredientId === next.ingredientId && current.availableQuantity === next.availableQuantity
     && current.availableUnit === next.availableUnit;
 }
@@ -91,9 +108,11 @@ function withIngredient(state: Workspace, itemId: string, preferredUnit: string)
   return {
     ...state.current,
     mode: "ingredient",
-    targetServings: String(result.servings),
+    targetServings: formatScaledQuantity(result.servings),
+    derivedServings: result.servings,
+    roundedControl: Number(formatScaledQuantity(amount)) !== amount,
     ingredientId: item.id,
-    availableQuantity: String(amount),
+    availableQuantity: formatScaledQuantity(amount),
     availableUnit: unit,
   };
 }
@@ -104,7 +123,7 @@ const scaling = createSlice({
   reducers: {
     editQuantity(state, action: PayloadAction<{ field: QuantityField; value: string }>) {
       const { field, value } = action.payload;
-      update(state, { ...state.current, [field]: value }, field);
+      update(state, { ...state.current, [field]: value, derivedServings: null, roundedControl: false }, field);
     },
     finishEditing(state) {
       state.editing = null;
@@ -115,7 +134,11 @@ const scaling = createSlice({
 
       if (mode === "servings") {
         const result = validScale(state);
-        if (result.ok) update(state, { ...current, mode, targetServings: String(result.servings) });
+        if (result.ok) {
+          const targetServings = formatScaledQuantity(result.servings);
+          update(state, { ...current, mode, targetServings, derivedServings: result.servings,
+            roundedControl: Number(targetServings) !== result.servings });
+        }
       } else {
         const next = withIngredient(state, current.ingredientId, current.availableUnit);
         if (next) update(state, next);
@@ -131,9 +154,8 @@ const scaling = createSlice({
       if (current.mode !== "ingredient" || current.availableUnit === unit) return;
       const item = state.recipe.ingredients.find(({ id }) => id === current.ingredientId);
       if (!item || !getScalingUnits(item).includes(unit)) return;
-      const amount = convertScalingQuantity(current.availableQuantity, current.availableUnit, unit);
-      if (amount === null && calculate(state.recipe, current).ok) return;
-      update(state, { ...current, availableUnit: unit, availableQuantity: amount === null ? current.availableQuantity : String(amount) });
+      const next = calculate(state.recipe, current).ok ? withIngredient(state, item.id, unit) : null;
+      update(state, next ?? { ...current, availableUnit: unit });
     },
     undo(state) {
       const previous = state.history.pop();

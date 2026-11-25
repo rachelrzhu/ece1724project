@@ -208,7 +208,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"All updated fields and ordered children persist\", () => { const r=pm.response.json().recipe; pm.expect(r.baseServings).to.eql(\"6\"); pm.expect(r.visibility).to.eql(\"PUBLIC\"); pm.expect(r.ingredients.map(x=>x.name)).to.eql([\"Salt\",\"Flour\",\"Eggs\"]); pm.expect(r.ingredients.map(x=>x.quantity)).to.eql([null,\"600.123456\",\"1.5\"]); pm.expect(r.ingredients[1].note).to.eql(\"sifted\"); pm.expect(r.steps.map(x=>x.instruction)).to.eql([\"Sift, then mix.\",\"Bake, then cool.\"]); });"
+                  "pm.test(\"All updated fields and ordered children persist\", () => { const r=pm.response.json().recipe; pm.expect(r.baseServings).to.eql(\"6\"); pm.expect(r.visibility).to.eql(\"PUBLIC\"); pm.expect(r.ingredients.map(x=>x.name)).to.eql([\"Salt\",\"Flour\",\"Eggs\"]); pm.expect(r.ingredients.map(x=>x.quantity)).to.eql([null,\"600.1\",\"1.5\"]); pm.expect(r.ingredients[1].note).to.eql(\"sifted\"); pm.expect(r.steps.map(x=>x.instruction)).to.eql([\"Sift, then mix.\",\"Bake, then cool.\"]); });"
                 ]
               }
             }
@@ -228,7 +228,7 @@
             "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.1,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -268,7 +268,7 @@
             "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 0,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 0,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.1,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -287,7 +287,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"Previous data and children remain intact\", () => { const r=pm.response.json().recipe; pm.expect(r.baseServings).to.eql(\"6\"); pm.expect(r.title).to.eql(\"Updated bread \"+pm.collectionVariables.get(\"runId\")); pm.expect(r.ingredients.map(x=>x.quantity)).to.eql([null,\"600.123456\",\"1.5\"]); pm.expect(r.steps).to.have.lengthOf(2); });"
+                  "pm.test(\"Previous data and children remain intact\", () => { const r=pm.response.json().recipe; pm.expect(r.baseServings).to.eql(\"6\"); pm.expect(r.title).to.eql(\"Updated bread \"+pm.collectionVariables.get(\"runId\")); pm.expect(r.ingredients.map(x=>x.quantity)).to.eql([null,\"600.1\",\"1.5\"]); pm.expect(r.steps).to.have.lengthOf(2); });"
                 ]
               }
             }
@@ -333,7 +333,7 @@
             "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\",\n  \"coverFileId\": \"11111111-1111-4111-8111-111111111111\"\n}",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.1,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\",\n  \"coverFileId\": \"11111111-1111-4111-8111-111111111111\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -411,7 +411,7 @@
             "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\",\n  \"authorId\": \"11111111-1111-4111-8111-111111111111\"\n}",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.1,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\",\n  \"authorId\": \"11111111-1111-4111-8111-111111111111\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -619,7 +619,7 @@
             "url": "{{baseUrl}}/api/backend-test/recipes?id=11111111-1111-4111-8111-111111111111",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.1,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -684,7 +684,7 @@
             "url": "{{baseUrl}}/api/backend-test/recipes",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.1,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -871,7 +871,7 @@
             "url": "{{baseUrl}}/api/backend-test/recipes?id={{recipeId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.123456,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
+              "raw": "{\n  \"title\": \"Updated bread {{runId}}\",\n  \"description\": \"Disposable Postman CRUD verification.\",\n  \"baseServings\": 6,\n  \"prepMinutes\": 10,\n  \"cookMinutes\": 30,\n  \"difficulty\": \"EASY\",\n  \"ingredients\": [\n    {\n      \"name\": \"Salt\",\n      \"quantity\": null,\n      \"unit\": null,\n      \"note\": \"to taste\"\n    },\n    {\n      \"name\": \"Flour\",\n      \"quantity\": 600.1,\n      \"unit\": \"g\",\n      \"note\": \"sifted\"\n    },\n    {\n      \"name\": \"Eggs\",\n      \"quantity\": 1.5,\n      \"unit\": \"count\"\n    }\n  ],\n  \"steps\": [\n    {\n      \"instruction\": \"Sift, then mix.\"\n    },\n    {\n      \"instruction\": \"Bake, then cool.\"\n    }\n  ],\n  \"visibility\": \"PUBLIC\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

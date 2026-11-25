@@ -4,6 +4,8 @@ import { Icon } from "./icons";
 import { Button, Input } from "./material";
 import type { Collection } from "./site-header";
 import { allergenChoices, type ExploreAllergenFilter } from "@/lib/dietary/policy";
+import { RecipeDifficulty } from "@/generated/prisma/enums";
+import type { RecipeSort } from "@/lib/product/queries";
 import { MAX_READY_MINUTES } from "@/lib/recipes/ready-in";
 import styles from "./recipe-collection.module.css";
 
@@ -13,16 +15,20 @@ export type BrowseState = {
   query: string;
   page: number;
   view: "cards" | "list";
+  difficulty?: RecipeDifficulty;
+  sort: RecipeSort;
   maxMinutes?: number;
   hideDietaryConflicts: boolean;
   allergenFilter?: ExploreAllergenFilter;
 };
 
-export function collectionHref({ collection, path, query, page, view, maxMinutes, hideDietaryConflicts, allergenFilter }: BrowseState) {
+export function collectionHref({ collection, path, query, page, view, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter }: BrowseState) {
   const params = new URLSearchParams();
   if (collection !== "explore") params.set("collection", collection);
   if (view === "list") params.set("view", view);
   if (query) params.set("q", query);
+  if (difficulty) params.set("difficulty", difficulty);
+  if (sort !== "recent") params.set("sort", sort);
   if (maxMinutes) params.set("maxMinutes", String(maxMinutes));
   if (page > 1) params.set("page", String(page));
   if (hideDietaryConflicts) params.set("dietary", "1");
@@ -32,7 +38,7 @@ export function collectionHref({ collection, path, query, page, view, maxMinutes
 }
 
 function ActiveFilters({ state }: { state: BrowseState }) {
-  const { query, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
+  const { query, difficulty, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
   function chip(text: string, label: string, changes: Partial<BrowseState>) {
     return (
       <li key={label} className="min-w-0 max-w-full">
@@ -43,11 +49,12 @@ function ActiveFilters({ state }: { state: BrowseState }) {
       </li>
     );
   }
-  if (!query && !maxMinutes && !hideDietaryConflicts && !allergenFilter?.allergens.length && !allergenFilter?.ingredient) return null;
+  if (!query && !difficulty && !maxMinutes && !hideDietaryConflicts && !allergenFilter?.allergens.length && !allergenFilter?.ingredient) return null;
   return (
     <div className="space-y-1">
       <ul aria-label="Applied filters" className="flex flex-wrap gap-x-2 gap-y-1">
         {query && chip(`Search: ${query}`, "Clear search", { query: "" })}
+        {difficulty && chip(`Difficulty: ${difficulty.toLowerCase()}`, "Remove difficulty filter", { difficulty: undefined })}
         {maxMinutes && chip(`Ready in ${maxMinutes} min`, `Remove ${maxMinutes} min limit`, { maxMinutes: undefined })}
         {hideDietaryConflicts && chip("Dietary preferences", "Remove dietary filter", { hideDietaryConflicts: false })}
         {allergenFilter && allergenChoices.filter(({ value }) => allergenFilter.allergens.includes(value)).map(({ value, label }) =>
@@ -66,10 +73,11 @@ function ActiveFilters({ state }: { state: BrowseState }) {
 }
 
 export function RecipeFilters({ state, hasPreferences }: { state: BrowseState; hasPreferences: boolean }) {
-  const { collection, path, query, view, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
+  const { collection, path, query, view, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
   const scopeFields = <>
     {collection !== "explore" && <input type="hidden" name="collection" value={collection} />}
     {view === "list" && <input type="hidden" name="view" value={view} />}
+    {sort !== "recent" && <input type="hidden" name="sort" value={sort} />}
   </>;
   return (
     <>
@@ -94,6 +102,15 @@ export function RecipeFilters({ state, hasPreferences }: { state: BrowseState; h
                 className="min-h-11 bg-paper ps-10 text-base" />
             </div>
             <span className="sr-only" id="ready-in-help">Maximum total minutes, including prep and cooking. Leave blank for any time.</span>
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="recipe-difficulty" className={styles.fieldLabel}>Difficulty</label>
+            <select id="recipe-difficulty" name="difficulty" defaultValue={difficulty ?? ""} className="site-field w-full">
+              <option value="">Any difficulty</option>
+              {Object.values(RecipeDifficulty).map(value => (
+                <option key={value} value={value}>{value[0] + value.slice(1).toLowerCase()}</option>
+              ))}
+            </select>
           </div>
           <Button type="submit" isPill className="min-h-11 px-6">Search</Button>
         </div>

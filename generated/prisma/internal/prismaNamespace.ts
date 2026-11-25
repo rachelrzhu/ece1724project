@@ -406,10 +406,12 @@ export const ModelName = {
   Verification: 'Verification',
   StoredFile: 'StoredFile',
   Recipe: 'Recipe',
+  MeasurementUnit: 'MeasurementUnit',
   RecipeIngredient: 'RecipeIngredient',
   RecipeStep: 'RecipeStep',
   Bookmark: 'Bookmark',
-  RecipeReaction: 'RecipeReaction'
+  RecipeReaction: 'RecipeReaction',
+  RecipeLike: 'RecipeLike'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -425,7 +427,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "dietarySettings" | "ingredientProfile" | "ingredientAllergen" | "session" | "account" | "verification" | "storedFile" | "recipe" | "recipeIngredient" | "recipeStep" | "bookmark" | "recipeReaction"
+    modelProps: "user" | "dietarySettings" | "ingredientProfile" | "ingredientAllergen" | "session" | "account" | "verification" | "storedFile" | "recipe" | "measurementUnit" | "recipeIngredient" | "recipeStep" | "bookmark" | "recipeReaction" | "recipeLike"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1095,6 +1097,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MeasurementUnit: {
+      payload: Prisma.$MeasurementUnitPayload<ExtArgs>
+      fields: Prisma.MeasurementUnitFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MeasurementUnitFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MeasurementUnitFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>
+        }
+        findFirst: {
+          args: Prisma.MeasurementUnitFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MeasurementUnitFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>
+        }
+        findMany: {
+          args: Prisma.MeasurementUnitFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>[]
+        }
+        create: {
+          args: Prisma.MeasurementUnitCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>
+        }
+        createMany: {
+          args: Prisma.MeasurementUnitCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MeasurementUnitCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>[]
+        }
+        delete: {
+          args: Prisma.MeasurementUnitDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>
+        }
+        update: {
+          args: Prisma.MeasurementUnitUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>
+        }
+        deleteMany: {
+          args: Prisma.MeasurementUnitDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MeasurementUnitUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MeasurementUnitUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>[]
+        }
+        upsert: {
+          args: Prisma.MeasurementUnitUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MeasurementUnitPayload>
+        }
+        aggregate: {
+          args: Prisma.MeasurementUnitAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMeasurementUnit>
+        }
+        groupBy: {
+          args: Prisma.MeasurementUnitGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MeasurementUnitGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MeasurementUnitCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MeasurementUnitCountAggregateOutputType> | number
+        }
+      }
+    }
     RecipeIngredient: {
       payload: Prisma.$RecipeIngredientPayload<ExtArgs>
       fields: Prisma.RecipeIngredientFieldRefs
@@ -1391,6 +1467,44 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    RecipeLike: {
+      payload: Prisma.$RecipeLikePayload<ExtArgs>
+      fields: Prisma.RecipeLikeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.RecipeLikeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecipeLikePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.RecipeLikeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecipeLikePayload>
+        }
+        findFirst: {
+          args: Prisma.RecipeLikeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecipeLikePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.RecipeLikeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecipeLikePayload>
+        }
+        findMany: {
+          args: Prisma.RecipeLikeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RecipeLikePayload>[]
+        }
+        aggregate: {
+          args: Prisma.RecipeLikeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRecipeLike>
+        }
+        groupBy: {
+          args: Prisma.RecipeLikeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RecipeLikeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.RecipeLikeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.RecipeLikeCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1548,6 +1662,14 @@ export const RecipeScalarFieldEnum = {
 export type RecipeScalarFieldEnum = (typeof RecipeScalarFieldEnum)[keyof typeof RecipeScalarFieldEnum]
 
 
+export const MeasurementUnitScalarFieldEnum = {
+  symbol: 'symbol',
+  menuPosition: 'menuPosition'
+} as const
+
+export type MeasurementUnitScalarFieldEnum = (typeof MeasurementUnitScalarFieldEnum)[keyof typeof MeasurementUnitScalarFieldEnum]
+
+
 export const RecipeIngredientScalarFieldEnum = {
   id: 'id',
   recipeId: 'recipeId',
@@ -1588,6 +1710,14 @@ export const RecipeReactionScalarFieldEnum = {
 } as const
 
 export type RecipeReactionScalarFieldEnum = (typeof RecipeReactionScalarFieldEnum)[keyof typeof RecipeReactionScalarFieldEnum]
+
+
+export const RecipeLikeScalarFieldEnum = {
+  recipeId: 'recipeId',
+  userId: 'userId'
+} as const
+
+export type RecipeLikeScalarFieldEnum = (typeof RecipeLikeScalarFieldEnum)[keyof typeof RecipeLikeScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1926,10 +2056,12 @@ export type GlobalOmitConfig = {
   verification?: Prisma.VerificationOmit
   storedFile?: Prisma.StoredFileOmit
   recipe?: Prisma.RecipeOmit
+  measurementUnit?: Prisma.MeasurementUnitOmit
   recipeIngredient?: Prisma.RecipeIngredientOmit
   recipeStep?: Prisma.RecipeStepOmit
   bookmark?: Prisma.BookmarkOmit
   recipeReaction?: Prisma.RecipeReactionOmit
+  recipeLike?: Prisma.RecipeLikeOmit
 }
 
 /* Types for Logging */

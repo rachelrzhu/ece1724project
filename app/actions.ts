@@ -4,14 +4,14 @@ import { z } from "zod";
 import { readSession, getAuth } from "@/lib/auth/server";
 import { getDatabase } from "@/lib/db/client";
 import { recipes } from "@/lib/product/queries";
-import { recipeIdSchema, recipeInputSchema } from "@/lib/recipes/schemas";
+import { recipeEditSchema, recipeIdSchema, recipeInputSchema } from "@/lib/recipes/schemas";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
 import { headers } from "next/headers";
 import { productImageStore } from "@/lib/product/storage";
 import { createImageService, ImageCleanupError } from "@/lib/storage/service";
 
 export async function saveRecipe(id: string | null, input: unknown) {
-  const parsed = recipeInputSchema.safeParse(input);
+  const parsed = (id ? recipeEditSchema : recipeInputSchema).safeParse(input);
   if (!parsed.success)
     return {
       error: "Check the highlighted recipe details.",
@@ -34,7 +34,11 @@ export async function saveRecipe(id: string | null, input: unknown) {
       };
     revalidatePath("/", "layout");
     return { id: result.id };
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) return {
+      error: "Check the highlighted recipe details.",
+      fields: error.issues.map(issue => ({ path: issue.path.join("."), message: issue.message })),
+    };
     return {
       error: "Couldn’t save your recipe. Try again.",
     };

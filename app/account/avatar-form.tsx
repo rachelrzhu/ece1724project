@@ -5,6 +5,7 @@ import { useRef, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/app/_components/material";
 import { avatars, publicAvatarImage } from "@/lib/product/avatar";
 import { saveAvatar } from "./avatar-actions";
+import AvatarUploadField from "./avatar-upload-field";
 
 export default function AvatarForm({ name, image: savedImage }: { name: string; image: string | null }) {
   const image = publicAvatarImage(savedImage);
@@ -18,18 +19,16 @@ export default function AvatarForm({ name, image: savedImage }: { name: string; 
   ];
 
   function choosePreset(value: string) {
-    if (fileInput.current) fileInput.current.value = "";
+    if (fileInput.current) {
+      fileInput.current.value = "";
+      fileInput.current.setCustomValidity("");
+    }
     setChoice(value);
     setFeedback({ message: "", error: false });
   }
 
   function chooseFile(file: File | undefined) {
     if (!file) return choosePreset(image ?? "initial");
-    if (!file.size || file.size > 3 * 1024 * 1024) {
-      choosePreset(image ?? "initial");
-      setFeedback({ message: "Choose a photo up to 3 MiB.", error: true });
-      return;
-    }
     setChoice("upload");
     setFeedback({ message: "", error: false });
   }
@@ -70,12 +69,7 @@ export default function AvatarForm({ name, image: savedImage }: { name: string; 
             </label>
           ))}
         </div>
-        <div className="grid gap-1">
-          <label htmlFor="avatar-upload">Upload your own photo</label>
-          <input id="avatar-upload" ref={fileInput} name="photo" type="file" accept="image/jpeg,image/png,image/webp"
-            className="site-field" aria-describedby="avatar-upload-hint" onChange={event => chooseFile(event.target.files?.[0])} />
-          <p id="avatar-upload-hint" className="text-sm text-subtle">Still JPEG, PNG or WebP, up to 3 MiB and 16 megapixels. Your avatar appears on your public recipe page.</p>
-        </div>
+        <AvatarUploadField id="avatar-upload" label="Upload your own photo" inputRef={fileInput} onSelect={chooseFile} />
         <Button type="submit" className="min-h-11 justify-self-start" disabled={pending || choice === (image ?? "initial")}>
           {pending ? "Saving…" : "Save avatar"}
         </Button>

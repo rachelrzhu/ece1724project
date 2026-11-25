@@ -4,11 +4,13 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { readSession } from "@/lib/auth/server";
+import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/auth/limits";
 import { getDatabase } from "@/lib/db/client";
 import { activeUsernameCooldown, usernameHint, usernamePattern } from "./profile-options";
 
 const profileInput = z.strictObject({
-  name: z.string().trim().min(1, "Enter a display name.").max(120, "Use up to 120 characters for your display name."),
+  name: z.string().trim().min(1, "Enter a display name.")
+    .max(MAX_DISPLAY_NAME_LENGTH, `Use up to ${MAX_DISPLAY_NAME_LENGTH} characters for your display name.`),
   username: z.string().trim().normalize("NFKC").toLowerCase()
     .regex(new RegExp(`^${usernamePattern}$`, "u"), usernameHint).optional(),
 });

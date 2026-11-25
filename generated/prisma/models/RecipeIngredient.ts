@@ -245,6 +245,8 @@ export type RecipeIngredientWhereInput = {
   unit?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
   note?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
   recipe?: Prisma.XOR<Prisma.RecipeScalarRelationFilter, Prisma.RecipeWhereInput>
+  profile?: Prisma.XOR<Prisma.IngredientProfileScalarRelationFilter, Prisma.IngredientProfileWhereInput>
+  measurementUnit?: Prisma.XOR<Prisma.MeasurementUnitNullableScalarRelationFilter, Prisma.MeasurementUnitWhereInput> | null
 }
 
 export type RecipeIngredientOrderByWithRelationInput = {
@@ -257,6 +259,8 @@ export type RecipeIngredientOrderByWithRelationInput = {
   unit?: Prisma.SortOrderInput | Prisma.SortOrder
   note?: Prisma.SortOrderInput | Prisma.SortOrder
   recipe?: Prisma.RecipeOrderByWithRelationInput
+  profile?: Prisma.IngredientProfileOrderByWithRelationInput
+  measurementUnit?: Prisma.MeasurementUnitOrderByWithRelationInput
 }
 
 export type RecipeIngredientWhereUniqueInput = Prisma.AtLeast<{
@@ -273,6 +277,8 @@ export type RecipeIngredientWhereUniqueInput = Prisma.AtLeast<{
   unit?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
   note?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
   recipe?: Prisma.XOR<Prisma.RecipeScalarRelationFilter, Prisma.RecipeWhereInput>
+  profile?: Prisma.XOR<Prisma.IngredientProfileScalarRelationFilter, Prisma.IngredientProfileWhereInput>
+  measurementUnit?: Prisma.XOR<Prisma.MeasurementUnitNullableScalarRelationFilter, Prisma.MeasurementUnitWhereInput> | null
 }, "id" | "recipeId_position">
 
 export type RecipeIngredientOrderByWithAggregationInput = {
@@ -309,11 +315,11 @@ export type RecipeIngredientCreateInput = {
   id?: string
   position: number
   name: string
-  canonicalName: string
   quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  unit?: string | null
   note?: string | null
   recipe: Prisma.RecipeCreateNestedOneWithoutIngredientsInput
+  profile: Prisma.IngredientProfileCreateNestedOneWithoutRecipeIngredientsInput
+  measurementUnit?: Prisma.MeasurementUnitCreateNestedOneWithoutIngredientsInput
 }
 
 export type RecipeIngredientUncheckedCreateInput = {
@@ -331,11 +337,11 @@ export type RecipeIngredientUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   recipe?: Prisma.RecipeUpdateOneRequiredWithoutIngredientsNestedInput
+  profile?: Prisma.IngredientProfileUpdateOneRequiredWithoutRecipeIngredientsNestedInput
+  measurementUnit?: Prisma.MeasurementUnitUpdateOneWithoutIngredientsNestedInput
 }
 
 export type RecipeIngredientUncheckedUpdateInput = {
@@ -364,9 +370,7 @@ export type RecipeIngredientUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
@@ -439,6 +443,48 @@ export type RecipeIngredientSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder
 }
 
+export type RecipeIngredientCreateNestedManyWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutProfileInput, Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput> | Prisma.RecipeIngredientCreateWithoutProfileInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput | Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyProfileInputEnvelope
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+}
+
+export type RecipeIngredientUncheckedCreateNestedManyWithoutProfileInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutProfileInput, Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput> | Prisma.RecipeIngredientCreateWithoutProfileInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput | Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyProfileInputEnvelope
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+}
+
+export type RecipeIngredientUpdateManyWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutProfileInput, Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput> | Prisma.RecipeIngredientCreateWithoutProfileInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput | Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput[]
+  upsert?: Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutProfileInput | Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutProfileInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyProfileInputEnvelope
+  set?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  disconnect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  delete?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  update?: Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutProfileInput | Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutProfileInput[]
+  updateMany?: Prisma.RecipeIngredientUpdateManyWithWhereWithoutProfileInput | Prisma.RecipeIngredientUpdateManyWithWhereWithoutProfileInput[]
+  deleteMany?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
+}
+
+export type RecipeIngredientUncheckedUpdateManyWithoutProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutProfileInput, Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput> | Prisma.RecipeIngredientCreateWithoutProfileInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput | Prisma.RecipeIngredientCreateOrConnectWithoutProfileInput[]
+  upsert?: Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutProfileInput | Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutProfileInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyProfileInputEnvelope
+  set?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  disconnect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  delete?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  update?: Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutProfileInput | Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutProfileInput[]
+  updateMany?: Prisma.RecipeIngredientUpdateManyWithWhereWithoutProfileInput | Prisma.RecipeIngredientUpdateManyWithWhereWithoutProfileInput[]
+  deleteMany?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
+}
+
 export type RecipeIngredientCreateNestedManyWithoutRecipeInput = {
   create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutRecipeInput, Prisma.RecipeIngredientUncheckedCreateWithoutRecipeInput> | Prisma.RecipeIngredientCreateWithoutRecipeInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutRecipeInput[]
   connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutRecipeInput | Prisma.RecipeIngredientCreateOrConnectWithoutRecipeInput[]
@@ -481,6 +527,48 @@ export type RecipeIngredientUncheckedUpdateManyWithoutRecipeNestedInput = {
   deleteMany?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
 }
 
+export type RecipeIngredientCreateNestedManyWithoutMeasurementUnitInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput> | Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput | Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyMeasurementUnitInputEnvelope
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+}
+
+export type RecipeIngredientUncheckedCreateNestedManyWithoutMeasurementUnitInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput> | Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput | Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyMeasurementUnitInputEnvelope
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+}
+
+export type RecipeIngredientUpdateManyWithoutMeasurementUnitNestedInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput> | Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput | Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput[]
+  upsert?: Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutMeasurementUnitInput | Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutMeasurementUnitInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyMeasurementUnitInputEnvelope
+  set?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  disconnect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  delete?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  update?: Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutMeasurementUnitInput | Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutMeasurementUnitInput[]
+  updateMany?: Prisma.RecipeIngredientUpdateManyWithWhereWithoutMeasurementUnitInput | Prisma.RecipeIngredientUpdateManyWithWhereWithoutMeasurementUnitInput[]
+  deleteMany?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
+}
+
+export type RecipeIngredientUncheckedUpdateManyWithoutMeasurementUnitNestedInput = {
+  create?: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput> | Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput[] | Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput[]
+  connectOrCreate?: Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput | Prisma.RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput[]
+  upsert?: Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutMeasurementUnitInput | Prisma.RecipeIngredientUpsertWithWhereUniqueWithoutMeasurementUnitInput[]
+  createMany?: Prisma.RecipeIngredientCreateManyMeasurementUnitInputEnvelope
+  set?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  disconnect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  delete?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  connect?: Prisma.RecipeIngredientWhereUniqueInput | Prisma.RecipeIngredientWhereUniqueInput[]
+  update?: Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutMeasurementUnitInput | Prisma.RecipeIngredientUpdateWithWhereUniqueWithoutMeasurementUnitInput[]
+  updateMany?: Prisma.RecipeIngredientUpdateManyWithWhereWithoutMeasurementUnitInput | Prisma.RecipeIngredientUpdateManyWithWhereWithoutMeasurementUnitInput[]
+  deleteMany?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
+}
+
 export type NullableDecimalFieldUpdateOperationsInput = {
   set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
@@ -489,14 +577,74 @@ export type NullableDecimalFieldUpdateOperationsInput = {
   divide?: runtime.Decimal | runtime.DecimalJsLike | number | string
 }
 
+export type RecipeIngredientCreateWithoutProfileInput = {
+  id?: string
+  position: number
+  name: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: string | null
+  recipe: Prisma.RecipeCreateNestedOneWithoutIngredientsInput
+  measurementUnit?: Prisma.MeasurementUnitCreateNestedOneWithoutIngredientsInput
+}
+
+export type RecipeIngredientUncheckedCreateWithoutProfileInput = {
+  id?: string
+  recipeId: string
+  position: number
+  name: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  unit?: string | null
+  note?: string | null
+}
+
+export type RecipeIngredientCreateOrConnectWithoutProfileInput = {
+  where: Prisma.RecipeIngredientWhereUniqueInput
+  create: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutProfileInput, Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput>
+}
+
+export type RecipeIngredientCreateManyProfileInputEnvelope = {
+  data: Prisma.RecipeIngredientCreateManyProfileInput | Prisma.RecipeIngredientCreateManyProfileInput[]
+  skipDuplicates?: boolean
+}
+
+export type RecipeIngredientUpsertWithWhereUniqueWithoutProfileInput = {
+  where: Prisma.RecipeIngredientWhereUniqueInput
+  update: Prisma.XOR<Prisma.RecipeIngredientUpdateWithoutProfileInput, Prisma.RecipeIngredientUncheckedUpdateWithoutProfileInput>
+  create: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutProfileInput, Prisma.RecipeIngredientUncheckedCreateWithoutProfileInput>
+}
+
+export type RecipeIngredientUpdateWithWhereUniqueWithoutProfileInput = {
+  where: Prisma.RecipeIngredientWhereUniqueInput
+  data: Prisma.XOR<Prisma.RecipeIngredientUpdateWithoutProfileInput, Prisma.RecipeIngredientUncheckedUpdateWithoutProfileInput>
+}
+
+export type RecipeIngredientUpdateManyWithWhereWithoutProfileInput = {
+  where: Prisma.RecipeIngredientScalarWhereInput
+  data: Prisma.XOR<Prisma.RecipeIngredientUpdateManyMutationInput, Prisma.RecipeIngredientUncheckedUpdateManyWithoutProfileInput>
+}
+
+export type RecipeIngredientScalarWhereInput = {
+  AND?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
+  OR?: Prisma.RecipeIngredientScalarWhereInput[]
+  NOT?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
+  id?: Prisma.UuidFilter<"RecipeIngredient"> | string
+  recipeId?: Prisma.UuidFilter<"RecipeIngredient"> | string
+  position?: Prisma.IntFilter<"RecipeIngredient"> | number
+  name?: Prisma.StringFilter<"RecipeIngredient"> | string
+  canonicalName?: Prisma.StringFilter<"RecipeIngredient"> | string
+  quantity?: Prisma.DecimalNullableFilter<"RecipeIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  unit?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
+  note?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
+}
+
 export type RecipeIngredientCreateWithoutRecipeInput = {
   id?: string
   position: number
   name: string
-  canonicalName: string
   quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  unit?: string | null
   note?: string | null
+  profile: Prisma.IngredientProfileCreateNestedOneWithoutRecipeIngredientsInput
+  measurementUnit?: Prisma.MeasurementUnitCreateNestedOneWithoutIngredientsInput
 }
 
 export type RecipeIngredientUncheckedCreateWithoutRecipeInput = {
@@ -535,18 +683,90 @@ export type RecipeIngredientUpdateManyWithWhereWithoutRecipeInput = {
   data: Prisma.XOR<Prisma.RecipeIngredientUpdateManyMutationInput, Prisma.RecipeIngredientUncheckedUpdateManyWithoutRecipeInput>
 }
 
-export type RecipeIngredientScalarWhereInput = {
-  AND?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
-  OR?: Prisma.RecipeIngredientScalarWhereInput[]
-  NOT?: Prisma.RecipeIngredientScalarWhereInput | Prisma.RecipeIngredientScalarWhereInput[]
-  id?: Prisma.UuidFilter<"RecipeIngredient"> | string
-  recipeId?: Prisma.UuidFilter<"RecipeIngredient"> | string
-  position?: Prisma.IntFilter<"RecipeIngredient"> | number
-  name?: Prisma.StringFilter<"RecipeIngredient"> | string
-  canonicalName?: Prisma.StringFilter<"RecipeIngredient"> | string
-  quantity?: Prisma.DecimalNullableFilter<"RecipeIngredient"> | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  unit?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
-  note?: Prisma.StringNullableFilter<"RecipeIngredient"> | string | null
+export type RecipeIngredientCreateWithoutMeasurementUnitInput = {
+  id?: string
+  position: number
+  name: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: string | null
+  recipe: Prisma.RecipeCreateNestedOneWithoutIngredientsInput
+  profile: Prisma.IngredientProfileCreateNestedOneWithoutRecipeIngredientsInput
+}
+
+export type RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput = {
+  id?: string
+  recipeId: string
+  position: number
+  name: string
+  canonicalName: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: string | null
+}
+
+export type RecipeIngredientCreateOrConnectWithoutMeasurementUnitInput = {
+  where: Prisma.RecipeIngredientWhereUniqueInput
+  create: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput>
+}
+
+export type RecipeIngredientCreateManyMeasurementUnitInputEnvelope = {
+  data: Prisma.RecipeIngredientCreateManyMeasurementUnitInput | Prisma.RecipeIngredientCreateManyMeasurementUnitInput[]
+  skipDuplicates?: boolean
+}
+
+export type RecipeIngredientUpsertWithWhereUniqueWithoutMeasurementUnitInput = {
+  where: Prisma.RecipeIngredientWhereUniqueInput
+  update: Prisma.XOR<Prisma.RecipeIngredientUpdateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedUpdateWithoutMeasurementUnitInput>
+  create: Prisma.XOR<Prisma.RecipeIngredientCreateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedCreateWithoutMeasurementUnitInput>
+}
+
+export type RecipeIngredientUpdateWithWhereUniqueWithoutMeasurementUnitInput = {
+  where: Prisma.RecipeIngredientWhereUniqueInput
+  data: Prisma.XOR<Prisma.RecipeIngredientUpdateWithoutMeasurementUnitInput, Prisma.RecipeIngredientUncheckedUpdateWithoutMeasurementUnitInput>
+}
+
+export type RecipeIngredientUpdateManyWithWhereWithoutMeasurementUnitInput = {
+  where: Prisma.RecipeIngredientScalarWhereInput
+  data: Prisma.XOR<Prisma.RecipeIngredientUpdateManyMutationInput, Prisma.RecipeIngredientUncheckedUpdateManyWithoutMeasurementUnitInput>
+}
+
+export type RecipeIngredientCreateManyProfileInput = {
+  id?: string
+  recipeId: string
+  position: number
+  name: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  unit?: string | null
+  note?: string | null
+}
+
+export type RecipeIngredientUpdateWithoutProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recipe?: Prisma.RecipeUpdateOneRequiredWithoutIngredientsNestedInput
+  measurementUnit?: Prisma.MeasurementUnitUpdateOneWithoutIngredientsNestedInput
+}
+
+export type RecipeIngredientUncheckedUpdateWithoutProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  recipeId?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+export type RecipeIngredientUncheckedUpdateManyWithoutProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  recipeId?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type RecipeIngredientCreateManyRecipeInput = {
@@ -563,10 +783,10 @@ export type RecipeIngredientUpdateWithoutRecipeInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   position?: Prisma.IntFieldUpdateOperationsInput | number
   name?: Prisma.StringFieldUpdateOperationsInput | string
-  canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
-  unit?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profile?: Prisma.IngredientProfileUpdateOneRequiredWithoutRecipeIngredientsNestedInput
+  measurementUnit?: Prisma.MeasurementUnitUpdateOneWithoutIngredientsNestedInput
 }
 
 export type RecipeIngredientUncheckedUpdateWithoutRecipeInput = {
@@ -589,6 +809,46 @@ export type RecipeIngredientUncheckedUpdateManyWithoutRecipeInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
+export type RecipeIngredientCreateManyMeasurementUnitInput = {
+  id?: string
+  recipeId: string
+  position: number
+  name: string
+  canonicalName: string
+  quantity?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: string | null
+}
+
+export type RecipeIngredientUpdateWithoutMeasurementUnitInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  recipe?: Prisma.RecipeUpdateOneRequiredWithoutIngredientsNestedInput
+  profile?: Prisma.IngredientProfileUpdateOneRequiredWithoutRecipeIngredientsNestedInput
+}
+
+export type RecipeIngredientUncheckedUpdateWithoutMeasurementUnitInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  recipeId?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+export type RecipeIngredientUncheckedUpdateManyWithoutMeasurementUnitInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  recipeId?: Prisma.StringFieldUpdateOperationsInput | string
+  position?: Prisma.IntFieldUpdateOperationsInput | number
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
+  quantity?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
 
 
 export type RecipeIngredientSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -601,6 +861,8 @@ export type RecipeIngredientSelect<ExtArgs extends runtime.Types.Extensions.Inte
   unit?: boolean
   note?: boolean
   recipe?: boolean | Prisma.RecipeDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.IngredientProfileDefaultArgs<ExtArgs>
+  measurementUnit?: boolean | Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs>
 }, ExtArgs["result"]["recipeIngredient"]>
 
 export type RecipeIngredientSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -613,6 +875,8 @@ export type RecipeIngredientSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   unit?: boolean
   note?: boolean
   recipe?: boolean | Prisma.RecipeDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.IngredientProfileDefaultArgs<ExtArgs>
+  measurementUnit?: boolean | Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs>
 }, ExtArgs["result"]["recipeIngredient"]>
 
 export type RecipeIngredientSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -625,6 +889,8 @@ export type RecipeIngredientSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   unit?: boolean
   note?: boolean
   recipe?: boolean | Prisma.RecipeDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.IngredientProfileDefaultArgs<ExtArgs>
+  measurementUnit?: boolean | Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs>
 }, ExtArgs["result"]["recipeIngredient"]>
 
 export type RecipeIngredientSelectScalar = {
@@ -641,18 +907,26 @@ export type RecipeIngredientSelectScalar = {
 export type RecipeIngredientOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "recipeId" | "position" | "name" | "canonicalName" | "quantity" | "unit" | "note", ExtArgs["result"]["recipeIngredient"]>
 export type RecipeIngredientInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   recipe?: boolean | Prisma.RecipeDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.IngredientProfileDefaultArgs<ExtArgs>
+  measurementUnit?: boolean | Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs>
 }
 export type RecipeIngredientIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   recipe?: boolean | Prisma.RecipeDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.IngredientProfileDefaultArgs<ExtArgs>
+  measurementUnit?: boolean | Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs>
 }
 export type RecipeIngredientIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   recipe?: boolean | Prisma.RecipeDefaultArgs<ExtArgs>
+  profile?: boolean | Prisma.IngredientProfileDefaultArgs<ExtArgs>
+  measurementUnit?: boolean | Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs>
 }
 
 export type $RecipeIngredientPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "RecipeIngredient"
   objects: {
     recipe: Prisma.$RecipePayload<ExtArgs>
+    profile: Prisma.$IngredientProfilePayload<ExtArgs>
+    measurementUnit: Prisma.$MeasurementUnitPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1058,6 +1332,8 @@ readonly fields: RecipeIngredientFieldRefs;
 export interface Prisma__RecipeIngredientClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   recipe<T extends Prisma.RecipeDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RecipeDefaultArgs<ExtArgs>>): Prisma.Prisma__RecipeClient<runtime.Types.Result.GetResult<Prisma.$RecipePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  profile<T extends Prisma.IngredientProfileDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientProfileDefaultArgs<ExtArgs>>): Prisma.Prisma__IngredientProfileClient<runtime.Types.Result.GetResult<Prisma.$IngredientProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  measurementUnit<T extends Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RecipeIngredient$measurementUnitArgs<ExtArgs>>): Prisma.Prisma__MeasurementUnitClient<runtime.Types.Result.GetResult<Prisma.$MeasurementUnitPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1493,6 +1769,25 @@ export type RecipeIngredientDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
    * Limit how many RecipeIngredients to delete.
    */
   limit?: number
+}
+
+/**
+ * RecipeIngredient.measurementUnit
+ */
+export type RecipeIngredient$measurementUnitArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MeasurementUnit
+   */
+  select?: Prisma.MeasurementUnitSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MeasurementUnit
+   */
+  omit?: Prisma.MeasurementUnitOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MeasurementUnitInclude<ExtArgs> | null
+  where?: Prisma.MeasurementUnitWhereInput
 }
 
 /**

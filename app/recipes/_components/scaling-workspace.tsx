@@ -56,8 +56,7 @@ function ScalingControls() {
       </div>
       {showIngredientHelp && (
         <p id={ingredientHelpId} className="text-sm text-subtle">
-          The picker uses measured quantities in g, kg, mL, L, tsp, tbsp, or count.
-          Entries such as “to taste” and measurements in cups are skipped.
+          Choose a measured ingredient with a standard unit. Entries such as “to taste” stay in the ingredient list.
         </p>
       )}
       {settings.mode === "servings" ? (
@@ -96,6 +95,7 @@ function ScalingControls() {
           </div>
         </div>
       )}
+      {settings.roundedControl && <p className="text-sm text-subtle">The amount shown is rounded. Editing it sets a new batch size.</p>}
       {error && <p id={errorId} role="alert" className="text-sm text-rust">{error.message} Showing original amounts.</p>}
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" className="min-h-11" disabled={!canUndo} onClick={() => dispatch(scalingActions.undo())}>Undo</Button>
@@ -109,12 +109,10 @@ function IngredientPreview() {
   const original = useScalingSelector((state) => state.recipe);
   const preview = useScalingSelector(selectPreview);
   const scaled = preview.ok && preview.factor !== 1;
-  const amounts = scaled
-    ? preview.ingredients.map(({ scaledQuantity, ...item }) => ({
-      ...item, quantity: scaledQuantity === null ? null : formatScaledQuantity(scaledQuantity),
-    }))
+  const amounts = preview.ok
+    ? preview.ingredients.map(({ scaledQuantity, ...item }) => ({ ...item, quantity: scaledQuantity }))
     : original.ingredients;
-  const servings = scaled ? formatScaledQuantity(preview.servings) : String(original.baseServings);
+  const servings = formatScaledQuantity(preview.ok ? preview.servings : Number(original.baseServings));
 
   return (
     <div>
@@ -129,7 +127,7 @@ function IngredientPreview() {
               <p className="font-semibold">{item.name}</p>
               {item.note && <p className="text-sm text-subtle">{item.note}</p>}
             </div>
-            {item.quantity !== null && <span className="text-end text-subtle">{item.quantity} {item.unit}</span>}
+            {item.quantity !== null && <span className="text-end text-subtle">{formatScaledQuantity(Number(item.quantity))} {item.unit}</span>}
           </li>
         ))}
       </ul>

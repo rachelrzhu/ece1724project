@@ -159,12 +159,14 @@ export type IngredientProfileWhereInput = {
   canonicalName?: Prisma.StringFilter<"IngredientProfile"> | string
   classification?: Prisma.EnumIngredientDietFilter<"IngredientProfile"> | $Enums.IngredientDiet
   allergens?: Prisma.IngredientAllergenListRelationFilter
+  recipeIngredients?: Prisma.RecipeIngredientListRelationFilter
 }
 
 export type IngredientProfileOrderByWithRelationInput = {
   canonicalName?: Prisma.SortOrder
   classification?: Prisma.SortOrder
   allergens?: Prisma.IngredientAllergenOrderByRelationAggregateInput
+  recipeIngredients?: Prisma.RecipeIngredientOrderByRelationAggregateInput
 }
 
 export type IngredientProfileWhereUniqueInput = Prisma.AtLeast<{
@@ -174,6 +176,7 @@ export type IngredientProfileWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.IngredientProfileWhereInput | Prisma.IngredientProfileWhereInput[]
   classification?: Prisma.EnumIngredientDietFilter<"IngredientProfile"> | $Enums.IngredientDiet
   allergens?: Prisma.IngredientAllergenListRelationFilter
+  recipeIngredients?: Prisma.RecipeIngredientListRelationFilter
 }, "canonicalName">
 
 export type IngredientProfileOrderByWithAggregationInput = {
@@ -196,24 +199,28 @@ export type IngredientProfileCreateInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
   allergens?: Prisma.IngredientAllergenCreateNestedManyWithoutIngredientInput
+  recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutProfileInput
 }
 
 export type IngredientProfileUncheckedCreateInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
   allergens?: Prisma.IngredientAllergenUncheckedCreateNestedManyWithoutIngredientInput
+  recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type IngredientProfileUpdateInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
   allergens?: Prisma.IngredientAllergenUpdateManyWithoutIngredientNestedInput
+  recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutProfileNestedInput
 }
 
 export type IngredientProfileUncheckedUpdateInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
   allergens?: Prisma.IngredientAllergenUncheckedUpdateManyWithoutIngredientNestedInput
+  recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutProfileNestedInput
 }
 
 export type IngredientProfileCreateManyInput = {
@@ -269,14 +276,30 @@ export type IngredientProfileUpdateOneRequiredWithoutAllergensNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientProfileUpdateToOneWithWhereWithoutAllergensInput, Prisma.IngredientProfileUpdateWithoutAllergensInput>, Prisma.IngredientProfileUncheckedUpdateWithoutAllergensInput>
 }
 
+export type IngredientProfileCreateNestedOneWithoutRecipeIngredientsInput = {
+  create?: Prisma.XOR<Prisma.IngredientProfileCreateWithoutRecipeIngredientsInput, Prisma.IngredientProfileUncheckedCreateWithoutRecipeIngredientsInput>
+  connectOrCreate?: Prisma.IngredientProfileCreateOrConnectWithoutRecipeIngredientsInput
+  connect?: Prisma.IngredientProfileWhereUniqueInput
+}
+
+export type IngredientProfileUpdateOneRequiredWithoutRecipeIngredientsNestedInput = {
+  create?: Prisma.XOR<Prisma.IngredientProfileCreateWithoutRecipeIngredientsInput, Prisma.IngredientProfileUncheckedCreateWithoutRecipeIngredientsInput>
+  connectOrCreate?: Prisma.IngredientProfileCreateOrConnectWithoutRecipeIngredientsInput
+  upsert?: Prisma.IngredientProfileUpsertWithoutRecipeIngredientsInput
+  connect?: Prisma.IngredientProfileWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.IngredientProfileUpdateToOneWithWhereWithoutRecipeIngredientsInput, Prisma.IngredientProfileUpdateWithoutRecipeIngredientsInput>, Prisma.IngredientProfileUncheckedUpdateWithoutRecipeIngredientsInput>
+}
+
 export type IngredientProfileCreateWithoutAllergensInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutProfileInput
 }
 
 export type IngredientProfileUncheckedCreateWithoutAllergensInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutProfileInput
 }
 
 export type IngredientProfileCreateOrConnectWithoutAllergensInput = {
@@ -298,11 +321,53 @@ export type IngredientProfileUpdateToOneWithWhereWithoutAllergensInput = {
 export type IngredientProfileUpdateWithoutAllergensInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutProfileNestedInput
 }
 
 export type IngredientProfileUncheckedUpdateWithoutAllergensInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutProfileNestedInput
+}
+
+export type IngredientProfileCreateWithoutRecipeIngredientsInput = {
+  canonicalName: string
+  classification: $Enums.IngredientDiet
+  allergens?: Prisma.IngredientAllergenCreateNestedManyWithoutIngredientInput
+}
+
+export type IngredientProfileUncheckedCreateWithoutRecipeIngredientsInput = {
+  canonicalName: string
+  classification: $Enums.IngredientDiet
+  allergens?: Prisma.IngredientAllergenUncheckedCreateNestedManyWithoutIngredientInput
+}
+
+export type IngredientProfileCreateOrConnectWithoutRecipeIngredientsInput = {
+  where: Prisma.IngredientProfileWhereUniqueInput
+  create: Prisma.XOR<Prisma.IngredientProfileCreateWithoutRecipeIngredientsInput, Prisma.IngredientProfileUncheckedCreateWithoutRecipeIngredientsInput>
+}
+
+export type IngredientProfileUpsertWithoutRecipeIngredientsInput = {
+  update: Prisma.XOR<Prisma.IngredientProfileUpdateWithoutRecipeIngredientsInput, Prisma.IngredientProfileUncheckedUpdateWithoutRecipeIngredientsInput>
+  create: Prisma.XOR<Prisma.IngredientProfileCreateWithoutRecipeIngredientsInput, Prisma.IngredientProfileUncheckedCreateWithoutRecipeIngredientsInput>
+  where?: Prisma.IngredientProfileWhereInput
+}
+
+export type IngredientProfileUpdateToOneWithWhereWithoutRecipeIngredientsInput = {
+  where?: Prisma.IngredientProfileWhereInput
+  data: Prisma.XOR<Prisma.IngredientProfileUpdateWithoutRecipeIngredientsInput, Prisma.IngredientProfileUncheckedUpdateWithoutRecipeIngredientsInput>
+}
+
+export type IngredientProfileUpdateWithoutRecipeIngredientsInput = {
+  canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
+  classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  allergens?: Prisma.IngredientAllergenUpdateManyWithoutIngredientNestedInput
+}
+
+export type IngredientProfileUncheckedUpdateWithoutRecipeIngredientsInput = {
+  canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
+  classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  allergens?: Prisma.IngredientAllergenUncheckedUpdateManyWithoutIngredientNestedInput
 }
 
 
@@ -312,10 +377,12 @@ export type IngredientProfileUncheckedUpdateWithoutAllergensInput = {
 
 export type IngredientProfileCountOutputType = {
   allergens: number
+  recipeIngredients: number
 }
 
 export type IngredientProfileCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   allergens?: boolean | IngredientProfileCountOutputTypeCountAllergensArgs
+  recipeIngredients?: boolean | IngredientProfileCountOutputTypeCountRecipeIngredientsArgs
 }
 
 /**
@@ -335,11 +402,19 @@ export type IngredientProfileCountOutputTypeCountAllergensArgs<ExtArgs extends r
   where?: Prisma.IngredientAllergenWhereInput
 }
 
+/**
+ * IngredientProfileCountOutputType without action
+ */
+export type IngredientProfileCountOutputTypeCountRecipeIngredientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RecipeIngredientWhereInput
+}
+
 
 export type IngredientProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   canonicalName?: boolean
   classification?: boolean
   allergens?: boolean | Prisma.IngredientProfile$allergensArgs<ExtArgs>
+  recipeIngredients?: boolean | Prisma.IngredientProfile$recipeIngredientsArgs<ExtArgs>
   _count?: boolean | Prisma.IngredientProfileCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["ingredientProfile"]>
 
@@ -361,6 +436,7 @@ export type IngredientProfileSelectScalar = {
 export type IngredientProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"canonicalName" | "classification", ExtArgs["result"]["ingredientProfile"]>
 export type IngredientProfileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   allergens?: boolean | Prisma.IngredientProfile$allergensArgs<ExtArgs>
+  recipeIngredients?: boolean | Prisma.IngredientProfile$recipeIngredientsArgs<ExtArgs>
   _count?: boolean | Prisma.IngredientProfileCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type IngredientProfileIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -370,6 +446,7 @@ export type $IngredientProfilePayload<ExtArgs extends runtime.Types.Extensions.I
   name: "IngredientProfile"
   objects: {
     allergens: Prisma.$IngredientAllergenPayload<ExtArgs>[]
+    recipeIngredients: Prisma.$RecipeIngredientPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     canonicalName: string
@@ -769,6 +846,7 @@ readonly fields: IngredientProfileFieldRefs;
 export interface Prisma__IngredientProfileClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   allergens<T extends Prisma.IngredientProfile$allergensArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientProfile$allergensArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IngredientAllergenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  recipeIngredients<T extends Prisma.IngredientProfile$recipeIngredientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.IngredientProfile$recipeIngredientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipeIngredientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1214,6 +1292,30 @@ export type IngredientProfile$allergensArgs<ExtArgs extends runtime.Types.Extens
   take?: number
   skip?: number
   distinct?: Prisma.IngredientAllergenScalarFieldEnum | Prisma.IngredientAllergenScalarFieldEnum[]
+}
+
+/**
+ * IngredientProfile.recipeIngredients
+ */
+export type IngredientProfile$recipeIngredientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RecipeIngredient
+   */
+  select?: Prisma.RecipeIngredientSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RecipeIngredient
+   */
+  omit?: Prisma.RecipeIngredientOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RecipeIngredientInclude<ExtArgs> | null
+  where?: Prisma.RecipeIngredientWhereInput
+  orderBy?: Prisma.RecipeIngredientOrderByWithRelationInput | Prisma.RecipeIngredientOrderByWithRelationInput[]
+  cursor?: Prisma.RecipeIngredientWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RecipeIngredientScalarFieldEnum | Prisma.RecipeIngredientScalarFieldEnum[]
 }
 
 /**
