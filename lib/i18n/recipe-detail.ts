@@ -53,8 +53,6 @@ export const detailMessages = {
 export const scalingMessages = {
   "Ingredients": ["食材", "Ingrédients"],
   "Adjust quantities for your serving count or an ingredient you have on hand.": ["按目标份数或手头食材的用量调整配方。", "Ajustez les quantités selon le nombre de portions ou la quantité d’un ingrédient disponible."],
-  "Translate ingredient names": ["食材名称语言", "Traduire les noms des ingrédients"],
-  "Original names": ["原始名称", "Noms d’origine"],
   "Scale by": ["调整依据", "Ajuster selon"],
   "By servings": ["按份数", "Par portions"],
   "By ingredient": ["按食材", "Par ingrédient"],

@@ -1,96 +1,38 @@
 "use client";
 
-import { makeTranslator, type Locale, type Messages } from "@/lib/i18n";
+import { makeTranslator, type Messages } from "@/lib/i18n";
 import { useLocale } from "@/app/_components/language-provider";
 import { useRecipeTranslation, RecipeText } from "@/app/_components/recipe-translation";
 import { scalingMessages } from "@/lib/i18n/recipe-detail";
 import { unitMessages } from "@/lib/i18n/units";
 import { Button, Input } from "@/app/_components/material";
-import { useEffect, useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
-import { formatScaledQuantity, type ScalingRecipe } from "@/lib/recipes/scaling";
+import { formatScaledQuantity, type ScalingIngredient, type ScalingRecipe } from "@/lib/recipes/scaling";
 import {
   makeScalingStore,
   scalingActions,
   selectCanReset,
-  selectDisplayRecipe,
   selectEligibleIngredients,
   selectPreview,
-  type IngredientLanguage,
   type ScalingStore,
 } from "@/lib/recipes/scaling-workspace";
 
 const useScalingDispatch = useDispatch.withTypes<ScalingStore["dispatch"]>();
 const useScalingSelector = useSelector.withTypes<ReturnType<ScalingStore["getState"]>>();
 
-const languageLabels = { original: "Original names", en: "English", zh: "中文", fr: "Français" };
-const languagePreferenceKey = "ingredient-language";
-
-function isIngredientLanguage(value: string | null): value is IngredientLanguage {
-  return value !== null && Object.hasOwn(languageLabels, value);
-}
-
-function preferredIngredientLanguage(locale: Locale): IngredientLanguage {
-  try {
-    const saved = sessionStorage.getItem(languagePreferenceKey);
-    const scope = sessionStorage.getItem(languagePreferenceKey + "-locale");
-    // A choice applies to this site language. Existing tab preferences predate the site switcher.
-    if (isIngredientLanguage(saved) && (scope === locale || (!scope && navigator.language.split("-")[0] === locale))) return saved;
-  } catch {
-    // Browser privacy settings can disable storage.
-  }
-  return locale;
-}
-
-function IngredientLanguageSelect() {
-  const id = useId();
-  const dispatch = useScalingDispatch();
-  const language = useScalingSelector(state => state.language);
-  const locale = useLocale();
-  const t = makeTranslator(locale, scalingMessages);
-  const { original } = useRecipeTranslation();
-
-  useEffect(() => {
-    dispatch(scalingActions.changeLocale(locale));
-    dispatch(scalingActions.changeLanguage(original ? "original" : preferredIngredientLanguage(locale)));
-  }, [dispatch, locale, original]);
-
-  function changeLanguage(value: string) {
-    if (!isIngredientLanguage(value)) return;
-    dispatch(scalingActions.changeLanguage(value));
-    try {
-      sessionStorage.setItem(languagePreferenceKey, value);
-      sessionStorage.setItem(languagePreferenceKey + "-locale", locale);
-    } catch {
-      // The selection still applies to this recipe.
-    }
-  }
-
-  return (
-    <div className="grid justify-items-start gap-1">
-      <label htmlFor={id}>{t("Translate ingredient names")}</label>
-      <select id={id} className="site-field min-h-11" value={language} onChange={event => changeLanguage(event.target.value)}>
-        {Object.entries(languageLabels).map(([value, label]) =>
-          <option key={value} value={value} lang={value === "original" ? locale : value}>{value === "original" ? t("Original names") : label}</option>)}
-      </select>
-    </div>
-  );
-}
-
-function ScalingControls() {
+function ScalingControls({ recipe }: { recipe: ScalingRecipe }) {
   const locale = useLocale();
   const t = makeTranslator(locale, scalingMessages);
   const unitLabel = makeTranslator<Messages>(locale, unitMessages);
-  const { lookup } = useRecipeTranslation();
-  const language = useScalingSelector(state => state.language);
   const id = useId();
   const dispatch = useScalingDispatch();
   const settings = useScalingSelector((state) => state.current);
   const canUndo = useScalingSelector((state) => state.history.length > 0);
   const canReset = useScalingSelector(selectCanReset);
-  const eligible = useScalingSelector(selectEligibleIngredients);
-  const ingredientCount = useScalingSelector((state) => state.recipe.ingredients.length);
-  const preview = useScalingSelector(selectPreview);
+  const eligible = useScalingSelector(state => selectEligibleIngredients(state, recipe));
+  const ingredientCount = recipe.ingredients.length;
+  const preview = useScalingSelector(state => selectPreview(state, recipe, locale));
   const selected = eligible.find((item) => item.id === settings.ingredientId);
   const error = preview.ok ? null : preview.error;
   const allowIngredientMode = eligible.length > 0;
@@ -140,7 +82,7 @@ function ScalingControls() {
             <select id={`${id}-ingredient`} className="site-field w-full min-w-0 truncate" value={settings.ingredientId}
               onChange={(event) => dispatch(scalingActions.chooseIngredient(event.target.value))}
               {...invalidProps("ingredientId", showIngredientHelp ? ingredientHelpId : undefined)}>
-              {eligible.map((item) => <option key={item.id} value={item.id}>{language === locale ? lookup(item.name) : item.name}</option>)}
+              {eligible.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </div>
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(5rem,auto)] gap-2">
@@ -171,19 +113,16 @@ function ScalingControls() {
   );
 }
 
-function IngredientPreview() {
+function IngredientPreview({ recipe }: { recipe: ScalingRecipe }) {
   const locale = useLocale();
   const t = makeTranslator(locale, scalingMessages);
   const unitLabel = makeTranslator<Messages>(locale, unitMessages);
-  const { lookup } = useRecipeTranslation();
-  const original = useScalingSelector(selectDisplayRecipe);
-  const language = useScalingSelector(state => state.language);
-  const preview = useScalingSelector(selectPreview);
+  const preview = useScalingSelector(state => selectPreview(state, recipe, locale));
   const scaled = preview.ok && preview.factor !== 1;
   const amounts = preview.ok
     ? preview.ingredients.map(({ scaledQuantity, ...item }) => ({ ...item, quantity: scaledQuantity }))
-    : original.ingredients;
-  const servings = formatScaledQuantity(preview.ok ? preview.servings : Number(original.baseServings), locale);
+    : recipe.ingredients;
+  const servings = formatScaledQuantity(preview.ok ? preview.servings : Number(recipe.baseServings), locale);
 
   return (
     <div>
@@ -195,7 +134,7 @@ function IngredientPreview() {
         {amounts.map((item) => (
           <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,42%)] gap-3 py-3 wrap-anywhere">
             <div>
-              <p className="font-semibold" lang={language !== "original" && item.translations ? language : undefined}>{language === locale && !item.translations ? lookup(item.name) : item.name}</p>
+              <p className="font-semibold">{item.name}</p>
               {item.note && <p className="text-sm text-subtle"><RecipeText text={item.note} /></p>}
             </div>
             {item.quantity !== null && <span className="text-end text-subtle">{formatScaledQuantity(Number(item.quantity), locale)} {item.unit ? unitLabel(item.unit) : ""}</span>}
@@ -213,10 +152,20 @@ function IngredientPreview() {
   );
 }
 
-export default function ScalingWorkspace({ recipe }: { recipe: ScalingRecipe }) {
+type RecipeWithLabels = {
+  baseServings: ScalingRecipe["baseServings"];
+  ingredients: readonly (ScalingIngredient & { localizedName?: string })[];
+};
+
+export default function ScalingWorkspace({ recipe }: { recipe: RecipeWithLabels }) {
   const locale = useLocale();
   const t = makeTranslator(locale, scalingMessages);
-  const [store] = useState(() => makeScalingStore(recipe, locale, locale));
+  const { lookup } = useRecipeTranslation();
+  const [store] = useState(() => makeScalingStore(recipe));
+  const displayRecipe = useMemo(() => ({
+    baseServings: recipe.baseServings,
+    ingredients: recipe.ingredients.map(item => ({ ...item, name: lookup(item.name, item.localizedName) })),
+  }), [recipe, lookup]);
   return (
     <Provider store={store}>
       <section aria-labelledby="ingredients-title" className="min-w-0 space-y-4 border-t border-line pt-4">
@@ -224,9 +173,8 @@ export default function ScalingWorkspace({ recipe }: { recipe: ScalingRecipe }) 
           <h2 id="ingredients-title" className="site-heading text-2xl">{t("Ingredients")}</h2>
           <p className="text-sm text-subtle">{t("Adjust quantities for your serving count or an ingredient you have on hand.")}</p>
         </div>
-        <IngredientLanguageSelect />
-        <ScalingControls />
-        <IngredientPreview />
+        <ScalingControls recipe={displayRecipe} />
+        <IngredientPreview recipe={displayRecipe} />
       </section>
     </Provider>
   );
