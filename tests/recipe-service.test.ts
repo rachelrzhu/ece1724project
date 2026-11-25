@@ -2,13 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
 import { createRecipeService, RecipeAccessError, RecipeCoverError } from "@/lib/recipes/service";
 import { coverId, otherUserId, ownerId, recipeId, recipeInput } from "./fixtures";
+import { CapacityError, maxRecipesPerAccount } from "@/lib/security/capacity";
 
 vi.mock("server-only", () => ({}));
 
 function setup(userId: string | null = ownerId) {
   const transaction = {
     storedFile: { findFirst: vi.fn().mockResolvedValue(null) },
-    recipe: { create: vi.fn().mockResolvedValue({ id: recipeId }), findFirst: vi.fn().mockResolvedValue(null), update: vi.fn().mockResolvedValue({ id: recipeId }) },
+    recipe: { count: vi.fn().mockResolvedValue(0), create: vi.fn().mockResolvedValue({ id: recipeId }), findFirst: vi.fn().mockResolvedValue(null), update: vi.fn().mockResolvedValue({ id: recipeId }) },
   };
   const client = {
     recipe: { findFirst: vi.fn().mockResolvedValue(null), findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn().mockResolvedValue({ count: 0 }) },
@@ -23,6 +24,14 @@ function setup(userId: string | null = ownerId) {
 }
 
 describe("recipe service boundaries", () => {
+  it("counts originals and copies together and refuses a full account before inserting any children", async () => {
+    const { service, transaction } = setup();
+    transaction.recipe.count.mockResolvedValue(maxRecipesPerAccount);
+    await expect(service.create(recipeInput())).rejects.toBeInstanceOf(CapacityError);
+    await expect(service.copyPublic(recipeId)).rejects.toBeInstanceOf(CapacityError);
+    expect(transaction.recipe.count).toHaveBeenCalledWith({ where: { authorId: ownerId } });
+    expect(transaction.recipe.create).not.toHaveBeenCalled();
+  });
   it("rejects anonymous writes before database access", async () => {
     const { service, database } = setup(null);
     await expect(service.create(recipeInput())).rejects.toBeInstanceOf(RecipeAccessError);
@@ -141,7 +150,7 @@ describe("recipe service boundaries", () => {
     transaction.recipe.create.mockResolvedValue({ id: copyId });
 
     await expect(service.copyPublic(recipeId)).resolves.toEqual({ id: copyId });
-    expect(client.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: "RepeatableRead" });
+    expect(client.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: "Serializable" });
     const { select } = transaction.recipe.findFirst.mock.calls[0][0];
     expect(select.ingredients.orderBy).toEqual({ position: "asc" });
     expect(select.steps.orderBy).toEqual({ position: "asc" });

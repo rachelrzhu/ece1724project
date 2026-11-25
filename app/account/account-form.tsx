@@ -46,7 +46,10 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
           }
           const result = await auth.signUp.email({ ...credentials, name });
           if (result.error) {
-            setError("Couldn’t create your account. Check your details or try signing in.");
+            if (result.error.code === "SIGNUP_BROWSER_REQUIRED" || result.error.code === "SIGNUP_CHECK_UNAVAILABLE") {
+              setError(result.error.message ?? "We couldn’t verify your browser. Reload the page and try again.");
+            } else setError(result.error.status === 429 ? "Too many attempts. Please try again later."
+              : "Couldn’t create your account. Check your details or try signing in.");
             return;
           }
           if (!result.data.token) {
@@ -69,7 +72,8 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
         } else {
           const result = signedInEmail ? await auth.signOut() : await auth.signIn.email(credentials);
           if (result.error) {
-            setError(signedInEmail ? "Couldn’t sign out. Please try again." : "Couldn’t sign in. Check your email and password and try again.");
+            setError(result.error.status === 429 ? "Too many attempts. Please try again later."
+              : signedInEmail ? "Couldn’t sign out. Please try again." : "Couldn’t sign in. Check your email and password and try again.");
             return;
           }
         }

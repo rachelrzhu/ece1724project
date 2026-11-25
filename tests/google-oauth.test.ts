@@ -1,12 +1,18 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { PGlite } from "@electric-sql/pglite";
 import { PGLiteSocketServer } from "@electric-sql/pglite-socket";
+import { initBotId } from "botid/client/core";
+import { checkBotId } from "botid/server";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import { GET, POST } from "@/app/api/auth/[...all]/route";
 import { getAuth } from "@/lib/auth/server";
 import { getDatabase } from "@/lib/db/client";
 
 vi.mock("server-only", () => ({}));
+vi.mock("botid/client/core", () => ({ initBotId: vi.fn() }));
+vi.mock("botid/server", () => ({
+  checkBotId: vi.fn(async () => ({ isBot: false, isHuman: true, isVerifiedBot: false, bypassed: false })),
+}));
 
 const origin = "https://savor.example.test";
 const clientId = "savor-test.apps.googleusercontent.com";
@@ -25,6 +31,7 @@ beforeAll(async () => {
   await socket.start();
   vi.stubEnv("DATABASE_URL", `postgresql://postgres@${socket.getServerConn()}/postgres`);
   vi.stubEnv("BETTER_AUTH_URL", origin);
+  vi.stubEnv("VERCEL", "1");
   vi.stubEnv(
     "BETTER_AUTH_SECRET",
     "local-test-only-secret-for-google-oauth-integration",
@@ -73,13 +80,39 @@ async function beginSignIn() {
   return { callback, headers: { Cookie: cookies(response) } };
 }
 
-function request(path: string, body: object, cookie = "") {
+function request(path: string, body: object, cookie = "", ip = "192.0.2.1") {
   return POST(new Request(origin + "/api/auth/" + path, {
     method: "POST",
-    headers: { Origin: origin, "Content-Type": "application/json", Cookie: cookie },
+    headers: { Origin: origin, "Content-Type": "application/json", Cookie: cookie, "x-vercel-forwarded-for": ip },
     body: JSON.stringify(body),
   }));
 }
+
+it("checks email registration with BotID Basic before spending a database allowance", async () => {
+  vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "preview");
+  await import("../instrumentation-client");
+  expect(initBotId).toHaveBeenCalledWith({
+    protect: [{ path: "/api/auth/sign-up/email", method: "POST", advancedOptions: { checkLevel: "basic" } }],
+  });
+  const credentials = { name: "Browser Cook", email: "browser-check@example.test", password: "A test password" };
+  const register = () => request("sign-up/email", credentials, "", "192.0.2.2");
+  const query = vi.spyOn(getDatabase(), "$queryRaw");
+  vi.mocked(checkBotId).mockResolvedValueOnce({ isBot: true, isHuman: false, isVerifiedBot: false, bypassed: false });
+  const blocked = await register();
+  expect(blocked.status).toBe(403);
+  expect(await blocked.json()).toMatchObject({ code: "SIGNUP_BROWSER_REQUIRED" });
+  expect(checkBotId).toHaveBeenCalledWith({ advancedOptions: { checkLevel: "basic" } });
+
+  vi.mocked(checkBotId).mockRejectedValueOnce(new Error("verification offline"));
+  const unavailable = await register();
+  expect(unavailable.status).toBe(503);
+  expect(await unavailable.json()).toMatchObject({ code: "SIGNUP_CHECK_UNAVAILABLE" });
+  expect(query).not.toHaveBeenCalled();
+
+  const accepted = await register();
+  expect(accepted.status).toBe(200);
+  expect((await accepted.json()).user.email).toBe(credentials.email);
+});
 
 it("registers an email account with a generated username and signs it back in", async () => {
   const credentials = { email: "email-cook@example.test", password: "A test password" };

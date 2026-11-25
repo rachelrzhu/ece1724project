@@ -2,7 +2,9 @@ import "server-only";
 import { z } from "zod";
 
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
+import { serializableTransaction } from "@/lib/db/serializable";
 import { visibleRecipeWhere } from "./access";
+import { CapacityError, maxRecipesPerAccount } from "@/lib/security/capacity";
 import { recipeEditSchema, recipeIdSchema, recipeInputSchema, type RecipeInput } from "./schemas";
 
 // The authentication module must supply a verified server session, never request-body data.
@@ -91,6 +93,11 @@ export function createRecipeService({
     if (!cover) throw new RecipeCoverError();
   }
 
+  async function checkCapacity(transaction: Prisma.TransactionClient, authorId: string) {
+    if (await transaction.recipe.count({ where: { authorId } }) >= maxRecipesPerAccount)
+      throw new CapacityError(`Your account can hold ${maxRecipesPerAccount} recipes. Delete a recipe to make room.`);
+  }
+
   return {
     async listOwn() {
       const authorId = await requireOwner();
@@ -126,7 +133,8 @@ export function createRecipeService({
       const authorId = await requireOwner();
       const recipe = recipeInputSchema.parse(input);
 
-      return database().$transaction(async (transaction) => {
+      return serializableTransaction(database(), async (transaction) => {
+        await checkCapacity(transaction, authorId);
         await checkCover(transaction, recipe.coverFileId, authorId);
         return transaction.recipe.create({
           data: { authorId, ...recipeWriteData(recipe) },
@@ -141,7 +149,8 @@ export function createRecipeService({
 
       // Prisma may read the recipe and its children in separate statements.
       // Read one public snapshot even if the author edits or unpublishes it concurrently.
-      return database().$transaction(async (transaction) => {
+      return serializableTransaction(database(), async (transaction) => {
+        await checkCapacity(transaction, authorId);
         const source = await transaction.recipe.findFirst({
           where: { id: sourceRecipeId, visibility: "PUBLIC" },
           select: {
@@ -170,7 +179,7 @@ export function createRecipeService({
           },
           select: { id: true },
         });
-      }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
+      });
     },
 
     async update(id: string, input: unknown) {

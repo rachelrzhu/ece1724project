@@ -3,11 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { readSession } from "@/lib/auth/server";
 import { getDatabase } from "@/lib/db/client";
-import { dietaryInputSchema } from "@/lib/dietary/policy";
+import { allergenChoices, dietaryInputSchema } from "@/lib/dietary/policy";
+import { takeLimit } from "@/lib/security/rate-limit";
+import { activityLimitMessage } from "@/lib/security/action-limits";
 
 export async function saveDietaryPreferences(input: unknown): Promise<{ ok: true } | { error: string }> {
   const session = await readSession();
   if (!session) return { error: "Sign in to save your dietary preferences." };
+  if (!(await takeLimit("profile", session.user.id))) return { error: activityLimitMessage };
+  if (input && typeof input === "object" && "allergens" in input &&
+      Array.isArray(input.allergens) && input.allergens.length > allergenChoices.length) {
+    return { error: "Choose each allergen only once." };
+  }
   const parsed = dietaryInputSchema.safeParse(input);
   if (!parsed.success) return { error: "Choose a dietary preference and allergens from the available options." };
   const userId = session.user.id;

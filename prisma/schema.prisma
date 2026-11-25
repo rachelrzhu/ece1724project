@@ -258,3 +258,13 @@ view RecipeLike {
   @@unique([userId, recipeId])
   @@map("recipe_likes")
 }
+
+model WriteRateLimit {
+  policy    String   @db.VarChar(24)
+  slot      Int      @db.SmallInt
+  used      Int
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(6)
+
+  @@id([policy, slot])
+  @@map("write_rate_limits")
+}

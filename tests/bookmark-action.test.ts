@@ -5,6 +5,7 @@ import { otherUserId, recipeId } from "./fixtures";
 const { createMany } = vi.hoisted(() => ({ createMany: vi.fn() }));
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/lib/security/rate-limit", () => ({ takeLimit: async () => true }));
 vi.mock("@/lib/auth/server", () => ({
   readSession: async () => ({ user: { id: otherUserId } }),
 }));
