@@ -264,7 +264,7 @@ export default async function RecipeCollection({ searchParams, cook }: {
             <div className="flex min-w-0 items-center gap-4">
               {cook && (cook.image
                 ? <Image src={cook.image} unoptimized width={64} height={64} alt="" className="size-16 shrink-0 rounded-full object-cover" />
-                : <span aria-hidden="true" className="grid size-16 shrink-0 place-items-center rounded-full bg-brand text-2xl font-bold text-white">
+                : <span aria-hidden="true" className="grid size-16 shrink-0 place-items-center rounded-full bg-brand text-2xl font-bold text-primary-foreground">
                     {Array.from(cook.name?.trim() || cook.username)[0]?.toUpperCase()}
                   </span>)}
               <div className="min-w-0">

@@ -155,7 +155,7 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
   return (
     <form onSubmit={submit} aria-label={t(recipe ? "Edit recipe" : "Create recipe")} className="max-w-3xl">
       {feedback && (
-        <div ref={feedbackRef} tabIndex={-1} role="alert" className="mb-4 w-full rounded-md border border-red-200 bg-red-50 p-4 text-rust">
+        <div ref={feedbackRef} tabIndex={-1} role="alert" className="mb-4 w-full rounded-md border border-rust/25 bg-rust/10 p-4 text-rust">
           <p className="font-semibold">{t(feedback.message)}</p>
           {!!feedback.fields?.length && (
             <ul className="mt-2 list-disc space-y-1 ps-5 text-sm">

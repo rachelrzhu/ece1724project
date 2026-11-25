@@ -15,7 +15,7 @@ export default async function NewRecipePage() {
   if (!(await readSession())) redirect("/account?returnTo=%2Frecipes%2Fnew");
   const t = editorText(await getLocale());
   return (
-    <PageFrame title={t("Create recipe")} back={{ href: "/recipes?collection=mine", label: t("My recipes") }}>
+    <PageFrame title={t("Create recipe")} active="new" back={{ href: "/recipes?collection=mine", label: t("My recipes") }}>
       <RecipeEditor units={await getUnitOptions()} />
     </PageFrame>
   );

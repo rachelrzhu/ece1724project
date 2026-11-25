@@ -136,7 +136,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
           {t(pending ? pendingLabel : submitLabel)}
         </Button>
       </form>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-rust">{t(error)}</p>}
+      {error && <p role="alert" className="rounded-lg bg-rust/10 p-3 text-sm text-rust">{t(error)}</p>}
       {notice && <p role="status" className="text-sm">{t(notice)}</p>}
       {!signedInEmail && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">

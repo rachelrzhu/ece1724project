@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 
 const paths = {
+  moon: <path d="M20.2 13.1a8.3 8.3 0 0 1-9.3-9.3 8.4 8.4 0 1 0 9.3 9.3Z" />,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
+  menu: <path d="M3 6h18M3 12h18M3 18h18" />,
+  home: <><path d="m3 10 9-7 9 7M5 9v11h14V9" /><path d="M9.5 20v-7h5v7" /></>,
   brand: <><path d="M12 6v13M12 6C9 4 6 4 3 5v13c3-1 6-1 9 1 3-2 6-2 9-1V5c-3-1-6-1-9 1Z" /><path d="M6 8.5c1-.1 2 0 3 .4m-3 3c1-.1 2 0 3 .4m6-3.4c1-.4 2-.5 3-.4m-3 3.8c1-.4 2-.5 3-.4" /></>,
   search: <><circle cx="10.5" cy="10.5" r="5.5" /><path d="m15 15 4 4" /></>,
   plus: <path d="M12 5v14M5 12h14" />,
