@@ -81,6 +81,16 @@
   margin-top: clamp(2.5rem, 5vw, 4rem);
 }
 
+.pantryHeader, .scrollControls {
+  display: flex;
+  align-items: center;
+}
+
+.pantryHeader {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .pantry h2 {
   font-size: clamp(1.65rem, 3vw, 2.35rem);
   font-weight: 650;
@@ -88,14 +98,52 @@
   letter-spacing: -0.025em;
 }
 
-.ingredients {
+.scrollControls {
+  flex: none;
+  gap: 0.375rem;
+}
+
+.scrollControls button {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(0.85rem, 2vw, 1.5rem);
-  margin-top: 1.5rem;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  background: var(--color-paper);
+  color: var(--color-brand);
+  cursor: pointer;
+}
+
+.scrollControls button:enabled:hover {
+  background: var(--color-tint);
+  border-color: var(--color-brand);
+}
+
+.scrollControls button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ingredients {
+  --gap: clamp(0.85rem, 2vw, 1.5rem);
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 2 * var(--gap)) / 3);
+  gap: var(--gap);
+  margin-top: 1rem;
+  padding-block: 0.25rem 0.75rem;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ingredients { scroll-behavior: smooth; }
 }
 
 .ingredientCard {
+  scroll-snap-align: start;
   border-radius: 1rem;
   transition: box-shadow 160ms ease;
 }
@@ -144,7 +192,11 @@
   .heroPhoto { min-height: 0; aspect-ratio: 1.95; }
 }
 
+@media (max-width: 59.999rem) {
+  .ingredients { grid-auto-columns: 46%; }
+}
+
 @media (max-width: 39.999rem) {
-  .ingredients { grid-template-columns: 1fr; }
+  .ingredients { grid-auto-columns: 84%; }
   .ingredientPhoto { aspect-ratio: 2.3; }
 }
