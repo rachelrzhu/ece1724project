@@ -1,5 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { getPublicCook, listRecipes, recipePageSize } from "@/lib/product/queries";
+import { getPublicCook, listRecipes } from "@/lib/product/queries";
+import { defaultRecipePageSize } from "@/lib/product/pagination";
 import { MAX_READY_MINUTES, parseMaxMinutes } from "@/lib/recipes/ready-in";
 import { ownerId, otherUserId } from "./fixtures";
 
@@ -40,28 +41,37 @@ it("applies recorded conflicts, visibility and search to both the count and each
   expect(mocks.findMany.mock.calls.map(([query]) => query.skip)).toEqual([0]);
   for (const [pageQuery] of mocks.findMany.mock.calls) {
     expect(pageQuery.where).toEqual(where);
-    expect(pageQuery.take).toBe(recipePageSize);
+    expect(pageQuery.take).toBe(defaultRecipePageSize);
   }
 });
 
-it("can reach the last page of a large public collection with a bounded database offset", async () => {
+it.each([12, 24, 48, 96])("reaches the last page of a large public collection with %i recipes per page", async (pageSize) => {
   mocks.count.mockResolvedValue(60001);
-  const result = await listRecipes({ authorId: ownerId, page: Number.MAX_VALUE });
-  expect(result.page).toBe(10001);
+  const result = await listRecipes({ authorId: ownerId, page: Number.MAX_VALUE, pageSize });
+  const lastPage = Math.ceil(60001 / pageSize);
+  expect(result).toMatchObject({ page: lastPage, pageSize });
   expect(mocks.findMany).toHaveBeenCalledTimes(1);
-  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 60000, take: recipePageSize }));
+  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: (lastPage - 1) * pageSize, take: pageSize }));
+});
+
+it.each([
+  [undefined, 24], ["48", 48], [0, 24], ["12abc", 24], [12.5, 24], [10000, 24],
+])("queries the first page with the validated size for %s", async (requestedSize, expectedSize) => {
+  const result = await listRecipes({ pageSize: requestedSize });
+  expect(result.pageSize).toBe(expectedSize);
+  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 0, take: expectedSize }));
 });
 
 it.each([
   ["likes", { likes: { _count: "desc" } }],
   ["saved", { bookmarks: { _count: "desc" } }],
 ] as const)("orders all matching recipes by %s before taking a page", async (sort, firstOrder) => {
-  mocks.count.mockResolvedValue(recipePageSize + 1);
+  mocks.count.mockResolvedValue(defaultRecipePageSize + 1);
   await listRecipes({ sort, difficulty: "HARD", page: 2 });
   const { where } = mocks.count.mock.calls[0][0];
   expect(where.AND).toContainEqual({ difficulty: "HARD" });
   expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-    where, skip: recipePageSize, take: recipePageSize,
+    where, skip: defaultRecipePageSize, take: defaultRecipePageSize,
     orderBy: [firstOrder, { createdAt: "desc" }, { id: "desc" }],
   }));
 });
@@ -89,7 +99,7 @@ it.each([
   [14, []],
   [15, ["20000000-0000-4000-8000-000000000017"]],
 ])("uses recorded totals and qualifying published estimates before counting and paging (%i min)", async (maxMinutes, ids) => {
-  mocks.count.mockResolvedValue(recipePageSize + 1);
+  mocks.count.mockResolvedValue(defaultRecipePageSize + 1);
   await listRecipes({ maxMinutes, difficulty: "EASY", hideDietaryConflicts: true, page: 2 });
   const { where } = mocks.count.mock.calls[0][0];
   expect(where.AND).toEqual(expect.arrayContaining([
@@ -97,7 +107,7 @@ it.each([
     { visibility: "PUBLIC" }, { difficulty: "EASY" },
     { ingredients: { none: { canonicalName: { in: ["milk"] } } } },
   ]));
-  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: recipePageSize }));
+  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: defaultRecipePageSize }));
 });
 
 it.each([false, true])("combines Explore allergens with search and optional saved conflicts (signed in: %s)", async (signedIn) => {
@@ -111,7 +121,7 @@ it.each([false, true])("combines Explore allergens with search and optional save
   ]);
   mocks.matchingNames.mockImplementation(async (_sql, text) =>
     text === "100% 花椒" ? [{ canonical_name: "custom spice" }] : [{ canonical_name: "rice" }]);
-  mocks.count.mockResolvedValue(recipePageSize + 1);
+  mocks.count.mockResolvedValue(defaultRecipePageSize + 1);
   await listRecipes({
     query: "rice", allergenFilter: { allergens: ["SOY", "PEANUT"], ingredient: "100% 花椒" },
     hideDietaryConflicts: signedIn, page: 2,
@@ -128,20 +138,20 @@ it.each([false, true])("combines Explore allergens with search and optional save
       { ingredients: { some: { canonicalName: { in: ["rice"] } } } },
     ] },
   ]));
-  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: recipePageSize }));
+  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: defaultRecipePageSize }));
 });
 
 it.each([
   [ownerId, { authorId: ownerId, visibility: "PUBLIC" }],
   [otherUserId, { authorId: otherUserId }],
 ] as const)("scopes profile counts and pages to the author's recipes visible to the viewer (%s)", async (authorId, scope) => {
-  mocks.count.mockResolvedValue(recipePageSize + 1);
+  mocks.count.mockResolvedValue(defaultRecipePageSize + 1);
   const page = await listRecipes({ authorId, query: "flour", page: 2 });
   expect(page.page).toBe(2);
   const { where } = mocks.count.mock.calls[0][0];
   expect(where.AND).toContainEqual(scope);
   expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({
-    where, skip: recipePageSize, take: recipePageSize, orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    where, skip: defaultRecipePageSize, take: defaultRecipePageSize, orderBy: [{ createdAt: "desc" }, { id: "desc" }],
   }));
 });
 

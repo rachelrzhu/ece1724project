@@ -2,7 +2,7 @@
 
 From My Kitchen is a recipe-sharing app for home cooks. You can save a recipe once and adjust it to the number of people at the table or the amount of an ingredient you have. If a four-serving recipe calls for 400 g of flour and you have 200 g, the app shows the quantities for two servings. The original recipe stays available for the next time you cook.
 
-[Open the live app on Vercel](https://ece1724project.vercel.app/) · [Run it locally](#development-guide)
+[Open the live app on Vercel](https://frommykitchen.vercel.app/) · [Run it locally](#development-guide)
 
 ## Features and user guide
 

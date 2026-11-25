@@ -1,0 +1,53 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"23px","primaryColor":"#EDF2FC","primaryBorderColor":"#657896","primaryTextColor":"#191D24","lineColor":"#657896","edgeLabelBackground":"#FFFFFF","background":"#FFFFFF","attributeBackgroundColorEven":"#FFFFFF","attributeBackgroundColorOdd":"#F7F9FD"},"er":{"fontSize":23,"entityPadding":7,"minEntityWidth":100,"minEntityHeight":30,"nodeSpacing":70,"rankSpacing":84},"themeCSS":".node .label.name {font-weight:700;color:#203E86} .edgeLabel .label {font-size:19px;} .relationshipLine {stroke-width:1.2px;} .marker {stroke-width:1.1px;}"}}%%
+erDiagram
+    direction LR
+    %% Sources: prisma/schema.prisma and prisma/migrations/. Selected fields only.
+    accTitle: From My Kitchen recipe data model
+    accDescr: Each recipe belongs to one author and has ordered ingredients and steps. Each ingredient row references one catalog profile. A user can bookmark a recipe once. Each user owns their uploaded files, and a recipe may use one file as its cover.
+
+    users ||..o{ recipes : authors
+    users ||--o{ bookmarks : makes
+    bookmarks }o--|| recipes : saves
+    users ||..o{ files : owns
+    files |o..o| recipes : covers
+    recipes ||..o{ recipe_steps : contains
+    recipes ||..o{ recipe_ingredients : lists
+    ingredient_profiles ||..o{ recipe_ingredients : identifies
+
+    users {
+        uuid id PK
+        text username UK
+    }
+    recipes {
+        uuid id PK
+        uuid author_id FK
+        uuid cover_file_id FK,UK
+        decimal base_servings
+        enum visibility
+    }
+    bookmarks {
+        uuid user_id PK,FK
+        uuid recipe_id PK,FK
+    }
+    files {
+        uuid id PK
+        uuid owner_id FK
+        text pathname UK
+    }
+    recipe_steps {
+        uuid id PK
+        uuid recipe_id FK
+        int position
+        varchar instruction
+    }
+    recipe_ingredients {
+        uuid id PK
+        uuid recipe_id FK
+        int position
+        varchar canonical_name FK
+        decimal quantity
+    }
+    ingredient_profiles {
+        varchar canonical_name PK
+        enum classification
+    }

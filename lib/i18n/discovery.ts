@@ -77,6 +77,8 @@ export const discoveryMessages = {
   "Most liked": ["最多人喜欢", "Les plus aimées"],
   "Most saved": ["最多人收藏", "Les plus enregistrées"],
   "Sort by {sort}": ["排序：{sort}", "Trier par : {sort}"],
+  "{count} per page": ["每页 {count} 条", "{count} par page"],
+  "Recipes per page": ["每页食谱数", "Recettes par page"],
   "Sort recipes": ["食谱排序", "Trier les recettes"],
   "Loading recipes…": ["正在加载食谱…", "Chargement des recettes…"],
   "Sign in to view your recipes.": ["登录后即可查看你的食谱。", "Connectez-vous pour voir vos recettes."],
