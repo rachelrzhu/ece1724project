@@ -11,7 +11,7 @@ import { isValidBaseServings, MAX_SERVINGS, formatScaledQuantity } from "@/lib/r
 import { recipeEditSchema, recipeInputSchema } from "@/lib/recipes/schemas";
 import IngredientFields from "./ingredient-fields";
 
-const emptyIngredient = { id: "first", name: "", quantity: null, unit: null, note: null };
+const emptyIngredient = { id: "first", name: "", quantity: null, unit: null, note: null, translations: null };
 const maxRows = 100;
 const maxPhotoBytes = 3 * 1024 * 1024;
 const fieldLabels: Record<string, string> = {

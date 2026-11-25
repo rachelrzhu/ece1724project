@@ -4,12 +4,14 @@ import {
   convertScalingQuantity,
   getScalingUnits,
   scaleRecipe,
+  type IngredientTranslations,
   type ScalingRecipe,
   type ScalingResult,
 } from "./scaling";
 
 type Mode = "servings" | "ingredient";
 type QuantityField = "targetServings" | "availableQuantity";
+export type IngredientLanguage = "original" | keyof IngredientTranslations;
 
 type Settings = {
   mode: Mode;
@@ -24,6 +26,7 @@ type Settings = {
 
 type Workspace = {
   recipe: ScalingRecipe;
+  language: IngredientLanguage;
   current: Settings;
   history: Settings[];
   editing: QuantityField | null;
@@ -45,7 +48,7 @@ function originalSettings(recipe: ScalingRecipe): Settings {
 }
 
 function initialize(recipe: ScalingRecipe): Workspace {
-  return { recipe, current: originalSettings(recipe), history: [], editing: null };
+  return { recipe, language: "original", current: originalSettings(recipe), history: [], editing: null };
 }
 
 function calculate(recipe: ScalingRecipe, settings: Settings): ScalingResult {
@@ -121,6 +124,9 @@ const scaling = createSlice({
   name: "scaling",
   initialState: initialize({ baseServings: 1, ingredients: [] }),
   reducers: {
+    changeLanguage(state, { payload }: PayloadAction<IngredientLanguage>) {
+      state.language = payload;
+    },
     editQuantity(state, action: PayloadAction<{ field: QuantityField; value: string }>) {
       const { field, value } = action.payload;
       update(state, { ...state.current, [field]: value, derivedServings: null, roundedControl: false }, field);
@@ -176,14 +182,26 @@ export function makeScalingStore(recipe: ScalingRecipe) {
 
 export type ScalingStore = ReturnType<typeof makeScalingStore>;
 
+export const selectDisplayRecipe = createSelector(
+  [(state: Workspace) => state.recipe, (state: Workspace) => state.language],
+  (recipe, language): ScalingRecipe => {
+    if (language === "original") return recipe;
+    return {
+      ...recipe,
+      ingredients: recipe.ingredients.map(item =>
+        item.translations ? { ...item, name: item.translations[language] } : item),
+    };
+  },
+);
+
 export const selectPreview = createSelector(
-  [(state: Workspace) => state.recipe, (state: Workspace) => state.current],
+  [selectDisplayRecipe, (state: Workspace) => state.current],
   calculate,
 );
 
 export const selectEligibleIngredients = createSelector(
-  [(state: Workspace) => state.recipe.ingredients],
-  (ingredients) => ingredients.flatMap((item) => {
+  [selectDisplayRecipe],
+  (recipe) => recipe.ingredients.flatMap((item) => {
     const units = getScalingUnits(item);
     return units.length ? [{ id: item.id, name: item.name, units }] : [];
   }),

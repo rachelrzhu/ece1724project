@@ -48,6 +48,15 @@ async function readReactions(recipeIds: string[], viewer: string | null) {
   return summaries;
 }
 
+// Resolve the search and exclusion fields with the same vocabulary used by the write trigger.
+const matchingIngredientNames = cache(async (text: string) => {
+  if (!text) return [];
+  const rows = await getDatabase().$queryRaw<{ canonical_name: string }[]>`
+    SELECT canonical_name FROM matching_ingredient_names(${text})
+  `;
+  return rows.map(({ canonical_name }) => canonical_name);
+});
+
 export async function listRecipes({
   query = "",
   page = 1,
@@ -70,9 +79,13 @@ export async function listRecipes({
   allergenFilter?: ExploreAllergenFilter;
 }) {
   const db = getDatabase();
-  const [session, dietary, allergenMatches] = await Promise.all([
+  const q = query.trim().slice(0, 160);
+  const excludedText = allergenFilter?.ingredient.trim().slice(0, 160) ?? "";
+  const [session, dietary, matchingNames, excludedTextNames, allergenMatches] = await Promise.all([
     readSession(),
     readDietaryContext(),
+    matchingIngredientNames(q),
+    matchingIngredientNames(excludedText),
     allergenFilter?.allergens.length
       ? db.ingredientAllergen.findMany({
           where: { allergen: { in: allergenFilter.allergens } },
@@ -81,14 +94,12 @@ export async function listRecipes({
       : [],
   ]);
   const excludedNames = [...new Set([
+    ...excludedTextNames,
     ...allergenMatches.map(({ canonicalName }) => canonicalName),
     ...(hideDietaryConflicts ? dietary?.conflictNames ?? [] : []),
   ])];
   const viewer = session?.user.id ?? null;
-  const q = query.trim().slice(0, 160);
   const pageNumber = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1;
-  // Prisma's PostgreSQL contains filter uses LIKE. Treat text in an ingredient name literally.
-  const excludedText = allergenFilter?.ingredient.replace(/[\\%_]/g, "\\$&");
   const where = {
     AND: [
       ...(maxMinutes === undefined ? [] : [{
@@ -97,9 +108,6 @@ export async function listRecipes({
           { totalMinutes: null, id: { in: publishedRecipeIdsReadyWithin(maxMinutes) } },
         ],
       }]),
-      ...(excludedText
-        ? [{ ingredients: { none: { canonicalName: { contains: excludedText, mode: "insensitive" as const } } } }]
-        : []),
       ...(excludedNames.length
         ? [{ ingredients: { none: { canonicalName: { in: excludedNames } } } }]
         : []),
@@ -121,17 +129,8 @@ export async function listRecipes({
         ...(q
           ? {
               OR: [
-                { title: { contains: q, mode: "insensitive" as const } },
-                {
-                  ingredients: {
-                    some: {
-                      canonicalName: {
-                        contains: q.toLowerCase(),
-                        mode: "insensitive" as const,
-                      },
-                    },
-                  },
-                },
+                { title: { contains: q.replace(/[\\%_]/g, "\\$&"), mode: "insensitive" as const } },
+                { ingredients: { some: { canonicalName: { in: matchingNames } } } },
               ],
             }
           : {}),
@@ -212,7 +211,7 @@ export const getRecipe = cache(async (id: string) => {
   const recipe = await recipes().getById(id);
   if (!recipe) return null;
   const session = await readSession();
-  const [author, bookmark, dietary, reactions] = await Promise.all([
+  const [author, bookmark, dietary, reactions, translations] = await Promise.all([
     getPublicCook(recipe.authorId),
     session
       ? getDatabase().bookmark.findUnique({
@@ -222,11 +221,18 @@ export const getRecipe = cache(async (id: string) => {
       : null,
     readDietaryContext(),
     readReactions([id], session?.user.id ?? null),
+    getDatabase().ingredientTranslation.findMany({
+      where: { canonicalName: { in: recipe.ingredients.map(({ canonicalName }) => canonicalName) } },
+      select: { canonicalName: true, en: true, zh: true, fr: true },
+    }),
   ]);
+  const labels = new Map(translations.map(({ canonicalName, ...names }) => [canonicalName, names]));
   return {
     ...recipe,
     source: getPublishedSource(recipe.id),
-    ingredients: recipe.ingredients.map(({ id, name, quantity, unit, note }) => ({ id, name, quantity, unit, note })),
+    ingredients: recipe.ingredients.map(({ id, name, canonicalName, quantity, unit, note }) => ({
+      id, name, quantity, unit, note, translations: labels.get(canonicalName) ?? null,
+    })),
     dietary: dietary?.summarize(recipe.ingredients) ?? null,
     author,
     saved: !!bookmark,

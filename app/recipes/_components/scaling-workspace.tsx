@@ -1,20 +1,77 @@
 "use client";
 
 import { Button, Input } from "@/app/_components/material";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
 import { formatScaledQuantity, type ScalingRecipe } from "@/lib/recipes/scaling";
 import {
   makeScalingStore,
   scalingActions,
   selectCanReset,
+  selectDisplayRecipe,
   selectEligibleIngredients,
   selectPreview,
+  type IngredientLanguage,
   type ScalingStore,
 } from "@/lib/recipes/scaling-workspace";
 
 const useScalingDispatch = useDispatch.withTypes<ScalingStore["dispatch"]>();
 const useScalingSelector = useSelector.withTypes<ReturnType<ScalingStore["getState"]>>();
+
+const languageLabels = { original: "Original names", en: "English", zh: "中文", fr: "Français" };
+const languagePreferenceKey = "ingredient-language";
+
+function isIngredientLanguage(value: string | null): value is IngredientLanguage {
+  return value !== null && Object.hasOwn(languageLabels, value);
+}
+
+function preferredIngredientLanguage(): IngredientLanguage {
+  try {
+    const saved = sessionStorage.getItem(languagePreferenceKey);
+    if (isIngredientLanguage(saved)) return saved;
+  } catch {
+    // Browser privacy settings can disable storage.
+  }
+  for (const locale of navigator.languages) {
+    const language = locale.split("-")[0].toLowerCase();
+    if (isIngredientLanguage(language)) return language;
+  }
+  return "original";
+}
+
+function IngredientLanguageSelect() {
+  const id = useId();
+  const dispatch = useScalingDispatch();
+  const language = useScalingSelector(state => state.language);
+  const hasUntranslated = useScalingSelector(state => state.recipe.ingredients.some(item => !item.translations));
+
+  useEffect(() => {
+    dispatch(scalingActions.changeLanguage(preferredIngredientLanguage()));
+  }, [dispatch]);
+
+  function changeLanguage(value: string) {
+    if (!isIngredientLanguage(value)) return;
+    dispatch(scalingActions.changeLanguage(value));
+    try {
+      sessionStorage.setItem(languagePreferenceKey, value);
+    } catch {
+      // The selection still applies to this recipe.
+    }
+  }
+
+  return (
+    <div className="grid justify-items-start gap-1">
+      <label htmlFor={id}>Translate ingredient names</label>
+      <select id={id} className="site-field min-h-11" value={language} onChange={event => changeLanguage(event.target.value)}>
+        {Object.entries(languageLabels).map(([value, label]) =>
+          <option key={value} value={value} lang={value === "original" ? "en" : value}>{label}</option>)}
+      </select>
+      {language !== "original" && hasUntranslated && (
+        <p className="text-sm text-subtle">Ingredients without a translation use the author’s wording.</p>
+      )}
+    </div>
+  );
+}
 
 function ScalingControls() {
   const id = useId();
@@ -106,7 +163,8 @@ function ScalingControls() {
 }
 
 function IngredientPreview() {
-  const original = useScalingSelector((state) => state.recipe);
+  const original = useScalingSelector(selectDisplayRecipe);
+  const language = useScalingSelector(state => state.language);
   const preview = useScalingSelector(selectPreview);
   const scaled = preview.ok && preview.factor !== 1;
   const amounts = preview.ok
@@ -124,7 +182,7 @@ function IngredientPreview() {
         {amounts.map((item) => (
           <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,42%)] gap-3 py-3 wrap-anywhere">
             <div>
-              <p className="font-semibold">{item.name}</p>
+              <p className="font-semibold" lang={language !== "original" && item.translations ? language : undefined}>{item.name}</p>
               {item.note && <p className="text-sm text-subtle">{item.note}</p>}
             </div>
             {item.quantity !== null && <span className="text-end text-subtle">{formatScaledQuantity(Number(item.quantity))} {item.unit}</span>}
@@ -151,6 +209,7 @@ export default function ScalingWorkspace({ recipe }: { recipe: ScalingRecipe }) 
           <h2 id="ingredients-title" className="site-heading text-2xl">Ingredients</h2>
           <p className="text-sm text-subtle">Adjust quantities for your serving count or an ingredient you have on hand.</p>
         </div>
+        <IngredientLanguageSelect />
         <ScalingControls />
         <IngredientPreview />
       </section>
