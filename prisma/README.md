@@ -1,8 +1,8 @@
 # Database workflow
 
-Prisma owns the schema and migration history. `DATABASE_URL` is used by the runtime client. The CLI prefers `DIRECT_URL`, falling back to `DATABASE_URL`. Environment values load from the project's Next.js environment files, including `.env.local`.
+Prisma owns the schema and migration history. The runtime client uses `DATABASE_URL`. When run directly, the Prisma CLI prefers `DIRECT_URL`, falling back to `DATABASE_URL`. Environment values load from the project's Next.js environment files, including `.env.local`.
 
-Installation and builds generate the client but never change the database. The homepage, health endpoint, and automated tests work without database credentials.
+Installation and `npm run build` generate the client. GitHub Actions applies the committed migrations to disposable PostgreSQL and compares the resulting schema with `prisma/schema.prisma`. Vercel runs `npm run db:migrate` on the matching database after a successful build of a release branch. [Release branches and database settings](../docs/deployment.md#automatic-database-migrations)
 
 ## Local commands
 
@@ -27,7 +27,7 @@ This applies the committed migrations to the selected database, including the di
 
 `0_baseline` describes the existing profile and file tables, including UUID keys, named uniqueness constraints/indexes, the file-owner foreign key, and `files_size_positive`. The next migration adds recipes, ingredients, steps, and bookmarks.
 
-Before adopting this history:
+Complete these steps before connecting a populated database to automatic deployments.
 
 1. Confirm the selected database and preserve a recoverable backup/branch.
 2. Compare its existing schema with `0_baseline/migration.sql`, including defaults, nullability, indexes, and constraints. Resolve differences before proceeding.
@@ -42,11 +42,11 @@ Before adopting this history:
 
 Recording the baseline writes migration metadata. Do not run the baseline SQL against tables that already exist. Run `npx prisma migrate status` to check the selected database against the committed migration history.
 
-## Cloud development fixtures
+## Public recipe catalog
 
-The development Neon database contains 16 public demo recipes shared by eight fictional cooks. Three are English translations from the Chinese cookbook HowToCook. Their detail pages credit the original contributors and link to the Chinese editions. Each recipe has ordered ingredients, steps, and a cover in the development private Blob store. The [demo catalog](../scripts/demo-recipes.ts) assigns stable IDs to cooks, recipes, and covers. [Recipe and photo sources](../public/images/SOURCES.md) are listed with the assets. The cloud demo profiles have no login credentials. The local seed also creates two password-based logins and a private recipe for testing on loopback.
+The [catalog migration](migrations/20261124050000_public_recipe_catalog/migration.sql) adds 16 public recipes shared by eight fictional cooks, including three English translations from HowToCook. It preserves existing recipes with the same catalog IDs, including their visibility and edits. Each recipe has ordered ingredients, steps, and a cover. The fixture profiles have no login credentials. The loopback seed creates two test logins and a private test recipe. [Demo catalog](../scripts/demo-recipes.ts) · [Recipe and photo sources](../public/images/SOURCES.md)
 
-On a deployment that includes the image route, request `/api/images/30000000-0000-4000-8000-000000000001` to read the first demo cover. A successful response reads the file metadata from PostgreSQL and streams the JPEG from Blob. The separate `/api/health` endpoint checks application liveness.
+Release builds provision the JPEGs in the environment’s private Blob store before applying the catalog SQL. For a manual hosted import, set the target store’s `BLOB_READ_WRITE_TOKEN` in the process environment and run `node --import tsx scripts/catalog-covers.ts` before migrating the database. The command checks existing photos byte for byte and uploads missing files. You can rerun it to verify or restore the covers. The first recipe’s cover is served at `/api/images/30000000-0000-4000-8000-000000000001`.
 
 ## Local database and API tests
 

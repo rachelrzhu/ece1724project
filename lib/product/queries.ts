@@ -1,12 +1,13 @@
 import "server-only";
 import { cache } from "react";
+import { Prisma } from "@/generated/prisma/client";
 import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
 import { readDietaryContext } from "@/lib/dietary/server";
 import { publicAvatarImage } from "@/lib/product/avatar";
 import type { ExploreAllergenFilter } from "@/lib/dietary/policy";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
-import { getPublishedSource } from "@/lib/recipes/published-sources";
+import { getPublishedSource, publishedRecipeIdsReadyWithin } from "@/lib/recipes/published-sources";
 import { createRecipeService } from "@/lib/recipes/service";
 import { z } from "zod";
 export const recipes = () =>
@@ -26,12 +27,32 @@ const cardSelect = {
 } as const;
 export const recipePageSize = 6;
 
+export type ReactionSummary = { likes: number; dislikes: number; viewerLikes: boolean | null };
+const noReactions: ReactionSummary = { likes: 0, dislikes: 0, viewerLikes: null };
+
+async function readReactions(recipeIds: string[], viewer: string | null) {
+  const summaries = new Map<string, ReactionSummary>();
+  if (!recipeIds.length) return summaries;
+  const rows = await getDatabase().$queryRaw<(ReactionSummary & { id: string })[]>`
+    SELECT recipe_id AS id,
+           COUNT(*) FILTER (WHERE liked)::int AS likes,
+           COUNT(*) FILTER (WHERE NOT liked)::int AS dislikes,
+           BOOL_OR(liked) FILTER (WHERE user_id = ${viewer}::uuid) AS "viewerLikes"
+    FROM recipe_reactions
+    WHERE recipe_id IN (${Prisma.join(recipeIds.map(id => Prisma.sql`${id}::uuid`))})
+    GROUP BY recipe_id
+  `;
+  for (const { id, ...summary } of rows) summaries.set(id, summary);
+  return summaries;
+}
+
 export async function listRecipes({
   query = "",
   page = 1,
   collection = "explore",
   authorId,
   difficulty = "",
+  maxMinutes,
   hideDietaryConflicts = false,
   allergenFilter,
 }: {
@@ -40,6 +61,7 @@ export async function listRecipes({
   collection?: string;
   authorId?: string;
   difficulty?: string;
+  maxMinutes?: number;
   hideDietaryConflicts?: boolean;
   allergenFilter?: ExploreAllergenFilter;
 }) {
@@ -65,6 +87,12 @@ export async function listRecipes({
   const excludedText = allergenFilter?.ingredient.replace(/[\\%_]/g, "\\$&");
   const where = {
     AND: [
+      ...(maxMinutes === undefined ? [] : [{
+        OR: [
+          { totalMinutes: { lte: maxMinutes } },
+          { totalMinutes: null, id: { in: publishedRecipeIdsReadyWithin(maxMinutes) } },
+        ],
+      }]),
       ...(excludedText
         ? [{ ingredients: { none: { canonicalName: { contains: excludedText, mode: "insensitive" as const } } } }]
         : []),
@@ -133,16 +161,19 @@ export async function listRecipes({
   ]);
   const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / recipePageSize)));
   const rows = firstPageRows ?? await readPage(boundedPage);
-  const saved =
+  const recipeIds = rows.map(row => row.id);
+  const [reactions, saved] = await Promise.all([
+    readReactions(recipeIds, viewer),
     viewer && rows.length
-      ? await db.bookmark.findMany({
+      ? db.bookmark.findMany({
           where: {
             userId: viewer,
-            recipeId: { in: rows.map((row) => row.id) },
+            recipeId: { in: recipeIds },
           },
           select: { recipeId: true },
         })
-      : [];
+      : [],
+  ]);
   return {
     total,
     page: boundedPage,
@@ -153,8 +184,9 @@ export async function listRecipes({
         ...recipe,
         source,
         baseServings: recipe.baseServings.toString(),
-        durationLabel: source && minutes === 0 ? source.time : `${minutes} min`,
+        durationLabel: minutes > 0 ? `${minutes} min` : source?.time ?? null,
         saved: saved.some((b) => b.recipeId === recipe.id),
+        reactions: reactions.get(recipe.id) ?? noReactions,
         dietary: dietary?.summarize(ingredients) ?? null,
       };
     }),
@@ -177,7 +209,7 @@ export const getRecipe = cache(async (id: string) => {
   const recipe = await recipes().getById(id);
   if (!recipe) return null;
   const session = await readSession();
-  const [author, bookmark, dietary] = await Promise.all([
+  const [author, bookmark, dietary, reactions] = await Promise.all([
     getPublicCook(recipe.authorId),
     session
       ? getDatabase().bookmark.findUnique({
@@ -186,6 +218,7 @@ export const getRecipe = cache(async (id: string) => {
         })
       : null,
     readDietaryContext(),
+    readReactions([id], session?.user.id ?? null),
   ]);
   return {
     ...recipe,
@@ -194,6 +227,7 @@ export const getRecipe = cache(async (id: string) => {
     dietary: dietary?.summarize(recipe.ingredients) ?? null,
     author,
     saved: !!bookmark,
+    reactions: reactions.get(recipe.id) ?? noReactions,
     isOwner: session?.user.id === recipe.authorId,
     signedIn: !!session,
   };

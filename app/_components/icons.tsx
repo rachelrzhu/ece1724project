@@ -5,7 +5,12 @@ const paths = {
   search: <><circle cx="10.5" cy="10.5" r="5.5" /><path d="m15 15 4 4" /></>,
   plus: <path d="M12 5v14M5 12h14" />,
   back: <path d="M20 12H5m6-6-6 6 6 6" />,
+  forward: <path d="M4 12h15m-6-6 6 6-6 6" />,
+  diagonal: <path d="M6 18 18 6M7 6h11v11" />,
   clock: <><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></>,
+  filters: <><path d="M3 7h4m5 0h9M3 17h9m5 0h4" /><circle cx="9.5" cy="7" r="2.5" /><circle cx="14.5" cy="17" r="2.5" /></>,
+  chevron: <path d="m6 9 6 6 6-6" />,
+  close: <path d="m6 6 12 12M6 18 18 6" />,
   bookmark: <path d="M6 4h12v16l-6-4-6 4V4Z" />,
   account: <><circle cx="12" cy="8" r="3" /><path d="M5 20v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1" /></>,
 } satisfies Record<string, ReactNode>;

@@ -1,5 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { getPublicCook, listRecipes, recipePageSize } from "@/lib/product/queries";
+import { MAX_READY_MINUTES, parseMaxMinutes } from "@/lib/recipes/ready-in";
 import { ownerId, otherUserId } from "./fixtures";
 
 const mocks = vi.hoisted(() => ({
@@ -55,6 +56,32 @@ it("keeps recipes visible when the cook has not opted into filtering", async () 
   expect(mocks.count.mock.calls[0][0].where.AND).not.toContainEqual(
     expect.objectContaining({ ingredients: expect.anything() }),
   );
+});
+
+it("accepts whole minutes within the full supported range", () => {
+  expect(parseMaxMinutes("1")).toBe(1);
+  expect(parseMaxMinutes("030")).toBe(30);
+  expect(parseMaxMinutes("30.0")).toBe(30);
+  expect(parseMaxMinutes("3e1")).toBe(30);
+  expect(parseMaxMinutes(String(MAX_READY_MINUTES))).toBe(MAX_READY_MINUTES);
+  for (const invalid of [undefined, "", "0", "-5", "1.5", "1e-2", "0xff", "15min", String(MAX_READY_MINUTES + 1)]) {
+    expect(parseMaxMinutes(invalid)).toBeUndefined();
+  }
+});
+
+it.each([
+  [14, []],
+  [15, ["20000000-0000-4000-8000-000000000017"]],
+])("uses recorded totals and qualifying published estimates before counting and paging (%i min)", async (maxMinutes, ids) => {
+  mocks.count.mockResolvedValue(recipePageSize + 1);
+  await listRecipes({ maxMinutes, difficulty: "EASY", hideDietaryConflicts: true, page: 2 });
+  const { where } = mocks.count.mock.calls[0][0];
+  expect(where.AND).toEqual(expect.arrayContaining([
+    { OR: [{ totalMinutes: { lte: maxMinutes } }, { totalMinutes: null, id: { in: ids } }] },
+    { visibility: "PUBLIC" }, { difficulty: "EASY" },
+    { ingredients: { none: { canonicalName: { in: ["milk"] } } } },
+  ]));
+  expect(mocks.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: recipePageSize }));
 });
 
 it.each([false, true])("combines Explore allergens with search and optional saved conflicts (signed in: %s)", async (signedIn) => {

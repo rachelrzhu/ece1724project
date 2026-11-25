@@ -219,6 +219,7 @@ export type UserWhereInput = {
   files?: Prisma.StoredFileListRelationFilter
   recipes?: Prisma.RecipeListRelationFilter
   bookmarks?: Prisma.BookmarkListRelationFilter
+  reactions?: Prisma.RecipeReactionListRelationFilter
   dietarySettings?: Prisma.XOR<Prisma.DietarySettingsNullableScalarRelationFilter, Prisma.DietarySettingsWhereInput> | null
 }
 
@@ -237,6 +238,7 @@ export type UserOrderByWithRelationInput = {
   files?: Prisma.StoredFileOrderByRelationAggregateInput
   recipes?: Prisma.RecipeOrderByRelationAggregateInput
   bookmarks?: Prisma.BookmarkOrderByRelationAggregateInput
+  reactions?: Prisma.RecipeReactionOrderByRelationAggregateInput
   dietarySettings?: Prisma.DietarySettingsOrderByWithRelationInput
 }
 
@@ -258,6 +260,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   files?: Prisma.StoredFileListRelationFilter
   recipes?: Prisma.RecipeListRelationFilter
   bookmarks?: Prisma.BookmarkListRelationFilter
+  reactions?: Prisma.RecipeReactionListRelationFilter
   dietarySettings?: Prisma.XOR<Prisma.DietarySettingsNullableScalarRelationFilter, Prisma.DietarySettingsWhereInput> | null
 }, "id" | "username" | "email">
 
@@ -306,6 +309,7 @@ export type UserCreateInput = {
   files?: Prisma.StoredFileCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsCreateNestedOneWithoutUserInput
 }
 
@@ -324,6 +328,7 @@ export type UserUncheckedCreateInput = {
   files?: Prisma.StoredFileUncheckedCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkUncheckedCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionUncheckedCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsUncheckedCreateNestedOneWithoutUserInput
 }
 
@@ -342,6 +347,7 @@ export type UserUpdateInput = {
   files?: Prisma.StoredFileUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUpdateOneWithoutUserNestedInput
 }
 
@@ -360,6 +366,7 @@ export type UserUncheckedUpdateInput = {
   files?: Prisma.StoredFileUncheckedUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUncheckedUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUncheckedUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUncheckedUpdateOneWithoutUserNestedInput
 }
 
@@ -544,6 +551,20 @@ export type UserUpdateOneRequiredWithoutBookmarksNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutBookmarksInput, Prisma.UserUpdateWithoutBookmarksInput>, Prisma.UserUncheckedUpdateWithoutBookmarksInput>
 }
 
+export type UserCreateNestedOneWithoutReactionsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReactionsInput, Prisma.UserUncheckedCreateWithoutReactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutReactionsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutReactionsInput, Prisma.UserUncheckedCreateWithoutReactionsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutReactionsInput
+  upsert?: Prisma.UserUpsertWithoutReactionsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutReactionsInput, Prisma.UserUpdateWithoutReactionsInput>, Prisma.UserUncheckedUpdateWithoutReactionsInput>
+}
+
 export type UserCreateWithoutDietarySettingsInput = {
   id?: string
   username?: string
@@ -559,6 +580,7 @@ export type UserCreateWithoutDietarySettingsInput = {
   files?: Prisma.StoredFileCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDietarySettingsInput = {
@@ -576,6 +598,7 @@ export type UserUncheckedCreateWithoutDietarySettingsInput = {
   files?: Prisma.StoredFileUncheckedCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkUncheckedCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDietarySettingsInput = {
@@ -609,6 +632,7 @@ export type UserUpdateWithoutDietarySettingsInput = {
   files?: Prisma.StoredFileUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDietarySettingsInput = {
@@ -626,6 +650,7 @@ export type UserUncheckedUpdateWithoutDietarySettingsInput = {
   files?: Prisma.StoredFileUncheckedUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUncheckedUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -642,6 +667,7 @@ export type UserCreateWithoutSessionsInput = {
   files?: Prisma.StoredFileCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsCreateNestedOneWithoutUserInput
 }
 
@@ -659,6 +685,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   files?: Prisma.StoredFileUncheckedCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkUncheckedCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionUncheckedCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsUncheckedCreateNestedOneWithoutUserInput
 }
 
@@ -692,6 +719,7 @@ export type UserUpdateWithoutSessionsInput = {
   files?: Prisma.StoredFileUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUpdateOneWithoutUserNestedInput
 }
 
@@ -709,6 +737,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   files?: Prisma.StoredFileUncheckedUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUncheckedUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUncheckedUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUncheckedUpdateOneWithoutUserNestedInput
 }
 
@@ -726,6 +755,7 @@ export type UserCreateWithoutAccountsInput = {
   files?: Prisma.StoredFileCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsCreateNestedOneWithoutUserInput
 }
 
@@ -743,6 +773,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   files?: Prisma.StoredFileUncheckedCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkUncheckedCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionUncheckedCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsUncheckedCreateNestedOneWithoutUserInput
 }
 
@@ -776,6 +807,7 @@ export type UserUpdateWithoutAccountsInput = {
   files?: Prisma.StoredFileUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUpdateOneWithoutUserNestedInput
 }
 
@@ -793,6 +825,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   files?: Prisma.StoredFileUncheckedUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUncheckedUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUncheckedUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUncheckedUpdateOneWithoutUserNestedInput
 }
 
@@ -810,6 +843,7 @@ export type UserCreateWithoutFilesInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   recipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsCreateNestedOneWithoutUserInput
 }
 
@@ -827,6 +861,7 @@ export type UserUncheckedCreateWithoutFilesInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   recipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
   bookmarks?: Prisma.BookmarkUncheckedCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionUncheckedCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsUncheckedCreateNestedOneWithoutUserInput
 }
 
@@ -860,6 +895,7 @@ export type UserUpdateWithoutFilesInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   recipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUpdateOneWithoutUserNestedInput
 }
 
@@ -877,6 +913,7 @@ export type UserUncheckedUpdateWithoutFilesInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   recipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
   bookmarks?: Prisma.BookmarkUncheckedUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUncheckedUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUncheckedUpdateOneWithoutUserNestedInput
 }
 
@@ -894,6 +931,7 @@ export type UserCreateWithoutRecipesInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   files?: Prisma.StoredFileCreateNestedManyWithoutOwnerInput
   bookmarks?: Prisma.BookmarkCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsCreateNestedOneWithoutUserInput
 }
 
@@ -911,6 +949,7 @@ export type UserUncheckedCreateWithoutRecipesInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   files?: Prisma.StoredFileUncheckedCreateNestedManyWithoutOwnerInput
   bookmarks?: Prisma.BookmarkUncheckedCreateNestedManyWithoutUserInput
+  reactions?: Prisma.RecipeReactionUncheckedCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsUncheckedCreateNestedOneWithoutUserInput
 }
 
@@ -944,6 +983,7 @@ export type UserUpdateWithoutRecipesInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   files?: Prisma.StoredFileUpdateManyWithoutOwnerNestedInput
   bookmarks?: Prisma.BookmarkUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUpdateOneWithoutUserNestedInput
 }
 
@@ -961,6 +1001,7 @@ export type UserUncheckedUpdateWithoutRecipesInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   files?: Prisma.StoredFileUncheckedUpdateManyWithoutOwnerNestedInput
   bookmarks?: Prisma.BookmarkUncheckedUpdateManyWithoutUserNestedInput
+  reactions?: Prisma.RecipeReactionUncheckedUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUncheckedUpdateOneWithoutUserNestedInput
 }
 
@@ -978,6 +1019,7 @@ export type UserCreateWithoutBookmarksInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   files?: Prisma.StoredFileCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  reactions?: Prisma.RecipeReactionCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsCreateNestedOneWithoutUserInput
 }
 
@@ -995,6 +1037,7 @@ export type UserUncheckedCreateWithoutBookmarksInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   files?: Prisma.StoredFileUncheckedCreateNestedManyWithoutOwnerInput
   recipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  reactions?: Prisma.RecipeReactionUncheckedCreateNestedManyWithoutUserInput
   dietarySettings?: Prisma.DietarySettingsUncheckedCreateNestedOneWithoutUserInput
 }
 
@@ -1028,6 +1071,7 @@ export type UserUpdateWithoutBookmarksInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   files?: Prisma.StoredFileUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  reactions?: Prisma.RecipeReactionUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUpdateOneWithoutUserNestedInput
 }
 
@@ -1045,6 +1089,95 @@ export type UserUncheckedUpdateWithoutBookmarksInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   files?: Prisma.StoredFileUncheckedUpdateManyWithoutOwnerNestedInput
   recipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  reactions?: Prisma.RecipeReactionUncheckedUpdateManyWithoutUserNestedInput
+  dietarySettings?: Prisma.DietarySettingsUncheckedUpdateOneWithoutUserNestedInput
+}
+
+export type UserCreateWithoutReactionsInput = {
+  id?: string
+  username?: string
+  usernameChangeAvailableAt?: Date | string | null
+  email: string
+  name?: string | null
+  emailVerified?: boolean
+  image?: string | null
+  updatedAt?: Date | string
+  createdAt?: Date | string
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  files?: Prisma.StoredFileCreateNestedManyWithoutOwnerInput
+  recipes?: Prisma.RecipeCreateNestedManyWithoutAuthorInput
+  bookmarks?: Prisma.BookmarkCreateNestedManyWithoutUserInput
+  dietarySettings?: Prisma.DietarySettingsCreateNestedOneWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutReactionsInput = {
+  id?: string
+  username?: string
+  usernameChangeAvailableAt?: Date | string | null
+  email: string
+  name?: string | null
+  emailVerified?: boolean
+  image?: string | null
+  updatedAt?: Date | string
+  createdAt?: Date | string
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  files?: Prisma.StoredFileUncheckedCreateNestedManyWithoutOwnerInput
+  recipes?: Prisma.RecipeUncheckedCreateNestedManyWithoutAuthorInput
+  bookmarks?: Prisma.BookmarkUncheckedCreateNestedManyWithoutUserInput
+  dietarySettings?: Prisma.DietarySettingsUncheckedCreateNestedOneWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutReactionsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutReactionsInput, Prisma.UserUncheckedCreateWithoutReactionsInput>
+}
+
+export type UserUpsertWithoutReactionsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutReactionsInput, Prisma.UserUncheckedUpdateWithoutReactionsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutReactionsInput, Prisma.UserUncheckedCreateWithoutReactionsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutReactionsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutReactionsInput, Prisma.UserUncheckedUpdateWithoutReactionsInput>
+}
+
+export type UserUpdateWithoutReactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameChangeAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  files?: Prisma.StoredFileUpdateManyWithoutOwnerNestedInput
+  recipes?: Prisma.RecipeUpdateManyWithoutAuthorNestedInput
+  bookmarks?: Prisma.BookmarkUpdateManyWithoutUserNestedInput
+  dietarySettings?: Prisma.DietarySettingsUpdateOneWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutReactionsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  usernameChangeAvailableAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  files?: Prisma.StoredFileUncheckedUpdateManyWithoutOwnerNestedInput
+  recipes?: Prisma.RecipeUncheckedUpdateManyWithoutAuthorNestedInput
+  bookmarks?: Prisma.BookmarkUncheckedUpdateManyWithoutUserNestedInput
   dietarySettings?: Prisma.DietarySettingsUncheckedUpdateOneWithoutUserNestedInput
 }
 
@@ -1059,6 +1192,7 @@ export type UserCountOutputType = {
   files: number
   recipes: number
   bookmarks: number
+  reactions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1067,6 +1201,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   files?: boolean | UserCountOutputTypeCountFilesArgs
   recipes?: boolean | UserCountOutputTypeCountRecipesArgs
   bookmarks?: boolean | UserCountOutputTypeCountBookmarksArgs
+  reactions?: boolean | UserCountOutputTypeCountReactionsArgs
 }
 
 /**
@@ -1114,6 +1249,13 @@ export type UserCountOutputTypeCountBookmarksArgs<ExtArgs extends runtime.Types.
   where?: Prisma.BookmarkWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountReactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.RecipeReactionWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1130,6 +1272,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   files?: boolean | Prisma.User$filesArgs<ExtArgs>
   recipes?: boolean | Prisma.User$recipesArgs<ExtArgs>
   bookmarks?: boolean | Prisma.User$bookmarksArgs<ExtArgs>
+  reactions?: boolean | Prisma.User$reactionsArgs<ExtArgs>
   dietarySettings?: boolean | Prisma.User$dietarySettingsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
@@ -1177,6 +1320,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   files?: boolean | Prisma.User$filesArgs<ExtArgs>
   recipes?: boolean | Prisma.User$recipesArgs<ExtArgs>
   bookmarks?: boolean | Prisma.User$bookmarksArgs<ExtArgs>
+  reactions?: boolean | Prisma.User$reactionsArgs<ExtArgs>
   dietarySettings?: boolean | Prisma.User$dietarySettingsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1191,6 +1335,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     files: Prisma.$StoredFilePayload<ExtArgs>[]
     recipes: Prisma.$RecipePayload<ExtArgs>[]
     bookmarks: Prisma.$BookmarkPayload<ExtArgs>[]
+    reactions: Prisma.$RecipeReactionPayload<ExtArgs>[]
     dietarySettings: Prisma.$DietarySettingsPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1602,6 +1747,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   files<T extends Prisma.User$filesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$filesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StoredFilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   recipes<T extends Prisma.User$recipesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$recipesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   bookmarks<T extends Prisma.User$bookmarksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$bookmarksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$BookmarkPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  reactions<T extends Prisma.User$reactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$reactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RecipeReactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   dietarySettings<T extends Prisma.User$dietarySettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dietarySettingsArgs<ExtArgs>>): Prisma.Prisma__DietarySettingsClient<runtime.Types.Result.GetResult<Prisma.$DietarySettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2151,6 +2297,30 @@ export type User$bookmarksArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.BookmarkScalarFieldEnum | Prisma.BookmarkScalarFieldEnum[]
+}
+
+/**
+ * User.reactions
+ */
+export type User$reactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the RecipeReaction
+   */
+  select?: Prisma.RecipeReactionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the RecipeReaction
+   */
+  omit?: Prisma.RecipeReactionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RecipeReactionInclude<ExtArgs> | null
+  where?: Prisma.RecipeReactionWhereInput
+  orderBy?: Prisma.RecipeReactionOrderByWithRelationInput | Prisma.RecipeReactionOrderByWithRelationInput[]
+  cursor?: Prisma.RecipeReactionWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.RecipeReactionScalarFieldEnum | Prisma.RecipeReactionScalarFieldEnum[]
 }
 
 /**

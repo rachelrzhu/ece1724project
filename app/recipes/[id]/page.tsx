@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ButtonLink } from "@/app/_components/material";
 import { notFound } from "next/navigation";
 import PageFrame from "@/app/_components/page-frame";
 import { CookByline } from "@/app/_components/cook-byline";
 import { RecipeCover } from "@/app/_components/recipe-cover";
+import { RecipeReactions } from "@/app/_components/recipe-reactions";
 import { getRecipe, type RecipeDetailData } from "@/lib/product/queries";
 import RecipeActions from "../_components/recipe-actions";
 import RecipeEditor from "../_components/recipe-editor";
@@ -18,8 +19,8 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/rec
 
 function recipeFacts(recipe: RecipeDetailData) {
   const facts = [["Base servings", recipe.baseServings]];
-  if (recipe.source && recipe.prepMinutes + recipe.cookMinutes === 0) {
-    if (recipe.source.time) facts.push(["Total time", recipe.source.time]);
+  if (recipe.prepMinutes + recipe.cookMinutes === 0) {
+    facts.push(["Total time", recipe.source?.time || "Unknown"]);
   } else {
     facts.push(["Prep", `${recipe.prepMinutes} min`], ["Cook", `${recipe.cookMinutes} min`]);
   }
@@ -46,7 +47,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
   const canCopy = recipe.signedIn && recipe.visibility === "PUBLIC";
   const dietary = recipe.dietary;
   return (
-    <PageFrame title={recipe.title} back={{ href: "/", label: "Explore recipes" }}>
+    <PageFrame title={recipe.title} back={{ href: "/recipes", label: "Explore recipes" }}>
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8">
         <div className="flex max-w-3xl flex-col gap-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-subtle">
@@ -68,11 +69,12 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
             ))}
           </dl>
           <div className="flex flex-wrap items-center gap-2">
-            {recipe.isOwner && <Link className="site-button" href={`${href}?edit=1`}>Edit recipe</Link>}
+            <RecipeReactions id={id} title={recipe.title} reactions={recipe.reactions} signedIn={recipe.signedIn} />
+            {recipe.isOwner && <ButtonLink className="min-h-11" href={`${href}?edit=1`}>Edit recipe</ButtonLink>}
             {recipe.signedIn ? (
-              <RecipeActions id={id} title={recipe.title} saved={recipe.saved} canCopy={canCopy} isOwner={recipe.isOwner} afterDeleteHref="/?collection=mine" />
+              <RecipeActions id={id} title={recipe.title} saved={recipe.saved} canCopy={canCopy} isOwner={recipe.isOwner} afterDeleteHref="/recipes?collection=mine" />
             ) : (
-              <Link className="site-button-outline" href={`/account?${new URLSearchParams({ returnTo: href })}`}>Sign in to bookmark</Link>
+              <ButtonLink variant="outline" className="min-h-11" href={`/account?${new URLSearchParams({ returnTo: href })}`}>Sign in to bookmark</ButtonLink>
             )}
           </div>
           {canCopy && (

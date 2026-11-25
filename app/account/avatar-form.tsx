@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState, useTransition, type FormEvent } from "react";
+import { Button } from "@/app/_components/material";
 import { avatars, publicAvatarImage } from "@/lib/product/avatar";
 import { saveAvatar } from "./avatar-actions";
 
@@ -75,9 +76,9 @@ export default function AvatarForm({ name, image: savedImage }: { name: string; 
             className="site-field" aria-describedby="avatar-upload-hint" onChange={event => chooseFile(event.target.files?.[0])} />
           <p id="avatar-upload-hint" className="text-sm text-subtle">Still JPEG, PNG or WebP, up to 3 MiB and 16 megapixels. Your avatar appears on your public recipe page.</p>
         </div>
-        <button className="site-button justify-self-start" disabled={pending || choice === (image ?? "initial")}>
+        <Button type="submit" className="min-h-11 justify-self-start" disabled={pending || choice === (image ?? "initial")}>
           {pending ? "Saving…" : "Save avatar"}
-        </button>
+        </Button>
       </fieldset>
       {feedback.message && <p role={feedback.error ? "alert" : "status"} className={feedback.error ? "text-sm text-rust" : "text-sm"}>{feedback.message}</p>}
     </form>

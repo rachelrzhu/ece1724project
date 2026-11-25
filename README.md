@@ -1,96 +1,98 @@
 # From My Kitchen
 
-Recipe sharing and adaptive ingredient scaling, built with Next.js, React, TypeScript, Tailwind CSS, and HeroUI. The implementation includes a Prisma/PostgreSQL foundation, recipe models, validated recipe services, private-image upload/read services, and automated checks. Better Auth persists sessions in PostgreSQL. A local backend tester exercises recipe and image services.
+From My Kitchen is a recipe-sharing app for home cooks. You can save a recipe once and adjust it to the number of people at the table or the amount of an ingredient you have. If a four-serving recipe calls for 400 g of flour and you have 200 g, the app shows the quantities for two servings. The original recipe stays available for the next time you cook.
 
-## Run the app
+[Open the live app on Vercel](https://ece1724project.vercel.app/) · [Run it locally](#development-guide)
 
-1. Install **Node.js 24** with npm, then reopen your terminal. [Node.js downloads](https://nodejs.org/en/download)
-2. Clone the repo or extract the GitHub ZIP. Open the folder containing `package.json`.
-3. Run `npm run setup`. On macOS you can also double-click `setup.command`, and on Windows you can double-click `setup.cmd`.
-4. When the terminal says **Ready**, open [From My Kitchen on localhost](http://localhost:3000). If Next.js selects another port, use the address printed in the terminal and match that origin in your Google OAuth configuration. Press **Ctrl+C** to stop the server.
+## Features and user guide
 
-Setup installs the locked dependencies, generates the Prisma client, prepares `.env.local`, and checks the format of configured values. On first setup it generates a local authentication secret. You'll need internet access on the first run. You can open the homepage and run the unit tests without cloud credentials. If the database is unavailable, the homepage offers to reload the recipes. To try the API with seeded accounts and recipes, start in a fresh checkout and follow the [local database instructions](prisma/README.md#local-database-and-api-tests).
-
-## Project docs
-
-- [Architecture](docs/architecture.md) and [requirements](docs/requirements.md) cover the data model, permissions, and scaling rules.
-- [Database workflow](prisma/README.md) covers migrations, local test data, and existing databases.
-- [Deployment guide](docs/deployment.md) covers releases from `dev` through `preprod` to `main`.
-
-## Frontend and backend
-
-Next.js serves the pages and API routes from the same process.
-
-- The Next.js App Router serves discovery at `/`, sign-in and registration at `/account`, the editor at `/recipes/new`, and recipe details at `/recipes/[id]`. Shared UI lives in `app/_components/`. Recipe mutations run through `app/actions.ts`.
-- Explore searches everyone’s public recipes by title or ingredient. Select a cook’s name or @username to browse their public recipes. Open **View my recipe page** in **Account** to see all your own recipes, including private ones. Your page link stays the same when you change your username.
-- Your starting username comes from your display name. For example, “Robin Lee” becomes `@robin_lee`. If another cook already has that username, you get a random number at the end. In **Account**, you can change your username once a month, edit your display name, or upload an avatar.
-- Sign in to create and manage recipes under **My recipes** and revisit bookmarks under **Saved**. New recipes are private until you publish them.
-- On a recipe page, scale the ingredient list by target servings or by the amount of one ingredient you have. Use **Undo** to recover the previous settings or **Reset** to return to the base recipe. The cooking instructions stay as written. See the [scaling workspace](docs/recipe-scaling.md).
-- Open a public recipe while signed in to make an editable private copy. It includes the original quantities, units, and ordered steps. You can edit it and upload your own cover from the recipe editor.
-- Use **Filter by allergen** in Explore to hide recorded matches or exclude an ingredient by name. This works when signed out. Sign in and set dietary preferences in **Account** to see personal conflict and incomplete-information flags.
-- `app/api/health/route.ts` serves `GET /api/health`, a liveness endpoint that returns `{ "status": "ok" }` without checking cloud services.
-- `lib/db/client.ts` creates the server-only Prisma client lazily. `prisma/schema.prisma` defines profiles, file metadata, recipes, ingredients, steps, and bookmarks.
-- `lib/recipes/` contains Zod input contracts and owner-scoped creation, detail, listing, update, and delete services. Product Server Actions use the Better Auth session reader to authorize recipe and bookmark changes.
-- `lib/storage/` validates actual image content, writes private Blob objects and file metadata, compensates failed writes, and provides owner-scoped reads.
-- The homepage and account form offer **Continue with Google** when the provider is configured. Use **Account** to see the signed-in email after the callback. [Google sign-in setup](docs/deployment.md#google-sign-in)
-- `/backend-test` is a temporary development-only interface for recipe CRUD and image uploads.
-
-On subsequent runs, setup adds missing keys from `.env.example` and preserves existing values. Database features use `DATABASE_URL`. Private image services also require `BLOB_READ_WRITE_TOKEN`. Get development credentials from the project owner and keep them in `.env.local`, which is ignored by Git. The authentication API uses `BETTER_AUTH_URL` and `BETTER_AUTH_SECRET`. If an older environment file has an empty secret, set it to a unique value of at least 32 characters before using authentication.
-
-Migrations are explicit. Read the [database workflow](prisma/README.md) before running `npm run db:migrate`, especially against an existing database with `users` and `files` tables. The automated tests use isolated in-memory PostgreSQL and do not access Neon or Blob.
-
-## Everyday use
-
-Run `npm run dev` to start the app again. After a dependency change, stop the dev server and rerun `npm run setup`.
-
-| Command | When to use it |
+| What you want to do | How to do it |
 | --- | --- |
-| `npm run check` | Run Prisma validation, lint, TypeScript, and the unit and migration tests. |
-| `npm test` | Run the test suite on its own. |
-| `npm run test:product` | Run the two-account browser check against the seeded local app. |
-| `npm run build` | Check the production build. |
-| `npm run setup -- --install-only` | Install dependencies without starting the app. |
-| `npm run dev -- --port 3002` | Start the dev server on a specific port. |
-| `npm run env:check` | Check local configuration and see which services have credentials configured. |
-| `npm run storage:probe` | Check read access to the configured development database and Blob store. |
+| Find a recipe | Open **Explore** and search by title or ingredient. Switch between **Cards** and **List**, or select a cook’s name to see their public recipes. |
+| Find something quick | Enter your available minutes in **Ready in** and choose **Search**. A 30-minute limit includes 30 minutes exactly. The filter uses combined prep and cook time or a published total-time estimate. Recipes with unknown times appear when you leave the limit blank. |
+| Adjust a batch | Open a recipe and choose **By servings** or **By ingredient**. Enter your target servings or the quantity and unit you have. The measured ingredients update together. **Undo** restores the previous adjustment and **Reset** returns to the original quantities. Cooking times and instructions stay as written. |
+| Write and publish | Sign in, choose **New recipe**, and add servings, ingredients, ordered steps, and an optional cover photo. Recipes start private. Choose public visibility to share one, or open **My recipes** to edit or delete it. |
+| Save or adapt someone’s recipe | Bookmark a public recipe to find it under **Saved**. Choose **Make an editable copy** to get a private copy of its ingredients and steps. You can edit the copy and add your own cover. Signed-in cooks can also like or dislike recipes. |
+| Filter ingredients | In **Explore**, open **More filters** to exclude allergens or an ingredient by name, then choose **Apply filters**. Saved dietary preferences from **Account** also appear here. Remove an applied filter individually or use **Clear filters** to reset the search and filters together. |
+| Manage your profile | Register with email and password, or use Google sign-in when configured. In **Account**, edit your display name, username, and avatar or open your recipe page. |
 
-For the browser check, start the [seeded local app](prisma/README.md#local-database-and-api-tests) with `npm run poc:dev`. In a second terminal, run `npx playwright install chromium` once, then `npm run test:product`. The test creates a recipe and cover, searches by ingredient, bookmarks from two tabs, makes the recipe private, and verifies the reader loses access after refresh. It deletes the test recipe and signs out both accounts. The uploaded file remains eligible for the local cleanup command after 24 hours.
+## Stack and architecture
 
-## Simple local backend tester
+| Layer | Implementation |
+| --- | --- |
+| Web app | Next.js 16 App Router, React 19, and TypeScript. Next.js renders the pages, handles form submissions through Server Actions, and serves the authentication and image routes. |
+| Interface and scaling | Material Tailwind React and Tailwind CSS 4 for the interface. Each open recipe has a Redux Toolkit store that coordinates the scaling controls, quantities, warnings, and undo history. |
+| Database and accounts | Prisma 7 with PostgreSQL, hosted on Neon for deployments. Better Auth stores accounts and sessions in PostgreSQL. The server checks the cook’s identity and recipe visibility before serving private content. |
+| Images | Sharp validates uploads. Vercel Blob stores private images in hosted environments. The local demo stores images on disk. |
 
-Set `DATABASE_URL` in `.env.local` to your development database. Add `BLOB_READ_WRITE_TOKEN` if you're testing image uploads. From the project folder, run:
+For ECE1724, the recipe editor demonstrates relational create, read, update, and delete operations, and cover uploads demonstrate cloud file handling. Authentication and the shared state behind ingredient scaling are the two advanced features. [Architecture](docs/architecture.md) · [Course requirement mapping](docs/requirements.md#course-alignment-and-evidence)
 
-```bash
-npm run backend-test:setup
-npm run dev -- --hostname 127.0.0.1
+## Development guide
+
+### 1. Download the code
+
+Install **Node.js 24.x** with npm and **PostgreSQL 18** with the server tools. Check that `node --version`, `initdb --version`, and `pg_ctl --version` work in your terminal. You need an internet connection to install dependencies the first time. [Node.js downloads](https://nodejs.org/en/download) · [PostgreSQL downloads](https://www.postgresql.org/download/)
+
+Clone the development branch and enter the project folder.
+
+```sh
+git clone --branch dev https://github.com/rachelrzhu/ece1724project.git
+cd ece1724project
 ```
 
-Open `/backend-test` on the local address printed by Next.js. You can create a recipe, edit its ingredients and first cooking step, upload a cover, and inspect each HTTP response. For an ingredient like “salt to taste,” leave the quantity blank and enter “to taste” in the note.
+You can also choose **Code → Download ZIP** on the development branch, extract it, and open a terminal in the folder containing `package.json`. [Development branch on GitHub](https://github.com/rachelrzhu/ece1724project/tree/dev)
 
-The tester uses a fixed user in a separate PostgreSQL schema and stores its local configuration in the Git-ignored `.backend-test.json`. Its APIs accept loopback development requests and return 404 in production. Test recipes survive server restarts. When you finish with all the test data in that schema, run the following command to remove the schema, uploaded images, and local configuration.
+### 2. Start the local demo
 
-```bash
-npm run backend-test:cleanup
+From a fresh checkout, run the following as your regular user. The setup script creates its own `.env.local`.
+
+```sh
+npm ci
+npm run poc:setup
+npm run poc:dev
 ```
 
-The test APIs are `GET/POST/PATCH/DELETE /api/backend-test/recipes` (use `?id=...` for a single recipe) and `GET/POST/DELETE /api/backend-test/images`. Writes require a matching `Origin` header, which the test page sends automatically.
+`npm ci` installs the locked dependencies and generates the Prisma client. The setup command creates an authentication secret, starts PostgreSQL on port `55432`, applies the migrations, and seeds recipes, covers, and demo accounts. The app uses port `3100`. Both ports must be free. This setup works without cloud credentials.
 
-For repeatable checks, use the [Postman collections](postman/README.md). The [November 8 CRUD review](docs/crud-review.md) records the requests, results, and fixes from that run.
+### 3. Try a recipe
 
-## Manual live storage check
+Open the app at **http://127.0.0.1:3100**. Choose **Explore** and open a recipe to try both scaling modes. To try publishing and bookmarks, choose **Sign in**. Use either local demo account, `rachel@savor.local` or `grace@savor.local`, with the password `SavorKitchen2026!`.
 
-For a read-only connectivity check, run `npm run storage:probe`. It checks access to the existing database tables and lists up to one Blob object without printing object names or credentials.
+To stop, press **Ctrl+C** in the app terminal, then run `npm run poc:stop-db`. Recipes and images persist in `.local-poc/`. To resume, run `npm run poc:setup` followed by `npm run poc:dev`.
 
-With development database and Blob credentials configured, run `npm run storage:check`. It creates a temporary PostgreSQL schema, checks recipe writes and rollback, uploads and reads a sample image, then removes its test data. The database role needs permission to create schemas. The script writes its [results](docs/storage-test-results.json) to the repo.
+### Use hosted services locally (optional)
 
-## Troubleshooting
+In a separate fresh checkout, run `npm run setup -- --install-only` to install dependencies and create `.env.local`. Set `DATABASE_URL` to a development PostgreSQL database and `DIRECT_URL` to its direct connection for migrations. For hosted image uploads, set `BLOB_READ_WRITE_TOKEN` to the token for a private development Blob store. Setup generates `BETTER_AUTH_SECRET` and sets `BETTER_AUTH_URL` to `http://localhost:3000`. Optional Google sign-in also needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a registered callback. [Environment template](.env.example) · [Google sign-in configuration](docs/deployment.md#google-sign-in)
 
-| Problem | What to try |
-| --- | --- |
-| Node or npm is missing | Install Node.js 24 with npm, reopen the terminal, and run `node --version`. With nvm, run `nvm install` and `nvm use` in the project folder. |
-| PowerShell blocks `npm.ps1` | Use `setup.cmd` or run `npm.cmd run setup`. |
-| npm can't find `package.json` | Open a terminal in the extracted project folder. |
-| Server already running | Use the URL in the existing terminal, or stop that server with **Ctrl+C** before running setup. If a crash left a stale lock, confirm the server has stopped before removing `.next` and restarting. |
-| The page won't open | Check the **Local** URL in the terminal. Next.js can choose a different port if 3000 is busy. |
-| Email registration and Google sign-in both fail | Run `npm run db:status` against the app’s database. Both flows read the profile username and its next change date. Review and apply pending migrations using the [database workflow](prisma/README.md). |
-| Package or font download fails | Check your connection or proxy, then rerun the command. |
+For an empty development database, run `npm run db:migrate`, then `npm run dev` and open [localhost:3000](http://localhost:3000). For a populated database, follow the baselining instructions first. If setup reports a Next.js lock, stop the server or build using that checkout. After a crash, confirm the process has stopped before clearing its generated `.next` directory. [Database setup](prisma/README.md) · [Deployment guide](docs/deployment.md)
+
+<a id="everyday-use"></a>
+
+### Run the checks
+
+- `npm run check` validates the Prisma schema, runs ESLint and TypeScript, and executes the Vitest suite, including migration tests.
+- With the seeded local app running, run `npm run poc:verify` in a second terminal to check sign-in, recipe access, and cover visibility over HTTP.
+- For the two-account browser test, run `npx playwright install chromium` once, then `npm run test:product` against the running local demo.
+
+<a id="simple-local-backend-tester"></a>
+
+The separate development-only backend tester supports manual recipe and image requests. The Postman guide covers setup, sample requests, and cleanup. [Run the backend tester](postman/README.md#start-the-tester)
+
+## Team and contributions
+
+| Team member | Student number | Preferred email | Contribution |
+| --- | --- | --- | --- |
+| Rachel | | | Proposed the project and led backend development, including recipe persistence, private image storage, and access checks with two accounts. [Recipe and storage implementation](https://github.com/rachelrzhu/ece1724project/commit/5b59965) · [Two-account verification](https://github.com/rachelrzhu/ece1724project/commit/7d66df0) |
+| Grace | | | Led frontend development, including recipe discovery, navigation, and the Redux controls that scale ingredients on the recipe detail page. [Discovery interface](https://github.com/rachelrzhu/ece1724project/commit/0b5b83d) · [Scaling interface](https://github.com/rachelrzhu/ece1724project/commit/06367d2) |
+
+## AI assistance, verification, and lessons learned
+
+The team used AI to compare storage and database options and review the design. During that review, the team caught a flaw in the proposed image permissions. An owner-only rule would hide a published recipe’s cover from its readers. The image route now checks who can see the associated recipe. [Project proposal](docs/proposal.md#42-exploration-and-evaluation)
+
+The owner can see the cover in both visibility settings, so checking with the owner alone would miss this bug. The browser test uses a second account to bookmark a public recipe, then checks that the reader loses access to the bookmark listing, recipe, and cover when the author makes it private. [Browser check](scripts/check-product.mjs) · [Recorded integration tests](docs/crud-review.md)
+
+The separate `ai-session.md` with the team’s representative AI interactions is pending for final submission. [Course final report guidelines](https://www.eecg.utoronto.ca/~cying/courses/ece1724-web/project/handout/#final-report)
+
+## Video Demo
+
+<!-- Add the URL of the team's 2–5 minute narrated walkthrough here. -->

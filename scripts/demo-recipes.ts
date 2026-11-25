@@ -2,14 +2,14 @@ import { publishedChineseRecipes } from "./published-chinese-recipes";
 
 // The first two local email addresses also serve as the integration-test logins.
 export const demoAuthors = [
-  { slot: 1, name: "Mira Patel", localEmail: "rachel@savor.local" },
-  { slot: 2, name: "Theo Bennett", localEmail: "grace@savor.local" },
-  { slot: 3, name: "Nina Flores", localEmail: "nina@savor.local" },
-  { slot: 4, name: "Elias Park", localEmail: "elias@savor.local" },
-  { slot: 5, name: "Amara Ellis", localEmail: "amara@savor.local" },
-  { slot: 6, name: "Luca Moreno", localEmail: "luca@savor.local" },
-  { slot: 7, name: "Iris Brooks", localEmail: "iris@savor.local" },
-  { slot: 8, name: "Felix Ward", localEmail: "felix@savor.local" },
+  { slot: 1, name: "Mira Patel", localEmail: "rachel@savor.local", publicEmail: "rachel@public-fixtures.savor.invalid" },
+  { slot: 2, name: "Theo Bennett", localEmail: "grace@savor.local", publicEmail: "grace@public-fixtures.savor.invalid" },
+  { slot: 3, name: "Nina Flores", localEmail: "nina@savor.local", publicEmail: "nina.flores@public-fixtures.savor.invalid" },
+  { slot: 4, name: "Elias Park", localEmail: "elias@savor.local", publicEmail: "elias.park@public-fixtures.savor.invalid" },
+  { slot: 5, name: "Amara Ellis", localEmail: "amara@savor.local", publicEmail: "amara.ellis@public-fixtures.savor.invalid" },
+  { slot: 6, name: "Luca Moreno", localEmail: "luca@savor.local", publicEmail: "luca.moreno@public-fixtures.savor.invalid" },
+  { slot: 7, name: "Iris Brooks", localEmail: "iris@savor.local", publicEmail: "iris.brooks@public-fixtures.savor.invalid" },
+  { slot: 8, name: "Felix Ward", localEmail: "felix@savor.local", publicEmail: "felix.ward@public-fixtures.savor.invalid" },
 ];
 
 // Slots keep author, recipe, and cover links stable when the catalog changes order.
