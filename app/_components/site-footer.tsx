@@ -1,21 +1,9 @@
-import Link from "next/link";
-import { makeTranslator, type Locale } from "@/lib/i18n";
-import { siteMessages } from "@/lib/i18n/site";
-import { SiteWordmark } from "./site-wordmark";
-import styles from "./site-footer.module.css";
+import { appName } from "@/lib/brand";
 
-export function SiteFooter({ locale }: { locale: Locale }) {
-  const t = makeTranslator(locale, siteMessages);
+export function SiteFooter() {
   return (
-    <footer className={styles.footer}>
-      <div className={`site-container ${styles.inner}`}>
-        <SiteWordmark inverse />
-        <nav aria-label={t("Footer")} className={styles.links}>
-          <Link href="/recipes">{t("Find recipes")}</Link>
-          <Link href="/recipes/new">{t("Share a recipe")}</Link>
-          <Link href="/account">{t("Your account")}</Link>
-        </nav>
-      </div>
+    <footer className="mt-auto border-t border-line py-5 text-center text-sm text-subtle">
+      © {new Date().getUTCFullYear()} {appName}
     </footer>
   );
 }

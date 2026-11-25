@@ -1,41 +1,55 @@
 @import "tailwindcss" source(none);
 @source "./";
 @source "../node_modules/@material-tailwind/react/src/theme/{button,card,input,navbar,textarea}.ts";
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) { @slot; }
+  @media (prefers-color-scheme: dark) {
+    &:where(html:not([data-theme]), html:not([data-theme]) *) { @slot; }
+  }
+}
 
-@theme inline {
-  --color-canvas: #f6f7f9;
-  --color-paper: #ffffff;
-  --color-ink: #191d24;
-  --color-subtle: #525a66;
-  --color-brand: #2549a3;
-  --color-tint: #edf2fc;
-  --color-line: #dce0e6;
-  --color-rust: #9b252e;
+@theme {
+  --color-canvas: light-dark(#f6f7f9, #10151d);
+  --color-paper: light-dark(#ffffff, #191f29);
+  --color-ink: light-dark(#191d24, #eef1f7);
+  --color-subtle: light-dark(#525a66, #b7c1d0);
+  --color-brand: light-dark(#2549a3, #a5bfff);
+  --color-tint: light-dark(#edf2fc, #22314c);
+  --color-line: light-dark(#dce0e6, #384252);
+  --color-rust: light-dark(#9b252e, #ffa8af);
+  --color-warning: light-dark(#724509, #efc783);
   --font-sans: system-ui, sans-serif;
   --color-primary: var(--color-brand);
-  --color-primary-dark: #1d3983;
-  --color-primary-light: #3056af;
-  --color-primary-foreground: #fff;
-  --color-secondary: #dce7ff;
-  --color-secondary-light: #e8efff;
-  --color-secondary-dark: #bfcee9;
-  --color-secondary-foreground: #18356c;
+  --color-primary-dark: light-dark(#1d3983, #8aa8ee);
+  --color-primary-light: light-dark(#3056af, #bfd1ff);
+  --color-primary-foreground: light-dark(#fff, #101d35);
+  --color-secondary: light-dark(#dce7ff, #344666);
+  --color-secondary-light: light-dark(#e8efff, #405372);
+  --color-secondary-dark: light-dark(#bfcee9, #2b3c58);
+  --color-secondary-foreground: light-dark(#18356c, #d4e2ff);
   --color-background: var(--color-paper);
   --color-foreground: var(--color-subtle);
   --color-surface: var(--color-line);
   --color-surface-light: var(--color-canvas);
-  --color-surface-dark: #bfc6d2;
+  --color-surface-dark: light-dark(#bfc6d2, #637086);
   --color-surface-foreground: var(--color-ink);
   --color-error: var(--color-rust);
 }
 
 :root {
+  color-scheme: light dark;
+}
+
+:root[data-theme="light"] {
   color-scheme: light;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
-  @apply min-h-screen bg-paper font-sans text-ink antialiased;
+  @apply min-h-screen bg-paper font-sans text-ink antialiased dark:bg-canvas;
 }
 
 :focus-visible {

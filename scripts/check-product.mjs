@@ -168,7 +168,7 @@ async function saveVisibility(visibility, instruction) {
   assert(await choice.getByRole("radio", { name: new RegExp("^" + visibility + "\\b") }).isChecked());
   await owner.getByRole("button", { name: "Save recipe", exact: true }).click();
   await owner.waitForURL((url) => url.pathname === detail && !url.search);
-  await owner.getByText(visibility.toLowerCase(), { exact: true }).waitFor();
+  await owner.getByText(visibility, { exact: true }).waitFor();
 }
 
 async function deleteFixture(page, path) {

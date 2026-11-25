@@ -8,6 +8,8 @@ export const siteMessages = {
   ],
   "Skip to content": ["跳至正文", "Aller au contenu"],
   "Recipe navigation": ["食谱导航", "Navigation des recettes"],
+  "Navigation menu": ["导航菜单", "Menu de navigation"],
+  "Account settings": ["账户设置", "Paramètres du compte"],
   "Home": ["首页", "Accueil"],
   "Explore": ["探索", "Explorer"],
   "My recipes": ["我的食谱", "Mes recettes"],
