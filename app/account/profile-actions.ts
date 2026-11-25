@@ -6,6 +6,8 @@ import { Prisma } from "@/generated/prisma/client";
 import { readSession } from "@/lib/auth/server";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/lib/auth/limits";
 import { getDatabase } from "@/lib/db/client";
+import { takeLimit } from "@/lib/security/rate-limit";
+import { activityLimitMessage } from "@/lib/security/action-limits";
 import { activeUsernameCooldown, usernameHint, usernamePattern } from "./profile-options";
 
 const profileInput = z.strictObject({
@@ -18,6 +20,7 @@ const profileInput = z.strictObject({
 export async function saveProfile(input: unknown): Promise<{ name: string; username: string } | { error: string }> {
   const session = await readSession();
   if (!session) return { error: "Sign in to save your profile." };
+  if (!(await takeLimit("profile", session.user.id))) return { error: activityLimitMessage };
   const parsed = profileInput.safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];

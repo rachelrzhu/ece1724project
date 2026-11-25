@@ -7,6 +7,7 @@ const { session, findUnique, upsert, deleteMany } = vi.hoisted(() => ({
   session: vi.fn(), findUnique: vi.fn(), upsert: vi.fn(), deleteMany: vi.fn(),
 }));
 vi.mock("server-only", () => ({}));
+vi.mock("@/lib/security/rate-limit", () => ({ takeLimit: async () => true }));
 vi.mock("@/lib/auth/server", () => ({ readSession: session }));
 vi.mock("@/lib/db/client", () => ({
   getDatabase: () => ({ dietarySettings: { findUnique, upsert, deleteMany } }),
