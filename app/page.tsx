@@ -6,6 +6,9 @@ import { IngredientCarousel } from "@/app/_components/ingredient-carousel";
 import { ButtonLink, Card } from "@/app/_components/material";
 import { SiteHeader } from "@/app/_components/site-header";
 import { readSession } from "@/lib/auth/server";
+import { makeTranslator } from "@/lib/i18n";
+import { homeMessages } from "@/lib/i18n/discovery";
+import { getLocale } from "@/lib/i18n/server";
 import styles from "./landing.module.css";
 
 export default async function Home({ searchParams }: PageProps<"/">) {
@@ -19,27 +22,28 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   }
   if (browseParams.size) redirect(`/recipes?${browseParams}`);
 
-  const session = await readSession().catch(() => null);
+  const [session, locale] = await Promise.all([readSession().catch(() => null), getLocale()]);
+  const t = makeTranslator(locale, homeMessages);
   return (
     <>
       <SiteHeader user={session?.user} active="home" />
       <main id="main-content" tabIndex={-1} className={`site-container ${styles.landing}`}>
         <Card as="section" aria-labelledby="landing-title" className={styles.hero}>
           <div className={styles.intro}>
-            <h1 id="landing-title">What’s cooking tonight?</h1>
-            <p>Find recipes from other home cooks, adjust the servings for your table, and save the dishes you’ll make again.</p>
+            <h1 id="landing-title">{t("What’s cooking tonight?")}</h1>
+            <p>{t("Find recipes from other home cooks, adjust the servings for your table, and save the dishes you’ll make again.")}</p>
             <div className={styles.actions}>
               <ButtonLink href="/recipes" isPill className={styles.explore}>
-                Explore recipes <Icon name="forward" className="size-4" />
+                {t("Explore recipes")} <Icon name="forward" className="size-4" />
               </ButtonLink>
-              <ButtonLink href="/recipes/new" variant="outline" isPill className="min-h-11">Share a recipe</ButtonLink>
+              <ButtonLink href="/recipes/new" variant="outline" isPill className="min-h-11">{t("Share a recipe")}</ButtonLink>
             </div>
           </div>
           <div className={styles.heroPhoto}>
-            <Image src="/images/pasta.jpg" alt="Bow-tie pasta tossed with basil and cherry tomatoes"
+            <Image src="/images/pasta.jpg" alt={t("Bow-tie pasta tossed with basil and cherry tomatoes")}
               fill preload sizes="(min-width: 72rem) 560px, (min-width: 48rem) 50vw, 100vw" />
             <Link href="/recipes?q=pasta" className={styles.photoLink}>
-              Pasta recipes <Icon name="diagonal" className="size-4" />
+              {t("Pasta recipes")} <Icon name="diagonal" className="size-4" />
             </Link>
           </div>
         </Card>

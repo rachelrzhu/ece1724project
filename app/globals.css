@@ -79,13 +79,14 @@ body {
 
 .site-header-grid {
   display: grid;
-  grid-template-areas: "brand brand account" "nav nav create";
+  grid-template-areas: "brand language account" "nav nav create";
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.125rem 0.5rem;
   padding-block: 0.5rem;
 }
 
+.masthead-language { grid-area: language; justify-self: end; max-width: 100%; }
 .masthead-brand { grid-area: brand; justify-self: start; }
 .masthead-nav { grid-area: nav; }
 .masthead-account { grid-area: account; justify-self: end; }
@@ -97,15 +98,14 @@ body {
   }
 
   .site-header-guest .site-header-grid {
-    grid-template-areas: "brand nav account";
-    grid-template-columns: 1fr auto auto;
+    grid-template-areas: "brand language account" "nav nav nav";
   }
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 62rem) {
   .site-header-grid {
-    grid-template-areas: "brand nav account create";
-    grid-template-columns: max-content 1fr auto auto;
+    grid-template-areas: "brand nav language account create";
+    grid-template-columns: max-content 1fr auto auto auto;
     gap: 0 1rem;
     min-height: 4.5rem;
     padding-block: 0;

@@ -1,5 +1,7 @@
 "use client";
 
+import { accountText } from "@/lib/i18n/account";
+import { useLocale } from "@/app/_components/language-provider";
 import { Button, Input } from "@/app/_components/material";
 import {
   MAX_DISPLAY_NAME_LENGTH, MAX_EMAIL_LENGTH, MAX_EXISTING_PASSWORD_LENGTH,
@@ -19,6 +21,7 @@ type AccountFormProps = {
 };
 
 export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: AccountFormProps) {
+  const t = accountText(useLocale());
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -105,41 +108,41 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
     <div className="space-y-5">
       <form method="post" className="grid w-full gap-4" onSubmit={submit}>
         {signedInEmail ? (
-          <p className="text-subtle wrap-anywhere">Signed in as <strong className="text-ink">{signedInEmail}</strong></p>
+          <p className="text-subtle wrap-anywhere">{t("Signed in as")} <strong className="text-ink">{signedInEmail}</strong></p>
         ) : (
           <>
-            <h2 className="site-heading text-xl">{registering ? "Create an account" : "Sign in with email"}</h2>
+            <h2 className="site-heading text-xl">{t(registering ? "Create an account" : "Sign in with email")}</h2>
             {registering && (
               <div className="grid gap-1.5">
-                <label htmlFor="account-name" className="text-sm font-medium">Display name</label>
+                <label htmlFor="account-name" className="text-sm font-medium">{t("Display name")}</label>
                 <Input id="account-name" name="name" autoComplete="name" maxLength={MAX_DISPLAY_NAME_LENGTH} required className="min-h-11 text-base" />
               </div>
             )}
             <div className="grid gap-1.5">
-              <label htmlFor="account-email" className="text-sm font-medium">Email</label>
+              <label htmlFor="account-email" className="text-sm font-medium">{t("Email")}</label>
               <Input id="account-email" name="email" type="email" autoComplete="email" maxLength={registering ? MAX_EMAIL_LENGTH : undefined} required className="min-h-11 text-base" />
             </div>
             <div className="grid gap-1.5">
-              <label htmlFor="account-password" className="text-sm font-medium">Password{registering && ` (${MIN_PASSWORD_LENGTH}–${MAX_NEW_PASSWORD_LENGTH} characters)`}</label>
+              <label htmlFor="account-password" className="text-sm font-medium">{registering ? t("Password ({min}–{max} characters)", { min: MIN_PASSWORD_LENGTH, max: MAX_NEW_PASSWORD_LENGTH }) : t("Password")}</label>
               <Input id="account-password" name="password" type="password" required className="min-h-11 text-base"
                 autoComplete={registering ? "new-password" : "current-password"}
                 minLength={registering ? MIN_PASSWORD_LENGTH : undefined}
                 maxLength={registering ? MAX_NEW_PASSWORD_LENGTH : MAX_EXISTING_PASSWORD_LENGTH} />
             </div>
-            {registering && <AvatarUploadField id="signup-avatar" label="Avatar photo (optional)" />}
+            {registering && <AvatarUploadField id="signup-avatar" label={t("Avatar photo (optional)")} />}
           </>
         )}
         <Button type="submit" className="min-h-11 justify-self-start" disabled={pending}>
-          {pending ? pendingLabel : submitLabel}
+          {t(pending ? pendingLabel : submitLabel)}
         </Button>
       </form>
-      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-rust">{error}</p>}
-      {notice && <p role="status" className="text-sm">{notice}</p>}
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-rust">{t(error)}</p>}
+      {notice && <p role="status" className="text-sm">{t(notice)}</p>}
       {!signedInEmail && (
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
           {googleEnabled && (
             <Button type="button" variant="outline" className="min-h-11" disabled={pending} onClick={continueWithGoogle}>
-              Continue with Google
+              {t("Continue with Google")}
             </Button>
           )}
           <Button type="button" variant="ghost" className="min-h-11" disabled={pending} onClick={() => {
@@ -147,7 +150,7 @@ export default function AccountForm({ signedInEmail, googleEnabled, returnTo }: 
             setError("");
             setNotice("");
           }}>
-            {registering ? "Use an existing account" : "Create an account"}
+            {t(registering ? "Use an existing account" : "Create an account")}
           </Button>
         </div>
       )}
