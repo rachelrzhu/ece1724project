@@ -89,6 +89,22 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await flags.getByText("Milk chocolate with peanuts", { exact: true }).waitFor();
     await flags.getByText("Contains milk", { exact: true }).waitFor();
     await flags.getByText("Contains peanuts", { exact: true }).waitFor();
+    const ingredients = reader.getByRole("region", { name: "Ingredients", exact: true });
+    assert.equal(await ingredients.getByRole("combobox").count(), 0, "Serving mode should have no ingredient language picker.");
+    try {
+      await reader.getByRole("radio", { name: "Français", exact: true }).check();
+      const frenchFlags = reader.getByRole("region", { name: "Vos alertes alimentaires", exact: true });
+      const quantities = reader.getByRole("list", { name: "Quantités des ingrédients", exact: true });
+      await quantities.getByText("Chocolat au lait aux arachides", { exact: true }).waitFor();
+      await frenchFlags.getByText("Contient du lait", { exact: true }).waitFor();
+      await reader.getByRole("button", { name: "Afficher l’original", exact: true }).click();
+      await quantities.getByText(mappedIngredient, { exact: true }).waitFor();
+      await frenchFlags.getByText("Contient des arachides", { exact: true }).waitFor();
+    } finally {
+      await reader.getByRole("radio", { name: "English", exact: true }).check();
+      await flags.waitFor();
+    }
+    passed("The page language controls ingredient names and preserves allergy flags when showing the original");
     await guest.goto(detail);
     assert.equal(await guest.getByRole("heading", { name: "Your dietary flags", exact: true }).count(), 0);
     await guest.goto(filtered);

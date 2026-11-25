@@ -6,14 +6,12 @@ import {
   convertScalingQuantity,
   getScalingUnits,
   scaleRecipe,
-  type IngredientTranslations,
   type ScalingRecipe,
   type ScalingResult,
 } from "./scaling";
 
 type Mode = "servings" | "ingredient";
 type QuantityField = "targetServings" | "availableQuantity";
-export type IngredientLanguage = "original" | keyof IngredientTranslations;
 
 type Settings = {
   mode: Mode;
@@ -28,8 +26,6 @@ type Settings = {
 
 type Workspace = {
   recipe: ScalingRecipe;
-  language: IngredientLanguage;
-  locale: Locale;
   current: Settings;
   history: Settings[];
   editing: QuantityField | null;
@@ -50,8 +46,8 @@ function originalSettings(recipe: ScalingRecipe): Settings {
   };
 }
 
-function initialize(recipe: ScalingRecipe, locale: Locale = "en"): Workspace {
-  return { recipe, locale, language: "original", current: originalSettings(recipe), history: [], editing: null };
+function initialize(recipe: ScalingRecipe): Workspace {
+  return { recipe, current: originalSettings(recipe), history: [], editing: null };
 }
 
 function calculate(recipe: ScalingRecipe, settings: Settings, locale: Locale = "en"): ScalingResult {
@@ -130,12 +126,6 @@ const scaling = createSlice({
   name: "scaling",
   initialState: initialize({ baseServings: 1, ingredients: [] }),
   reducers: {
-    changeLocale(state, { payload }: PayloadAction<Locale>) {
-      state.locale = payload;
-    },
-    changeLanguage(state, { payload }: PayloadAction<IngredientLanguage>) {
-      state.language = payload;
-    },
     editQuantity(state, action: PayloadAction<{ field: QuantityField; value: string }>) {
       const { field, value } = action.payload;
       update(state, { ...state.current, [field]: value, derivedServings: null, roundedControl: false }, field);
@@ -185,31 +175,23 @@ const scaling = createSlice({
 
 export const scalingActions = scaling.actions;
 
-export function makeScalingStore(recipe: ScalingRecipe, locale: Locale = "en", language: IngredientLanguage = "original") {
-  return configureStore({ reducer: scaling.reducer, preloadedState: { ...initialize(recipe, locale), language } });
+export function makeScalingStore(recipe: ScalingRecipe) {
+  return configureStore({ reducer: scaling.reducer, preloadedState: initialize(recipe) });
 }
 
 export type ScalingStore = ReturnType<typeof makeScalingStore>;
 
-export const selectDisplayRecipe = createSelector(
-  [(state: Workspace) => state.recipe, (state: Workspace) => state.language],
-  (recipe, language): ScalingRecipe => {
-    if (language === "original") return recipe;
-    return {
-      ...recipe,
-      ingredients: recipe.ingredients.map(item =>
-        item.translations ? { ...item, name: item.translations[language] } : item),
-    };
-  },
-);
+function selectRecipe(state: Workspace, displayRecipe?: ScalingRecipe) {
+  return displayRecipe ?? state.recipe;
+}
 
 export const selectPreview = createSelector(
-  [selectDisplayRecipe, (state: Workspace) => state.current, (state: Workspace) => state.locale],
+  [selectRecipe, (state: Workspace) => state.current, (_state: Workspace, _recipe?: ScalingRecipe, locale: Locale = "en") => locale],
   calculate,
 );
 
 export const selectEligibleIngredients = createSelector(
-  [selectDisplayRecipe],
+  [selectRecipe],
   (recipe) => recipe.ingredients.flatMap((item) => {
     const units = getScalingUnits(item);
     return units.length ? [{ id: item.id, name: item.name, units }] : [];

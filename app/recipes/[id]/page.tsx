@@ -64,9 +64,11 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
   const translateReason = makeTranslator<Messages>(locale, detailMessages);
   const texts = [recipe.title, recipe.description, ...recipe.steps.map(step => step.instruction),
     ...recipe.ingredients.flatMap(item => [...(item.translations ? [] : [item.name]), ...(item.note ? [item.note] : [])])];
-  const dietaryNames = new Map(recipe.ingredients.map(item => [item.name, item.translations?.[locale]]));
+  const ingredients = recipe.ingredients.map(({ translations, ...item }) => ({ ...item, localizedName: translations?.[locale] }));
+  const dietaryNames = new Map(ingredients.map(item => [item.name, item.localizedName]));
+  const hasCatalogTranslation = ingredients.some(item => item.localizedName && item.localizedName !== item.name);
   return (
-    <RecipeTranslation texts={texts}>
+    <RecipeTranslation texts={texts} hasCatalogTranslation={hasCatalogTranslation}>
       <PageFrame title={<RecipeText text={recipe.title} />} back={{ href: "/recipes", label: t("Explore recipes") }}>
         <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8">
           <div className="flex max-w-3xl flex-col gap-4">
@@ -113,7 +115,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
                 <dl className="space-y-2">
                   {dietary.conflicts.map(({ ingredient, reasons }, index) => (
                     <div key={index} className="text-sm wrap-anywhere">
-                      <dt className="font-semibold"><RecipeText text={ingredient} translation={dietaryNames.get(ingredient)} /></dt>
+                      <dt className="font-semibold"><RecipeText text={ingredient} translation={dietaryNames.get(ingredient) ?? ingredient} /></dt>
                       <dd><ul className="list-disc ps-5 text-subtle">{reasons.map((reason) => <li key={reason}>{translateReason(reason)}</li>)}</ul></dd>
                     </div>
                   ))}
@@ -125,7 +127,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
                 <h3 className="font-semibold">{t("Incomplete ingredient information")}</h3>
                 <p className="text-sm text-subtle">{t("These entries have missing or incomplete records for your settings.")}</p>
                 <ul className="list-disc ps-5 text-sm wrap-anywhere">
-                  {dietary.unknownIngredients.map((name, index) => <li key={index}><RecipeText text={name} translation={dietaryNames.get(name)} /></li>)}
+                  {dietary.unknownIngredients.map((name, index) => <li key={index}><RecipeText text={name} translation={dietaryNames.get(name) ?? name} /></li>)}
                 </ul>
               </div>
             )}
@@ -133,7 +135,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
           </section>
         )}
         <div className="grid items-start gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12">
-          <ScalingWorkspace key={recipe.id} recipe={{ baseServings: recipe.baseServings, ingredients: recipe.ingredients }} />
+          <ScalingWorkspace key={recipe.id} recipe={{ baseServings: recipe.baseServings, ingredients }} />
           <section aria-labelledby="method-title" className="min-w-0 border-t border-line pt-4">
             <h2 id="method-title" className="site-heading text-2xl">{t("Method")}</h2>
             <ol className="mt-2 divide-y divide-line">
