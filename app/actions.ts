@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { recipeFieldIssue } from "@/lib/i18n/recipe-validation";
 import { readSession, getAuth } from "@/lib/auth/server";
 import { getDatabase } from "@/lib/db/client";
 import { recipes } from "@/lib/product/queries";
@@ -16,15 +17,12 @@ import { activityLimitMessage, takeUploadLimit, uploadLimitMessage } from "@/lib
 
 type SaveRecipeResult =
   | { id: string; error?: never; fields?: never }
-  | { error: string; fields?: { path: string; message: string }[]; id?: never };
+  | { error: string; fields?: ReturnType<typeof recipeFieldIssue>[]; id?: never };
 
 function recipeValidationError(error: z.ZodError) {
   return {
     error: "Check the highlighted recipe details.",
-    fields: error.issues.slice(0, 20).map(issue => ({
-      path: issue.path.join("."),
-      message: issue.code === "unrecognized_keys" ? "Submit only the recipe fields shown." : issue.message.slice(0, 250),
-    })),
+    fields: error.issues.slice(0, 20).map(recipeFieldIssue),
   };
 }
 

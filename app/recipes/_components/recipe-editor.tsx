@@ -1,5 +1,7 @@
 "use client";
 
+import { editorText } from "@/lib/i18n/editor";
+import { useLocale } from "@/app/_components/language-provider";
 import { Button, ButtonLink, Input, Textarea } from "@/app/_components/material";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,6 +10,7 @@ import { RecipeCover } from "@/app/_components/recipe-cover";
 import { saveRecipe, uploadCover } from "@/app/actions";
 import type { RecipeDetailData } from "@/lib/product/queries";
 import { isValidBaseServings, MAX_SERVINGS, formatScaledQuantity } from "@/lib/recipes/measurements";
+import { recipeFieldIssue } from "@/lib/i18n/recipe-validation";
 import { recipeEditSchema, recipeInputSchema } from "@/lib/recipes/schemas";
 import IngredientFields from "./ingredient-fields";
 
@@ -20,17 +23,23 @@ const fieldLabels: Record<string, string> = {
   name: "name", quantity: "quantity", unit: "unit", note: "note", coverFileId: "Cover photo",
 };
 
-type FieldIssue = { path: string; message: string };
+type FieldIssue = ReturnType<typeof recipeFieldIssue>;
 type EditorFeedback = { message: string; fields?: FieldIssue[] };
 
-function issueLabel(path: string) {
+function issueLabel(path: string, t: ReturnType<typeof editorText>) {
   const [section, index, field] = path.split(".");
-  if (section === "ingredients" && index !== undefined) return `Ingredient ${Number(index) + 1} ${fieldLabels[field] ?? ""}`.trim();
-  if (section === "steps" && index !== undefined) return `Step ${Number(index) + 1}`;
-  return fieldLabels[section] ?? "Recipe";
+  if (section === "ingredients" && index !== undefined) {
+    const number = Number(index) + 1;
+    return fieldLabels[field] ? t("Ingredient {number} {field}", { number, field: t(fieldLabels[field]) })
+      : t("Ingredient {number}", { number });
+  }
+  if (section === "steps" && index !== undefined) return t("Step {number}", { number: Number(index) + 1 });
+  return t(fieldLabels[section] ?? "Recipe");
 }
 
 export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailData; units: string[] }) {
+  const locale = useLocale();
+  const t = editorText(locale);
   const router = useRouter();
   const formId = useId();
   const nextRow = useRef(0);
@@ -93,7 +102,7 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
     if (!parsed.success) {
       setFeedback({
         message: "Check the following recipe details.",
-        fields: parsed.error.issues.map(({ path, message }) => ({ path: path.join("."), message })),
+        fields: parsed.error.issues.map(recipeFieldIssue),
       });
       return;
     }
@@ -144,26 +153,30 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
   }
 
   return (
-    <form onSubmit={submit} aria-label={recipe ? "Edit recipe" : "Create recipe"} className="max-w-3xl">
+    <form onSubmit={submit} aria-label={t(recipe ? "Edit recipe" : "Create recipe")} className="max-w-3xl">
       {feedback && (
         <div ref={feedbackRef} tabIndex={-1} role="alert" className="mb-4 w-full rounded-md border border-red-200 bg-red-50 p-4 text-rust">
-          <p className="font-semibold">{feedback.message}</p>
+          <p className="font-semibold">{t(feedback.message)}</p>
           {!!feedback.fields?.length && (
             <ul className="mt-2 list-disc space-y-1 ps-5 text-sm">
-              {feedback.fields.map(({ path, message }, index) => <li key={`${path}-${index}`}>{issueLabel(path)}. {message}</li>)}
+              {feedback.fields.map((issue, index) => (
+                <li key={`${issue.path}-${index}`}>
+                  {issueLabel(issue.path, t)}. {locale === "en" ? issue.message : issue[locale]}
+                </li>
+              ))}
             </ul>
           )}
         </div>
       )}
-      <fieldset className="grid w-full min-w-0 gap-6" disabled={pending} aria-label="Recipe fields">
+      <fieldset className="grid w-full min-w-0 gap-6" disabled={pending} aria-label={t("Recipe fields")}>
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-basics">
-          <h2 id="recipe-basics" className="site-heading text-xl">Recipe details</h2>
+          <h2 id="recipe-basics" className="site-heading text-xl">{t("Recipe details")}</h2>
           <div className="grid gap-1">
-            <label htmlFor={`${formId}-title`}>Title</label>
+            <label htmlFor={`${formId}-title`}>{t("Title")}</label>
             <Input id={`${formId}-title`} name="title" defaultValue={recipe?.title} className="min-h-11 text-base" maxLength={160} required />
           </div>
           <div className="grid gap-1">
-            <label htmlFor={`${formId}-description`}>Description</label>
+            <label htmlFor={`${formId}-description`}>{t("Description")}</label>
             <Textarea id={`${formId}-description`} name="description" defaultValue={recipe?.description}
               className="text-base" rows={3} maxLength={5000} resize required />
           </div>
@@ -174,10 +187,10 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
               { name: "cookMinutes", label: "Cook time (min)", min: "0", max: "10080", step: "1", initial: recipe?.cookMinutes ?? 0 },
             ].map(({ name, label, initial, ...bounds }) => (
               <div key={name} className="grid min-w-0 gap-1">
-                <label htmlFor={`${formId}-${name}`}>{label}</label>
+                <label htmlFor={`${formId}-${name}`}>{t(label)}</label>
                 {name === "baseServings" && keepServings ? (
                   <Button id={`${formId}-${name}`} type="button" variant="outline" onClick={() => setKeepServings(false)}>
-                    Change original servings ({formatScaledQuantity(Number(recipe?.baseServings))})
+                    {t("Change original servings ({servings})", { servings: formatScaledQuantity(Number(recipe?.baseServings)) })}
                   </Button>
                 ) : (
                   <Input id={`${formId}-${name}`} name={name} type="number" defaultValue={initial}
@@ -187,13 +200,13 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
             ))}
           </div>
           <fieldset role="radiogroup">
-            <legend>Difficulty</legend>
+            <legend>{t("Difficulty")}</legend>
             <div className="flex flex-wrap gap-x-5">
               {["EASY", "MEDIUM", "HARD"].map((option) => (
                 <label key={option} className="inline-flex min-h-11 items-center gap-2 capitalize">
                   <input type="radio" name="difficulty" value={option} defaultChecked={option === (recipe?.difficulty ?? "EASY")}
                     className="size-4 accent-brand" />
-                  {option.toLowerCase()}
+                  {t(option[0] + option.slice(1).toLowerCase())}
                 </label>
               ))}
             </div>
@@ -202,8 +215,8 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
 
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-ingredients">
           <div className="space-y-1">
-            <h2 id="recipe-ingredients" className="site-heading text-xl">Ingredients</h2>
-            <p className="text-sm text-subtle">Use a quantity and unit for measured ingredients. For unmeasured ingredients, add a note such as “to taste”.</p>
+            <h2 id="recipe-ingredients" className="site-heading text-xl">{t("Ingredients")}</h2>
+            <p className="text-sm text-subtle">{t("Use a quantity and unit for measured ingredients. For unmeasured ingredients, add a note such as “to taste”.")}</p>
           </div>
           {ingredients.map((ingredient, index) => (
             <IngredientFields key={ingredient.id} ingredient={ingredient} number={index + 1} units={units}
@@ -215,23 +228,23 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
               const id = `new-${nextRow.current++}`;
               setIngredients((rows) => [...rows, { ...emptyIngredient, id }]);
             }}>
-            Add ingredient
+            {t("Add ingredient")}
           </Button>
         </section>
 
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-method">
-          <h2 id="recipe-method" className="site-heading text-xl">Method</h2>
+          <h2 id="recipe-method" className="site-heading text-xl">{t("Method")}</h2>
           {steps.map((step, index) => (
             <div key={step.id} className="grid min-w-0 gap-2">
               <div className="grid gap-1">
-                <label htmlFor={`${formId}-step-${step.id}`}>Step {index + 1}</label>
+                <label htmlFor={`${formId}-step-${step.id}`}>{t("Step {number}", { number: index + 1 })}</label>
                 <Textarea id={`${formId}-step-${step.id}`} name={`step-${step.id}`} defaultValue={step.instruction}
                   className="text-base" rows={2} maxLength={4000} resize required />
               </div>
               <Button type="button" variant="ghost" size="sm" className="justify-self-start"
-                disabled={steps.length === 1} aria-label={`Remove step ${index + 1}`}
+                disabled={steps.length === 1} aria-label={t("Remove step {number}", { number: index + 1 })}
                 onClick={() => setSteps((rows) => rows.filter((row) => row.id !== step.id))}>
-                Remove step
+                {t("Remove step")}
               </Button>
             </div>
           ))}
@@ -240,41 +253,41 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
               const id = `new-${nextRow.current++}`;
               setSteps((rows) => [...rows, { id, instruction: "" }]);
             }}>
-            Add step
+            {t("Add step")}
           </Button>
         </section>
 
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-photo">
-          <h2 id="recipe-photo" className="site-heading text-xl">Cover photo</h2>
+          <h2 id="recipe-photo" className="site-heading text-xl">{t("Cover photo")}</h2>
           {(preview || coverId) && (
             preview ? (
               <div className="relative aspect-[16/10] w-full max-w-xs overflow-hidden rounded-md border border-line">
-                <Image src={preview} alt="Selected cover preview" fill unoptimized className="object-cover" />
+                <Image src={preview} alt={t("Selected cover preview")} fill unoptimized className="object-cover" />
               </div>
             ) : (
               <RecipeCover fileId={coverId} className="aspect-[16/10] w-full max-w-xs rounded-md border border-line" />
             )
           )}
           <div className="grid min-w-0 gap-1.5">
-            <label htmlFor={`${formId}-cover`}>Choose a photo (optional)</label>
+            <label htmlFor={`${formId}-cover`}>{t("Choose a photo (optional)")}</label>
             <input id={`${formId}-cover`} type="file" ref={fileInput}
               className="site-field w-full py-2 file:me-2 file:rounded-md file:border-0 file:bg-canvas file:px-2 file:py-0.5 file:text-ink"
               accept="image/jpeg,image/png,image/webp" aria-describedby={`${formId}-cover-help`}
               onChange={(event) => chooseCover(event.currentTarget.files?.[0])} />
-            <p id={`${formId}-cover-help`} className="text-sm text-subtle">JPEG, PNG, or WebP up to 3 MiB.</p>
+            <p id={`${formId}-cover-help`} className="text-sm text-subtle">{t("JPEG, PNG, or WebP up to 3 MiB.")}</p>
           </div>
           {(preview || coverId) && (
             <Button type="button" variant="outline" className="min-h-11 justify-self-start" onClick={() => {
               if (!preview) setCoverId(null);
               clearSelection();
             }}>
-              {preview ? "Clear selected photo" : "Remove cover photo"}
+              {t(preview ? "Clear selected photo" : "Remove cover photo")}
             </Button>
           )}
         </section>
 
         <section className="grid min-w-0 gap-4 border-t border-line pt-5" aria-labelledby="recipe-publishing">
-          <h2 id="recipe-publishing" className="site-heading text-xl">Visibility</h2>
+          <h2 id="recipe-publishing" className="site-heading text-xl">{t("Visibility")}</h2>
           <div role="radiogroup" aria-labelledby="recipe-publishing" className="grid gap-2">
             {[
               { value: "PRIVATE", label: "Private", detail: "Only you can view this recipe." },
@@ -285,16 +298,16 @@ export default function RecipeEditor({ recipe, units }: { recipe?: RecipeDetailD
                   className="mt-1 size-4 shrink-0 accent-brand" aria-labelledby={`${formId}-${value}-label`}
                   aria-describedby={`${formId}-${value}-hint`} />
                 <span>
-                  <span id={`${formId}-${value}-label`}>{label}</span>
-                  <span id={`${formId}-${value}-hint`} className="block text-sm text-subtle">{detail}</span>
+                  <span id={`${formId}-${value}-label`}>{t(label)}</span>
+                  <span id={`${formId}-${value}-hint`} className="block text-sm text-subtle">{t(detail)}</span>
                 </span>
               </label>
             ))}
           </div>
         </section>
         <div className="flex flex-wrap items-center gap-2 border-t border-line pt-5">
-          <Button type="submit" className="min-h-11" disabled={pending}>{pending ? "Saving…" : "Save recipe"}</Button>
-          <ButtonLink href={cancelHref} variant="outline" className="min-h-11">Cancel</ButtonLink>
+          <Button type="submit" className="min-h-11" disabled={pending}>{t(pending ? "Saving…" : "Save recipe")}</Button>
+          <ButtonLink href={cancelHref} variant="outline" className="min-h-11">{t("Cancel")}</ButtonLink>
         </div>
       </fieldset>
     </form>

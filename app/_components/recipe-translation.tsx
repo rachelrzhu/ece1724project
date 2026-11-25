@@ -1,0 +1,149 @@
+"use client";
+
+import { createContext, useContext, useEffect, useId, useState, type ReactNode } from "react";
+import { isLocale, languageNames, makeTranslator, type Locale } from "@/lib/i18n";
+import { translateRecipe, type BeginDownload, type BrowserLanguageTools } from "@/lib/i18n/on-device";
+import { useLocale } from "./language-provider";
+import { Button } from "./material";
+
+const messages = {
+  "Original recipe language": ["食谱原文语言", "Langue d’origine de la recette"],
+  "Choose a language": ["选择语言", "Choisir une langue"],
+  "Enable language detection": ["启用语言识别", "Activer la détection de langue"],
+  "Enable recipe translation": ["启用食谱翻译", "Activer la traduction de la recette"],
+  "Translating on this device…": ["正在此设备上翻译…", "Traduction sur cet appareil…"],
+  "Show original": ["查看原文", "Afficher l’original"],
+  "Show translation": ["查看译文", "Afficher la traduction"],
+  "Showing the original recipe. On-device translation is unavailable.": [
+    "此设备暂时无法翻译，已显示食谱原文。", "La traduction sur cet appareil est indisponible. La recette s’affiche dans sa langue d’origine.",
+  ],
+} as const;
+
+type Status = "working" | "ready" | "unavailable" | "detector" | "translator";
+type Translation = { status: Status; strings?: Map<string, string>; needsSource?: boolean; enable?: () => void };
+// A model installed for one card is available to other cards from the same origin.
+const installedModels = new EventTarget();
+
+const TranslationContext = createContext<{
+  result: Translation; original: boolean; toggle: () => void; selectSource?: (source: Locale) => void;
+} | null>(null);
+
+export function RecipeTranslation({ texts, children }: { texts: readonly string[]; children: ReactNode }) {
+  const target = useLocale();
+  // Scope edits and language changes to a new translation job, without remounting the recipe's controls.
+  const [state, setState] = useState<{ texts: readonly string[]; target: string; result: Translation } | null>(null);
+  const [original, setOriginal] = useState(false);
+  const [source, setSource] = useState<{ texts: readonly string[]; locale: Locale } | null>(null);
+  const fallbackSource = source?.texts === texts ? source.locale : undefined;
+  const result = state?.texts === texts && state.target === target ? state.result : { status: "working" as const };
+
+  useEffect(() => {
+    const job = new AbortController();
+    const { signal } = job;
+    function update(result: Translation) {
+      if (!signal.aborted) setState({ texts, target, result });
+    }
+    // Invoke create() directly from the click handler while user activation is still available.
+    const beginDownload: BeginDownload = (model, create, modelId) => new Promise((resolve, reject) => {
+      signal.throwIfAborted();
+      let started = false;
+      function cancel() {
+        installedModels.removeEventListener(modelId, onInstalled);
+        reject(signal.reason);
+      }
+      function start(fromClick: boolean) {
+        if (started || signal.aborted) return;
+        started = true;
+        update({ status: "working" });
+        async function open() {
+          try {
+            const instance = await create();
+            installedModels.removeEventListener(modelId, onInstalled);
+            signal.removeEventListener("abort", cancel);
+            resolve(instance);
+            if (fromClick) installedModels.dispatchEvent(new Event(modelId));
+          } catch (error) {
+            if (!fromClick && !signal.aborted && error instanceof DOMException && error.name === "NotAllowedError") {
+              started = false;
+              update({ status: model, enable: () => start(true) });
+            } else {
+              installedModels.removeEventListener(modelId, onInstalled);
+              signal.removeEventListener("abort", cancel);
+              reject(error);
+            }
+          }
+        }
+        void open();
+      }
+      function onInstalled() { start(false); }
+      signal.addEventListener("abort", cancel, { once: true });
+      installedModels.addEventListener(modelId, onInstalled);
+      update({ status: model, enable: () => start(true) });
+    });
+    translateRecipe(window as BrowserLanguageTools, texts, target, signal, beginDownload, fallbackSource)
+      .then(result => update(result ? { status: "ready", ...result } : { status: "unavailable" }))
+      .catch(() => update({ status: "unavailable" }));
+    return () => job.abort();
+  }, [texts, target, fallbackSource]);
+
+  return (
+    <TranslationContext.Provider value={{
+      result, original, toggle: () => setOriginal(value => !value),
+      selectSource: result.needsSource ? locale => setSource({ texts, locale }) : undefined,
+    }}>
+      {children}
+    </TranslationContext.Provider>
+  );
+}
+
+export function useRecipeTranslation() {
+  const context = useContext(TranslationContext);
+  return {
+    original: context?.original ?? false,
+    lookup: (text: string) => context?.original ? text : context?.result.strings?.get(text) ?? text,
+  };
+}
+
+export function useRecipeText(text: string) {
+  return useRecipeTranslation().lookup(text);
+}
+
+export function RecipeText({ text, translation }: { text: string; translation?: string }) {
+  const { original, lookup } = useRecipeTranslation();
+  const value = original ? text : translation ?? lookup(text);
+  const target = useLocale();
+  return value === text ? <>{text}</> : <span lang={target}>{value}</span>;
+}
+
+export function RecipeTranslationControls({ compact = false }: { compact?: boolean }) {
+  const context = useContext(TranslationContext);
+  const t = makeTranslator(useLocale(), messages);
+  const id = useId();
+  if (!context) return null;
+  const { result, original, toggle } = context;
+  if (result.enable) return (
+    <Button type="button" variant="outline" onClick={result.enable}>
+      {t(result.status === "detector" ? "Enable language detection" : "Enable recipe translation")}
+    </Button>
+  );
+  if (context.selectSource) return (
+    <div className="grid justify-items-start gap-1 text-sm">
+      <label htmlFor={id}>{t("Original recipe language")}</label>
+      <select id={id} className="site-field min-h-11" defaultValue="" onChange={event => {
+        const value = event.currentTarget.value;
+        if (isLocale(value)) context.selectSource?.(value);
+      }}>
+        <option value="" disabled>{t("Choose a language")}</option>
+        {Object.entries(languageNames).map(([value, name]) => <option key={value} value={value} lang={value}>{name}</option>)}
+      </select>
+    </div>
+  );
+  if (result.strings?.size) return (
+    <Button type="button" variant="outline" onClick={toggle}>
+      {t(original ? "Show translation" : "Show original")}
+    </Button>
+  );
+  if (compact || result.status === "ready") return null;
+  return <p className="text-sm text-subtle" role="status">{t(result.status === "working"
+    ? "Translating on this device…" : "Showing the original recipe. On-device translation is unavailable.")}</p>;
+}

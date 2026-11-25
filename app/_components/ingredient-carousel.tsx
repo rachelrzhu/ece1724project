@@ -3,6 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { makeTranslator } from "@/lib/i18n";
+import { homeMessages } from "@/lib/i18n/discovery";
+import { useLocale } from "./language-provider";
 import styles from "../landing.module.css";
 import { Icon } from "./icons";
 import { Card } from "./material";
@@ -16,9 +19,10 @@ const options = [
   { name: "Lentils", href: "/recipes?q=lentil", image: "red-lentil-dal.jpg" },
   { name: "Salmon", href: "/recipes?q=salmon", image: "salmon-cakes.jpg" },
   { name: "Browse all", href: "/recipes", image: "bowl.jpg" },
-];
+] as const;
 
 export function IngredientCarousel() {
+  const t = makeTranslator(useLocale(), homeMessages);
   const listRef = useRef<HTMLUListElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
@@ -50,11 +54,11 @@ export function IngredientCarousel() {
   return (
     <section aria-labelledby="ingredient-title" className={styles.pantry}>
       <div className={styles.pantryHeader}>
-        <h2 id="ingredient-title">Start with an ingredient</h2>
+        <h2 id="ingredient-title">{t("Start with an ingredient")}</h2>
         <div className={styles.scrollControls}>
-          <button type="button" aria-label="Previous ingredient" aria-controls="ingredient-options"
+          <button type="button" aria-label={t("Previous ingredient")} aria-controls="ingredient-options"
             disabled={atStart} onClick={() => scrollOneCard(-1)}><Icon name="back" /></button>
-          <button type="button" aria-label="Next ingredient" aria-controls="ingredient-options"
+          <button type="button" aria-label={t("Next ingredient")} aria-controls="ingredient-options"
             disabled={atEnd} onClick={() => scrollOneCard(1)}><Icon name="forward" /></button>
         </div>
       </div>
@@ -67,7 +71,7 @@ export function IngredientCarousel() {
                   sizes="(min-width: 72rem) 352px, (min-width: 60rem) 33vw, (min-width: 40rem) 46vw, 84vw" />
               </div>
               <div className={styles.ingredientLabel}>
-                <span>{name}</span><Icon name="forward" />
+                <span>{t(name)}</span><Icon name="forward" />
               </div>
             </Link>
           </Card>
