@@ -90,7 +90,7 @@ export function RecipeFilters({ state, hasPreferences }: { state: BrowseState; h
             <div className="relative">
               <Icon name="search" className={styles.fieldIcon} />
               <Input id="recipe-query" name="q" type="search" maxLength={160} defaultValue={query}
-                placeholder="Name or ingredient" className="min-h-11 bg-paper ps-10 text-base" />
+                placeholder="Name or ingredient" aria-describedby="ingredient-languages" className="min-h-11 bg-paper ps-10 text-base" />
             </div>
           </div>
           <div className="min-w-0">
@@ -114,6 +114,7 @@ export function RecipeFilters({ state, hasPreferences }: { state: BrowseState; h
           </div>
           <Button type="submit" isPill className="min-h-11 px-6">Search</Button>
         </div>
+        <p id="ingredient-languages" className="text-xs text-subtle">Search or exclude ingredients in English, 中文, or français.</p>
         <div className={styles.filterActions}>
           {(allergenFilter || hasPreferences) && (
             <details className={styles.moreFilters}>
@@ -137,7 +138,7 @@ export function RecipeFilters({ state, hasPreferences }: { state: BrowseState; h
                     <div>
                       <label htmlFor="excluded-ingredient" className={styles.fieldLabel}>Ingredient name to exclude</label>
                       <Input id="excluded-ingredient" name="exclude" type="text" maxLength={160}
-                        defaultValue={allergenFilter.ingredient} placeholder="e.g. celery" className="min-h-11 bg-paper text-base" />
+                        defaultValue={allergenFilter.ingredient} placeholder="e.g. egg, 鸡蛋, œuf" aria-describedby="ingredient-languages" className="min-h-11 bg-paper text-base" />
                     </div>
                   )}
                   {hasPreferences && (

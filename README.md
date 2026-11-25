@@ -9,6 +9,7 @@ From My Kitchen is a recipe-sharing app for home cooks. You can save a recipe on
 | What you want to do | How to do it |
 | --- | --- |
 | Find a recipe | Open **Explore** and search by title or ingredient. Switch between **Cards** and **List**, or select a cook’s name to see their public recipes. |
+| Translate ingredients | Search for or exclude a catalog ingredient in English, Chinese, or French. For example, **egg**, **鸡蛋**, and **œuf** match the same ingredient. On a recipe, **Translate ingredient names** follows your browser language. Choose a language or **Original names** to override it. Unlisted ingredients keep the cook’s wording. |
 | Find something quick | Enter your available minutes in **Ready in** and choose **Search**. A 30-minute limit includes 30 minutes exactly. The filter uses combined prep and cook time or a published total-time estimate. Recipes with unknown times appear when you leave the limit blank. |
 | Adjust a batch | Open a recipe and choose **By servings** or **By ingredient**. Enter your target servings or the quantity and unit you have. The measured ingredients update together. **Undo** restores the previous adjustment and **Reset** returns to the original quantities. Cooking times and instructions stay as written. |
 | Write and publish | Sign in, choose **New recipe**, and add servings, ingredients, ordered steps, and an optional cover photo. Recipes start private. Choose public visibility to share one, or open **My recipes** to edit or delete it. |

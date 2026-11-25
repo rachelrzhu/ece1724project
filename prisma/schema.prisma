@@ -83,8 +83,29 @@ model IngredientProfile {
   classification IngredientDiet
   allergens      IngredientAllergen[]
   recipeIngredients RecipeIngredient[]
+  translation    IngredientTranslation?
+  aliases        IngredientAlias[]
 
   @@map("ingredient_profiles")
+}
+
+model IngredientTranslation {
+  canonicalName String            @id @map("canonical_name") @db.VarChar(160)
+  en            String            @db.VarChar(160)
+  zh            String            @db.VarChar(160)
+  fr            String            @db.VarChar(160)
+  ingredient    IngredientProfile @relation(fields: [canonicalName], references: [canonicalName], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("ingredient_translations")
+}
+
+model IngredientAlias {
+  name          String            @id @db.VarChar(160)
+  canonicalName String            @map("canonical_name") @db.VarChar(160)
+  ingredient    IngredientProfile @relation(fields: [canonicalName], references: [canonicalName], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([canonicalName])
+  @@map("ingredient_aliases")
 }
 
 model IngredientAllergen {

@@ -16,6 +16,26 @@ const recipe: ScalingRecipe = {
 };
 
 describe("recipe scaling workspace", () => {
+  it("translates the preview, warnings and pantry options without changing the batch or undo history", () => {
+    const egg = { ...recipe.ingredients[2], name: "雞蛋", translations: { en: "Egg", zh: "鸡蛋", fr: "Œuf" } };
+    const store = makeScalingStore({ baseServings: 4, ingredients: [egg, recipe.ingredients[4]] });
+    store.dispatch(scalingActions.editQuantity({ field: "targetServings", value: "6" }));
+    store.dispatch(scalingActions.changeMode("ingredient"));
+    const { current, history } = store.getState();
+
+    for (const [language, name] of [["fr", "Œuf"], ["en", "Egg"], ["zh", "鸡蛋"], ["original", "雞蛋"]] as const) {
+      store.dispatch(scalingActions.changeLanguage(language));
+      expect(store.getState().current).toEqual(current);
+      expect(store.getState().history).toEqual(history);
+      expect(selectPreview(store.getState())).toMatchObject({
+        ok: true, servings: 6,
+        ingredients: [{ id: "egg", name, scaledQuantity: 1.5 }, { name: "Oats", scaledQuantity: 3 }],
+        warnings: [{ message: `${name} scales to a fraction of a whole item.` }, { code: "cooking-conditions" }],
+      });
+      expect(selectEligibleIngredients(store.getState())).toEqual([{ id: "egg", name, units: ["count"] }]);
+    }
+  });
+
   it("derives all results from the recipe and groups a continuous input edit into one undo", () => {
     const store = makeScalingStore(recipe);
     store.dispatch(scalingActions.editQuantity({ field: "targetServings", value: "" }));

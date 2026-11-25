@@ -11,6 +11,8 @@
 export type * from './models/User'
 export type * from './models/DietarySettings'
 export type * from './models/IngredientProfile'
+export type * from './models/IngredientTranslation'
+export type * from './models/IngredientAlias'
 export type * from './models/IngredientAllergen'
 export type * from './models/Session'
 export type * from './models/Account'
