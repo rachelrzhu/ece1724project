@@ -1,5 +1,7 @@
 "use client";
 
+import { accountText } from "@/lib/i18n/account";
+import { useLocale } from "@/app/_components/language-provider";
 import Image from "next/image";
 import { useRef, useState, useTransition, type FormEvent } from "react";
 import { Button } from "@/app/_components/material";
@@ -8,6 +10,7 @@ import { saveAvatar } from "./avatar-actions";
 import AvatarUploadField from "./avatar-upload-field";
 
 export default function AvatarForm({ name, image: savedImage }: { name: string; image: string | null }) {
+  const t = accountText(useLocale());
   const image = publicAvatarImage(savedImage);
   const fileInput = useRef<HTMLInputElement>(null);
   const [choice, setChoice] = useState(image ?? "initial");
@@ -55,7 +58,7 @@ export default function AvatarForm({ name, image: savedImage }: { name: string; 
   return (
     <form onSubmit={save} className="site-panel space-y-4">
       <fieldset disabled={pending} className="grid gap-4">
-        <legend className="site-heading mb-3 text-xl">Avatar</legend>
+        <legend className="site-heading mb-3 text-xl">{t("Avatar")}</legend>
         <div className="flex flex-wrap gap-3">
           {choices.map(avatar => (
             <label key={avatar.label} className="grid cursor-pointer justify-items-center gap-1 text-xs">
@@ -65,16 +68,16 @@ export default function AvatarForm({ name, image: savedImage }: { name: string; 
                 {avatar.image ? <Image src={avatar.image} unoptimized width={48} height={48} alt="" className="size-full object-cover" />
                   : name.trim().charAt(0).toUpperCase() || "?"}
               </span>
-              {avatar.label}
+              {t(avatar.label)}
             </label>
           ))}
         </div>
-        <AvatarUploadField id="avatar-upload" label="Upload your own photo" inputRef={fileInput} onSelect={chooseFile} />
+        <AvatarUploadField id="avatar-upload" label={t("Upload your own photo")} inputRef={fileInput} onSelect={chooseFile} />
         <Button type="submit" className="min-h-11 justify-self-start" disabled={pending || choice === (image ?? "initial")}>
-          {pending ? "Saving…" : "Save avatar"}
+          {t(pending ? "Saving…" : "Save avatar")}
         </Button>
       </fieldset>
-      {feedback.message && <p role={feedback.error ? "alert" : "status"} className={feedback.error ? "text-sm text-rust" : "text-sm"}>{feedback.message}</p>}
+      {feedback.message && <p role={feedback.error ? "alert" : "status"} className={feedback.error ? "text-sm text-rust" : "text-sm"}>{t(feedback.message)}</p>}
     </form>
   );
 }

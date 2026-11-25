@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n";
+
 export const MAX_SERVINGS = 100;
 export const MIN_QUANTITY = 0.1;
 export const MAX_QUANTITY = 1_000_000;
@@ -32,9 +34,15 @@ export function isValidBaseServings(amount: number) {
   return Number.isInteger(amount) && amount >= 1 && amount <= MAX_SERVINGS;
 }
 
-const displayFormat = new Intl.NumberFormat("en", { maximumFractionDigits: 1, useGrouping: false });
+const quantityFormat = { maximumFractionDigits: 1, useGrouping: false };
+const displayFormats = {
+  en: new Intl.NumberFormat("en", quantityFormat),
+  zh: new Intl.NumberFormat("zh", quantityFormat),
+  fr: new Intl.NumberFormat("fr", quantityFormat),
+} satisfies Record<Locale, Intl.NumberFormat>;
 
-export function formatScaledQuantity(value: number): string {
-  const rounded = displayFormat.format(value);
-  return rounded === "0" && value > 0 ? "<0.1" : rounded;
+export function formatScaledQuantity(value: number, locale: Locale = "en"): string {
+  const formatter = displayFormats[locale];
+  const rounded = formatter.format(value);
+  return rounded === "0" && value > 0 ? `<${formatter.format(0.1)}` : rounded;
 }

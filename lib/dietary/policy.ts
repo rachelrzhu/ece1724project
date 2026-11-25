@@ -22,9 +22,9 @@ const allergenLabels = {
   CRUSTACEANS_MOLLUSCS: "Crustaceans and molluscs",
   MUSTARD: "Mustard",
   SULPHITES: "Sulphites",
-} satisfies Record<Allergen, string>;
+} as const satisfies Record<Allergen, string>;
 
-export const allergenChoices: readonly { value: Allergen; label: string }[] =
+export const allergenChoices =
   Object.values(Allergen).map((value) => ({ value, label: allergenLabels[value] }));
 
 export type ExploreAllergenFilter = { allergens: Allergen[]; ingredient: string };

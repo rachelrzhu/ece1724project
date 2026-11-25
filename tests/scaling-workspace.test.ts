@@ -36,6 +36,17 @@ describe("recipe scaling workspace", () => {
     }
   });
 
+  it("scales a French decimal amount and keeps the result when changing the display language", () => {
+    const store = makeScalingStore(recipe, "fr", "fr");
+    store.dispatch(scalingActions.editQuantity({ field: "targetServings", value: "1,5" }));
+    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 1.5 });
+    store.dispatch(scalingActions.changeMode("ingredient"));
+    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 1.5, factor: 0.375 });
+    store.dispatch(scalingActions.changeLocale("zh"));
+    store.dispatch(scalingActions.changeMode("servings"));
+    expect(selectPreview(store.getState())).toMatchObject({ ok: true, servings: 1.5, factor: 0.375 });
+  });
+
   it("derives all results from the recipe and groups a continuous input edit into one undo", () => {
     const store = makeScalingStore(recipe);
     store.dispatch(scalingActions.editQuantity({ field: "targetServings", value: "" }));
