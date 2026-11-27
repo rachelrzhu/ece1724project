@@ -6,12 +6,17 @@ import Link from "next/link";
 import { Icon } from "./icons";
 import { Button, Input } from "./material";
 import type { Collection } from "./site-header";
-import { allergenChoices, type ExploreAllergenFilter } from "@/lib/dietary/policy";
+import { additionalAllergenChoices, allergenChoices, commonAllergenChoices, type ExploreAllergenFilter } from "@/lib/dietary/policy";
 import { RecipeDifficulty } from "@/generated/prisma/enums";
 import { defaultRecipePageSize, type RecipePageSize } from "@/lib/product/pagination";
 import type { RecipeSort } from "@/lib/product/queries";
 import { MAX_READY_MINUTES } from "@/lib/recipes/ready-in";
 import styles from "./recipe-collection.module.css";
+
+const allergenGroups = [
+  { legend: "Common allergens to exclude", choices: commonAllergenChoices },
+  { legend: "Additional allergens and sensitivities", choices: additionalAllergenChoices },
+] as const;
 
 export type BrowseState = {
   collection: Collection;
@@ -130,17 +135,21 @@ export function RecipeFilters({ state, hasPreferences, locale }: { state: Browse
               <summary><Icon name="filters" className="size-4" />{t("More filters")}<Icon name="chevron" className={styles.chevron} /></summary>
               <div className={styles.filterPanel}>
                 {allergenFilter && (
-                  <fieldset>
-                    <legend className="mb-1 text-sm font-semibold">{t("Allergens to exclude")}</legend>
-                    <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-3">
-                      {allergenChoices.map(({ value, label }) => (
-                        <label key={value} className={styles.checkLabel}>
-                          <input type="checkbox" name="allergen" value={value} defaultChecked={allergenFilter.allergens.includes(value)} />
-                          {t(label)}
-                        </label>
-                      ))}
-                    </div>
-                  </fieldset>
+                  <div className="min-w-0 space-y-3">
+                    {allergenGroups.map(({ legend, choices }) => (
+                      <fieldset key={legend}>
+                        <legend className="mb-1 text-sm font-semibold">{t(legend)}</legend>
+                        <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-3">
+                          {choices.map(({ value, label }) => (
+                            <label key={value} className={styles.checkLabel}>
+                              <input type="checkbox" name="allergen" value={value} defaultChecked={allergenFilter.allergens.includes(value)} />
+                              {t(label)}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ))}
+                  </div>
                 )}
                 <div className="min-w-0 space-y-3">
                   {allergenFilter && (

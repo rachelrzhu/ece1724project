@@ -1,5 +1,6 @@
 import { assert, describe, expect, it } from "vitest";
-import { formatScaledQuantity, getScalingUnits, scaleRecipe } from "@/lib/recipes/scaling";
+import { formatConvertedQuantity } from "@/lib/recipes/measurements";
+import { formatScaledQuantity, getDisplayMeasurement, getScalingUnits, scaleRecipe } from "@/lib/recipes/scaling";
 
 const flour = { id: "flour", name: "Flour", quantity: "400", unit: "g", note: "Sifted" };
 const eggs = { id: "eggs", name: "Eggs", quantity: "3", unit: "count", note: null };
@@ -9,6 +10,46 @@ const recipe = { baseServings: "4", ingredients: [flour, eggs, salt] };
 function byIngredient(ingredientId: string, availableQuantity: string | number, availableUnit: string) {
   return { mode: "ingredient" as const, ingredientId, availableQuantity, availableUnit };
 }
+
+describe("ingredient display units", () => {
+  it("keeps small converted quantities measurable and uses the reader's decimal separator", () => {
+    expect(formatConvertedQuantity(1 / 28.349523125)).toBe("0.0353");
+    expect(formatConvertedQuantity(0.25, "fr")).toBe("0,25");
+    expect(formatConvertedQuantity(15, "zh")).toBe("15");
+  });
+
+  it("converts kitchen volumes and imperial weights to metric units", () => {
+    expect(getDisplayMeasurement(1, "TEASPOONS", "metric")).toEqual({ quantity: 5, unit: "mL" });
+    expect(getDisplayMeasurement(2, "tablespoons", "metric")).toEqual({ quantity: 30, unit: "mL" });
+    expect(getDisplayMeasurement(5, "cups", "metric")).toEqual({ quantity: 1.2, unit: "L" });
+    expect(getDisplayMeasurement(1, "ounces", "metric")).toEqual({ quantity: 28.349523125, unit: "g" });
+    expect(getDisplayMeasurement(1000, "g", "metric")).toEqual({ quantity: 1, unit: "kg" });
+  });
+
+  it("selects teaspoons, tablespoons, and cups for progressively larger volumes", () => {
+    expect(getDisplayMeasurement(2.5, "mL", "imperial")).toEqual({ quantity: 0.5, unit: "tsp" });
+    expect(getDisplayMeasurement(15, "mL", "imperial")).toEqual({ quantity: 1, unit: "tbsp" });
+    expect(getDisplayMeasurement(240, "mL", "imperial")).toEqual({ quantity: 1, unit: "cup" });
+  });
+
+  it("shows small masses in ounces and switches to pounds at sixteen ounces", () => {
+    const pinch = getDisplayMeasurement(0.1, "g", "imperial");
+    expect(pinch.unit).toBe("oz");
+    expect(pinch.quantity).toBeCloseTo(0.1 / 28.349523125, 14);
+    expect(getDisplayMeasurement(15.9, "oz", "imperial")).toEqual({ quantity: 15.9, unit: "oz" });
+    expect(getDisplayMeasurement(453.59237, "g", "imperial")).toEqual({ quantity: 1, unit: "lb" });
+  });
+
+  it("retains original measurements, counts, and rows without convertible units", () => {
+    expect(getDisplayMeasurement(0.125, " tablespoons ", "original")).toEqual({ quantity: 0.125, unit: " tablespoons " });
+    for (const system of ["metric", "imperial"] as const) {
+      expect(getDisplayMeasurement(3, "each", system)).toEqual({ quantity: 3, unit: "each" });
+      expect(getDisplayMeasurement(1, "scoop", system)).toEqual({ quantity: 1, unit: "scoop" });
+      expect(getDisplayMeasurement(2, null, system)).toEqual({ quantity: 2, unit: null });
+      expect(getDisplayMeasurement(null, null, system)).toEqual({ quantity: null, unit: null });
+    }
+  });
+});
 
 describe("recipe scaling", () => {
   it("scales the ordered recipe detail from four servings to six", () => {

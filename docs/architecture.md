@@ -166,7 +166,7 @@ A signed-in cook can copy a public recipe into their own collection. One transac
 
 ### Dietary preferences and ingredient matches
 
-Each signed-in cook can save a vegetarian or vegan preference and a separate list of allergens. Settings belong to the session user. Recipe cards and details compare the cook’s settings with a shared catalogue using each ingredient’s stored canonical name. The catalogue records dietary classifications and positive ingredient-to-allergen links. Exact-name matching also works for existing recipes and editable copies. Contributors can extend the catalogue through a reviewed data migration.
+Each signed-in cook can choose a vegetarian, vegan, pescatarian, gluten-free, dairy-free, or egg-free pattern and flag individual allergens. Recipe cards and details match the cook’s selections to the ingredient catalogue by canonical name, including for existing recipes and editable copies. The catalogue distinguishes meat and poultry from seafood, records gluten content when known, and links ingredients to identified allergens. For example, barley triggers a gluten-free conflict independently of the wheat allergen filter. Contributors can extend the catalogue through a reviewed data migration.
 
 Choosing to hide recorded conflicts applies the filter to the database query before counting and paginating. Ingredients without a matching profile remain visible with an incomplete-information notice. A product’s ingredients, preparation, and cross-contact can vary. The supported allergen and sulphite categories follow Canadian labelling terminology. [Canadian Food Inspection Agency consumer guide](https://inspection.canada.ca/en/food-labels/labelling/consumers/food-allergies)
 

@@ -19,7 +19,9 @@ export const readDietaryContext = cache(async () => {
   const preferences = await readDietaryPreferences();
   if (!preferences || (preferences.diet === "NONE" && preferences.allergens.length === 0)) return null;
   const ingredients = await getDatabase().ingredientProfile.findMany({
-    where: { OR: [{ classification: { not: "UNKNOWN" } }, { allergens: { some: {} } }] },
+    where: { OR: [
+      { classification: { not: "UNKNOWN" } }, { allergens: { some: {} } }, { containsGluten: { not: null } },
+    ] },
     include: { allergens: true },
   });
   return buildDietaryContext(preferences, ingredients);

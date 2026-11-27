@@ -129,7 +129,7 @@ export const discoveryMessages = {
   Search: ["搜索", "Rechercher"],
   "Search or exclude ingredients in English, 中文, or français.": ["支持用中文、英语或法语搜索或排除食材。", "Recherchez ou excluez des ingrédients en français, en anglais ou en chinois."],
   "More filters": ["更多筛选", "Plus de filtres"],
-  "Allergens to exclude": ["要排除的过敏原", "Allergènes à exclure"],
+  "Common allergens to exclude": ["要排除的常见过敏原", "Allergènes courants à exclure"],
   "Ingredient name to exclude": ["要排除的食材名称", "Nom de l’ingrédient à exclure"],
   "e.g. egg, 鸡蛋, œuf": ["例如：鸡蛋、egg、œuf", "p. ex. œuf, egg, 鸡蛋"],
   "Hide known conflicts": ["隐藏与饮食偏好冲突的食谱", "Masquer les incompatibilités connues"],

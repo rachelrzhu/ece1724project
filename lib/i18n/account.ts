@@ -67,7 +67,7 @@ export const accountMessages = {
   "Dietary preferences": ["饮食偏好", "Préférences alimentaires"],
   "Choose which ingredient records to flag when you browse. These settings are private to your account.": ["选择浏览食谱时需要标记的食材。这些设置仅自己可见。", "Choisissez les ingrédients à signaler lorsque vous parcourez les recettes. Ces réglages sont privés."],
   "Dietary pattern": ["饮食方式", "Régime alimentaire"],
-  "Allergens to flag": ["要标记的过敏原", "Allergènes à signaler"],
+  "Common allergens to flag": ["要标记的常见过敏原", "Allergènes courants à signaler"],
   "Ingredient records can be incomplete. Check product labels and preparation for possible cross-contact.": ["食材信息可能不完整。请核对产品标签及制作过程，留意过敏原交叉接触的可能性。", "Les renseignements sur les ingrédients peuvent être incomplets. Vérifiez les étiquettes et le mode de préparation pour repérer les risques de contact croisé."],
   "Save preferences": ["保存偏好", "Enregistrer les préférences"],
   "Clear preferences": ["清除偏好", "Effacer les préférences"],

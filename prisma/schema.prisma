@@ -23,6 +23,10 @@ enum DietPreference {
   NONE
   VEGETARIAN
   VEGAN
+  PESCATARIAN
+  GLUTEN_FREE
+  DAIRY_FREE
+  EGG_FREE
 }
 
 enum Allergen {
@@ -45,6 +49,8 @@ enum IngredientDiet {
   NON_VEGETARIAN
   NON_VEGAN
   UNKNOWN
+  MEAT
+  SEAFOOD
 }
 
 // Preserve the existing profile table. Authentication records are added separately.
@@ -81,6 +87,7 @@ model DietarySettings {
 model IngredientProfile {
   canonicalName  String               @id @map("canonical_name") @db.VarChar(160)
   classification IngredientDiet
+  containsGluten Boolean?             @map("contains_gluten")
   allergens      IngredientAllergen[]
   recipeIngredients RecipeIngredient[]
   translation    IngredientTranslation?

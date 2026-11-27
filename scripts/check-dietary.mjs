@@ -8,8 +8,8 @@ async function readPreferences(page) {
   await page.goto("/account");
   const pattern = page.getByLabel("Dietary pattern", { exact: true });
   await pattern.waitFor();
-  const group = page.getByRole("group", { name: "Allergens to flag", exact: true });
-  const allergens = await group.locator('input[type="checkbox"]:checked')
+  const form = page.getByRole("form", { name: "Dietary preferences", exact: true });
+  const allergens = await form.locator('input[name="allergens"]:checked')
     .evaluateAll((inputs) => inputs.map((input) => input.value).sort());
   return { pattern: await pattern.inputValue(), allergens };
 }
@@ -18,8 +18,8 @@ async function savePreferences(page, preferences) {
   await page.goto("/account");
   const select = page.getByLabel("Dietary pattern", { exact: true });
   await select.selectOption(preferences.pattern);
-  const group = page.getByRole("group", { name: "Allergens to flag", exact: true });
-  const choices = await group.getByRole("checkbox").all();
+  const form = page.getByRole("form", { name: "Dietary preferences", exact: true });
+  const choices = await form.getByRole("checkbox").all();
   for (const choice of choices) {
     const value = await choice.getAttribute("value");
     await choice.setChecked(preferences.allergens.includes(value));
@@ -58,7 +58,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
   const applyFilters = (page) => page.getByRole("button", { name: "Apply filters", exact: true }).click();
 
   try {
-    await savePreferences(reader, { pattern: "VEGAN", allergens: ["MILK", "PEANUT"] });
+    await savePreferences(reader, { pattern: "VEGAN", allergens: ["MILK", "MUSTARD", "PEANUT"] });
     assert(isDeepStrictEqual(await readPreferences(owner), otherProfile), "Editing preferences changed the other account.");
     await guest.goto("/account");
     assert.equal(await guest.getByLabel("Dietary pattern", { exact: true }).count(), 0);
@@ -111,8 +111,13 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await guest.goto(filtered);
     await guest.getByRole("link", { name: title, exact: true }).waitFor();
     await openMoreFilters(guest);
-    await guest.getByRole("checkbox", { name: "Milk", exact: true }).check();
-    await guest.getByRole("checkbox", { name: "Peanuts", exact: true }).check();
+    const common = guest.getByRole("group", { name: "Common allergens to exclude", exact: true });
+    const additional = guest.getByRole("group", { name: "Additional allergens and sensitivities", exact: true });
+    assert.equal(await common.getByRole("checkbox").count(), 9);
+    await additional.getByRole("checkbox", { name: "Mustard", exact: true }).waitFor();
+    await additional.getByRole("checkbox", { name: "Sulphites", exact: true }).waitFor();
+    await common.getByRole("checkbox", { name: "Milk", exact: true }).check();
+    await common.getByRole("checkbox", { name: "Peanuts", exact: true }).check();
     await applyFilters(guest);
     await noMatch(guest).waitFor();
     assert.deepEqual(new URL(guest.url()).searchParams.getAll("allergen"), ["MILK", "PEANUT"]);
@@ -148,6 +153,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
       { pattern: "NONE", allergens: ["MILK"] },
       { pattern: "NONE", allergens: ["PEANUT"] },
       { pattern: "VEGAN", allergens: [] },
+      { pattern: "DAIRY_FREE", allergens: [] },
     ]) {
       await savePreferences(reader, profile);
       await reader.goto(filtered);
@@ -161,7 +167,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await clearPreferences(reader);
     assert(isDeepStrictEqual(await readPreferences(owner), otherProfile), "Clearing preferences changed the other account.");
     await editIngredient(owner, detail, ingredient);
-    passed("Milk, peanuts and a vegan pattern each hide the conflicting recipe; a vegetarian pattern keeps it");
+    passed("Milk, peanut, vegan and dairy-free preferences each hide the conflicting recipe. A vegetarian preference keeps it");
   } finally {
     // A failed navigation on the test tab must not interrupt restoring a local cook's settings.
     const restore = await reader.context().newPage();

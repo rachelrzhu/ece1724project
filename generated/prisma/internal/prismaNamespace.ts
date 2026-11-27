@@ -1795,7 +1795,8 @@ export type DietarySettingsScalarFieldEnum = (typeof DietarySettingsScalarFieldE
 
 export const IngredientProfileScalarFieldEnum = {
   canonicalName: 'canonicalName',
-  classification: 'classification'
+  classification: 'classification',
+  containsGluten: 'containsGluten'
 } as const
 
 export type IngredientProfileScalarFieldEnum = (typeof IngredientProfileScalarFieldEnum)[keyof typeof IngredientProfileScalarFieldEnum]
