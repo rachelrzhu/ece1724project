@@ -71,6 +71,30 @@ export function convertScalingQuantity(value: DecimalInput, from: string, to: st
   return positiveNumber(convertQuantity(quantity, source, target));
 }
 
+export type DisplayUnitSystem = "original" | "metric" | "imperial";
+
+// Prefer the largest unit that fits at least once, falling back to a fraction of the smallest.
+const displayUnits = {
+  metric: { mass: ["kg", "g"], volume: ["L", "mL"] },
+  imperial: { mass: ["lb", "oz"], volume: ["cup", "tbsp", "tsp"] },
+} as const;
+
+export function getDisplayMeasurement(quantity: number | null, unit: string | null, system: DisplayUnitSystem) {
+  const original = { quantity, unit };
+  if (system === "original" || quantity === null) return original;
+  const source = findUnit(unit);
+  if (!source || (source.dimension !== "mass" && source.dimension !== "volume")) return original;
+
+  const candidates = displayUnits[system][source.dimension];
+  for (const symbol of candidates) {
+    const converted = convertScalingQuantity(quantity, source.symbol, symbol);
+    if (converted !== null && (converted >= 1 || symbol === candidates[candidates.length - 1])) {
+      return { quantity: converted, unit: symbol };
+    }
+  }
+  return original;
+}
+
 function failure(field: ErrorField, message: string, ingredientId?: string): ScalingFailure {
   return { ok: false, error: { field, message, ...(ingredientId !== undefined && { ingredientId }) } };
 }

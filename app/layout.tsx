@@ -8,6 +8,8 @@ import { siteMessages } from "@/lib/i18n/site";
 import { LanguageProvider } from "./_components/language-provider";
 import { ThemeProvider } from "./_components/theme-switch";
 import { themeCookie } from "@/lib/theme";
+import { displayUnitCookie, parseDisplayUnitSystem } from "@/lib/recipes/display-unit-preference";
+import { DisplayUnitProvider } from "./_components/display-unit-provider";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -28,7 +30,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="flex flex-col">
         <ThemeProvider initialTheme={theme}>
           <LanguageProvider locale={locale}>
-            {children}
+            <DisplayUnitProvider initialSystem={parseDisplayUnitSystem(jar.get(displayUnitCookie)?.value)}>
+              {children}
+            </DisplayUnitProvider>
             <SiteFooter />
           </LanguageProvider>
         </ThemeProvider>

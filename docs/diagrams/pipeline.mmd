@@ -1,0 +1,24 @@
+flowchart TB
+    accTitle: CI and deployment pipeline
+    accDescr: GitHub Actions, release policy and Vercel provide separate required statuses. Approved changes progress through dev, preprod, a manual smoke test and main.
+    subgraph gates["Automatic checks on a promotion pull request"]
+        direction TB
+        ci["GitHub Actions · CI<br/>Check migrations on PostgreSQL 18<br/>Lint, type-check, test and build"]
+        path["GitHub Actions · release policy<br/>Verify the source repository<br/>and promotion branch"]
+        vercel["Vercel · Git build<br/>Check environment and build the app<br/>Migrate eligible stage databases"]
+        go["All three checks pass"]
+        ci & path & vercel --> go
+    end
+    subgraph release["Protected branch promotion"]
+        direction LR
+        dev["dev<br/>Development preview"]
+        stage["preprod<br/>Staging preview"]
+        smoke["Manual smoke test<br/>Home, health and changed features"]
+        main["main<br/>Production deployment"]
+        dev -->|"merge PR"| stage
+        stage --> smoke
+        smoke -->|"merge preprod PR"| main
+    end
+    gates -->|"required for both merges"| release
+    classDef manual fill:#fff1da,stroke:#a16c20,color:#51340f
+    class smoke manual

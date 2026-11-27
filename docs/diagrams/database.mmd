@@ -1,0 +1,58 @@
+---
+config:
+  layout: elk
+---
+erDiagram
+    direction LR
+    accTitle: From My Kitchen PostgreSQL schema
+    accDescr: Fourteen tables hold users, authentication, recipes, measurements, dietary data, files and reader interactions. The recipe_likes view contains positive reactions. The diagram shows selected keys.
+
+    verifications {
+        uuid id PK
+        string identifier
+    }
+
+    users ||--o{ recipes : authors
+    users ||--o{ files : owns
+    files |o--o| recipes : covers
+    recipes ||--o{ recipe_ingredients : contains
+    recipes ||--o{ recipe_steps : orders
+    ingredient_profiles ||--o{ recipe_ingredients : identifies
+    measurement_units |o--o{ recipe_ingredients : measures
+    ingredient_profiles ||--o{ ingredient_allergens : declares
+    users ||--o| dietary_settings : configures
+    users ||--o{ bookmarks : saves
+    recipes ||--o{ bookmarks : receives
+    users ||--o{ recipe_reactions : gives
+    recipes ||--o{ recipe_reactions : receives
+    recipe_reactions ||..o| recipe_likes : "positive rows"
+    users ||--o{ accounts : links
+    users ||--o{ sessions : starts
+
+    users {
+        uuid id PK
+    }
+    recipes {
+        uuid id PK
+        uuid author_id FK
+        uuid cover_file_id FK,UK
+        decimal base_servings
+        enum visibility
+    }
+    recipe_ingredients {
+        uuid id PK
+        uuid recipe_id FK
+        string canonical_name FK
+        string unit FK
+        decimal quantity
+    }
+    bookmarks {
+        uuid user_id PK,FK
+        uuid recipe_id PK,FK
+    }
+    recipe_reactions {
+        uuid user_id PK,FK
+        uuid recipe_id PK,FK
+        boolean liked
+    }
+    recipe_likes["recipe_likes (view)"]

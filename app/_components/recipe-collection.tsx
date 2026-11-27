@@ -1,11 +1,12 @@
 import { discoveryTranslator } from "@/lib/i18n/discovery";
+import { prepareRecipeText } from "@/lib/i18n/recipe-copy";
 import { difficultyLabels } from "@/lib/i18n/recipe-labels";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n";
 import { RecipeTranslation, RecipeText, RecipeTranslationControls } from "./recipe-translation";
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { RecipeDifficulty } from "@/generated/prisma/enums";
 import { CookByline } from "@/app/_components/cook-byline";
 import { Icon } from "@/app/_components/icons";
@@ -18,7 +19,8 @@ import { parseAllergenFilter } from "@/lib/dietary/policy";
 import { readDietaryPreferences } from "@/lib/dietary/server";
 import { formatScaledQuantity } from "@/lib/recipes/measurements";
 import { parseMaxMinutes } from "@/lib/recipes/ready-in";
-import { listRecipes, recipePageSize, type PublicCook, type RecipeCardData, type RecipeSort } from "@/lib/product/queries";
+import { parseRecipePageSize, recipePageSizes } from "@/lib/product/pagination";
+import { listRecipes, type PublicCook, type RecipeCardData, type RecipeSort } from "@/lib/product/queries";
 import GoogleSignInButton from "@/app/account/google-sign-in-button";
 import RecipeActions from "@/app/recipes/_components/recipe-actions";
 import { collectionHref, RecipeFilters, type BrowseState } from "./recipe-filters";
@@ -39,7 +41,7 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
   const duration = minutes ? t("{count} min", { count: minutes })
     : recipe.source?.estimatedMinutes ? t("about {count} min", { count: recipe.source.estimatedMinutes }) : null;
   return (
-    <RecipeTranslation texts={[recipe.title, recipe.description]}>
+    <RecipeTranslation {...prepareRecipeText([recipe.title, recipe.description], locale)}>
       <Card as="article" className={styles.entry}>
         <RecipeCover fileId={recipe.coverFileId} className={styles.cover} />
         <div className={styles.body}>
@@ -65,7 +67,7 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
               <CookByline cook={recipe.author} displayNameOnly={collection === "explore"} />
             </p>
           )}
-          {dietary && (
+          {dietary && (dietary.conflicts.length > 0 || dietary.unknownIngredients.length > 0) && (
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
               {dietary.conflicts.length > 0 && (
                 <span className="font-semibold text-rust">
@@ -73,12 +75,9 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
                 </span>
               )}
               {dietary.unknownIngredients.length > 0 && (
-                <span className="text-subtle">
-                  {t(dietary.unknownIngredients.length === 1 ? "{count} ingredient with incomplete information" : "{count} ingredients with incomplete information", { count: dietary.unknownIngredients.length })}
+                <span className="text-xs text-subtle">
+                  {t("Some ingredients are unrecognized. Please check the ingredient list before cooking.")}
                 </span>
-              )}
-              {!dietary.conflicts.length && !dietary.unknownIngredients.length && (
-                <span className="text-subtle">{t("No known conflicts in mapped ingredients.")}</span>
               )}
             </div>
           )}
@@ -123,17 +122,11 @@ const sortLabels = {
   saved: "Most saved",
 } as const satisfies Record<RecipeSort, string>;
 
-function SortPicker({ state, locale }: { state: BrowseState; locale: Locale }) {
-  const t = discoveryTranslator(locale);
+function ResultsPicker({ summary, label, children }: { summary: string; label: string; children: ReactNode }) {
   return (
-    <details className={styles.sortPicker} key={state.sort}>
-      <summary>{t("Sort by {sort}", { sort: t(sortLabels[state.sort]).toLocaleLowerCase(locale) })}<Icon name="chevron" className="size-3.5" /></summary>
-      <nav aria-label={t("Sort recipes")}>
-        {(Object.keys(sortLabels) as RecipeSort[]).map(sort => (
-          <Link key={sort} scroll={false} aria-current={state.sort === sort ? "true" : undefined}
-            href={collectionHref({ ...state, sort, page: 1 }) + "#recipes"}>{t(sortLabels[sort])}</Link>
-        ))}
-      </nav>
+    <details className={styles.resultsPicker} name="recipe-results-options" key={summary}>
+      <summary>{summary}<Icon name="chevron" className="size-3.5" /></summary>
+      <nav aria-label={label}>{children}</nav>
     </details>
   );
 }
@@ -159,7 +152,7 @@ async function RecipeResults({ state, cookId, signedIn, locale }: {
   state: BrowseState; cookId?: string; signedIn: boolean; locale: Locale;
 }) {
   const t = discoveryTranslator(locale);
-  const { collection, query, page, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
+  const { collection, query, page, pageSize, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
   const returnTo = collectionHref(state);
   if (!signedIn && collection !== "explore") {
     return (
@@ -170,7 +163,7 @@ async function RecipeResults({ state, cookId, signedIn, locale }: {
     );
   }
 
-  const result = await listRecipes({ collection, authorId: cookId, query, page, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter }).catch(() => null);
+  const result = await listRecipes({ collection, authorId: cookId, query, page, pageSize, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter }).catch(() => null);
   if (!result) {
     return (
       <div className="site-panel space-y-3">
@@ -180,7 +173,7 @@ async function RecipeResults({ state, cookId, signedIn, locale }: {
     );
   }
 
-  const pageCount = Math.ceil(result.total / recipePageSize);
+  const pageCount = Math.ceil(result.total / result.pageSize);
   const hasExclusions = hideDietaryConflicts || Boolean(allergenFilter?.allergens.length || allergenFilter?.ingredient);
   const filtered = Boolean(query || difficulty || maxMinutes || hasExclusions);
   const emptyMessage = difficulty || hasExclusions ? t("No recipes match these filters.")
@@ -192,7 +185,18 @@ async function RecipeResults({ state, cookId, signedIn, locale }: {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-subtle" aria-live="polite">{t(result.total === 1 ? "{count} recipe" : "{count} recipes", { count: result.total })}</p>
         <div className="flex flex-wrap items-center gap-2">
-          <SortPicker state={state} locale={locale} />
+          <ResultsPicker summary={t("{count} per page", { count: pageSize })} label={t("Recipes per page")}>
+            {recipePageSizes.map(size => (
+              <Link key={size} scroll={false} prefetch={false} aria-current={size === pageSize ? "true" : undefined}
+                href={collectionHref({ ...state, pageSize: size, page: 1 }) + "#recipes"}>{size}</Link>
+            ))}
+          </ResultsPicker>
+          <ResultsPicker summary={t("Sort by {sort}", { sort: t(sortLabels[sort]).toLocaleLowerCase(locale) })} label={t("Sort recipes")}>
+            {(Object.keys(sortLabels) as RecipeSort[]).map(option => (
+              <Link key={option} scroll={false} aria-current={option === sort ? "true" : undefined}
+                href={collectionHref({ ...state, sort: option, page: 1 }) + "#recipes"}>{t(sortLabels[option])}</Link>
+            ))}
+          </ResultsPicker>
           <ViewPicker state={state} locale={locale} />
         </div>
       </div>
@@ -246,6 +250,7 @@ export default async function RecipeCollection({ searchParams, cook }: {
   const state: BrowseState = {
     path: cook ? `/users/${cook.id}` : "/recipes",
     collection, query, page, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter,
+    pageSize: parseRecipePageSize(params.pageSize),
     view: params.view === "list" ? "list" : "cards",
   };
   const searchKey = collectionHref({ ...state, page: 1 });

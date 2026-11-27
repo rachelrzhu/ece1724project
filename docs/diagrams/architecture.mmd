@@ -1,0 +1,20 @@
+flowchart LR
+    accTitle: Hosted system architecture
+    accDescr: Cooks use a React client with recipe-scoped Redux. Next.js handles reads and writes, authenticates requests, and accesses relational and image storage.
+    browser["Browser · React + Tailwind<br/>Redux Toolkit scales quantities<br/>and handles Undo"]
+    subgraph app["Vercel · Next.js App Router"]
+        entry["Server Components for reads<br/>Server Actions for writes<br/>HTTP routes for auth and images"]
+        auth["Better Auth<br/>Sign-in and session lookup"]
+        recipes["Recipe services<br/>Validate input and check access"]
+        media["Photo handling<br/>Sharp validates uploads<br/>Image route authorizes reads"]
+        entry --> auth & recipes & media
+    end
+    db[("Neon PostgreSQL<br/>via Prisma")]
+    blob[("Private Vercel Blob<br/>Photo bytes")]
+    browser -->|"request"| entry
+    auth -->|"accounts and sessions"| db
+    recipes -->|"recipes and interactions"| db
+    media -->|"file metadata and visibility"| db
+    media -->|"upload or stream"| blob
+    classDef store fill:#e6eefc,stroke:#44689c,color:#172437
+    class db,blob store

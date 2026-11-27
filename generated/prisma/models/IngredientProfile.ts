@@ -27,16 +27,19 @@ export type AggregateIngredientProfile = {
 export type IngredientProfileMinAggregateOutputType = {
   canonicalName: string | null
   classification: $Enums.IngredientDiet | null
+  containsGluten: boolean | null
 }
 
 export type IngredientProfileMaxAggregateOutputType = {
   canonicalName: string | null
   classification: $Enums.IngredientDiet | null
+  containsGluten: boolean | null
 }
 
 export type IngredientProfileCountAggregateOutputType = {
   canonicalName: number
   classification: number
+  containsGluten: number
   _all: number
 }
 
@@ -44,16 +47,19 @@ export type IngredientProfileCountAggregateOutputType = {
 export type IngredientProfileMinAggregateInputType = {
   canonicalName?: true
   classification?: true
+  containsGluten?: true
 }
 
 export type IngredientProfileMaxAggregateInputType = {
   canonicalName?: true
   classification?: true
+  containsGluten?: true
 }
 
 export type IngredientProfileCountAggregateInputType = {
   canonicalName?: true
   classification?: true
+  containsGluten?: true
   _all?: true
 }
 
@@ -132,6 +138,7 @@ export type IngredientProfileGroupByArgs<ExtArgs extends runtime.Types.Extension
 export type IngredientProfileGroupByOutputType = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten: boolean | null
   _count: IngredientProfileCountAggregateOutputType | null
   _min: IngredientProfileMinAggregateOutputType | null
   _max: IngredientProfileMaxAggregateOutputType | null
@@ -158,6 +165,7 @@ export type IngredientProfileWhereInput = {
   NOT?: Prisma.IngredientProfileWhereInput | Prisma.IngredientProfileWhereInput[]
   canonicalName?: Prisma.StringFilter<"IngredientProfile"> | string
   classification?: Prisma.EnumIngredientDietFilter<"IngredientProfile"> | $Enums.IngredientDiet
+  containsGluten?: Prisma.BoolNullableFilter<"IngredientProfile"> | boolean | null
   allergens?: Prisma.IngredientAllergenListRelationFilter
   recipeIngredients?: Prisma.RecipeIngredientListRelationFilter
   translation?: Prisma.XOR<Prisma.IngredientTranslationNullableScalarRelationFilter, Prisma.IngredientTranslationWhereInput> | null
@@ -167,6 +175,7 @@ export type IngredientProfileWhereInput = {
 export type IngredientProfileOrderByWithRelationInput = {
   canonicalName?: Prisma.SortOrder
   classification?: Prisma.SortOrder
+  containsGluten?: Prisma.SortOrderInput | Prisma.SortOrder
   allergens?: Prisma.IngredientAllergenOrderByRelationAggregateInput
   recipeIngredients?: Prisma.RecipeIngredientOrderByRelationAggregateInput
   translation?: Prisma.IngredientTranslationOrderByWithRelationInput
@@ -179,6 +188,7 @@ export type IngredientProfileWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.IngredientProfileWhereInput[]
   NOT?: Prisma.IngredientProfileWhereInput | Prisma.IngredientProfileWhereInput[]
   classification?: Prisma.EnumIngredientDietFilter<"IngredientProfile"> | $Enums.IngredientDiet
+  containsGluten?: Prisma.BoolNullableFilter<"IngredientProfile"> | boolean | null
   allergens?: Prisma.IngredientAllergenListRelationFilter
   recipeIngredients?: Prisma.RecipeIngredientListRelationFilter
   translation?: Prisma.XOR<Prisma.IngredientTranslationNullableScalarRelationFilter, Prisma.IngredientTranslationWhereInput> | null
@@ -188,6 +198,7 @@ export type IngredientProfileWhereUniqueInput = Prisma.AtLeast<{
 export type IngredientProfileOrderByWithAggregationInput = {
   canonicalName?: Prisma.SortOrder
   classification?: Prisma.SortOrder
+  containsGluten?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.IngredientProfileCountOrderByAggregateInput
   _max?: Prisma.IngredientProfileMaxOrderByAggregateInput
   _min?: Prisma.IngredientProfileMinOrderByAggregateInput
@@ -199,11 +210,13 @@ export type IngredientProfileScalarWhereWithAggregatesInput = {
   NOT?: Prisma.IngredientProfileScalarWhereWithAggregatesInput | Prisma.IngredientProfileScalarWhereWithAggregatesInput[]
   canonicalName?: Prisma.StringWithAggregatesFilter<"IngredientProfile"> | string
   classification?: Prisma.EnumIngredientDietWithAggregatesFilter<"IngredientProfile"> | $Enums.IngredientDiet
+  containsGluten?: Prisma.BoolNullableWithAggregatesFilter<"IngredientProfile"> | boolean | null
 }
 
 export type IngredientProfileCreateInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutProfileInput
   translation?: Prisma.IngredientTranslationCreateNestedOneWithoutIngredientInput
@@ -213,6 +226,7 @@ export type IngredientProfileCreateInput = {
 export type IngredientProfileUncheckedCreateInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutProfileInput
   translation?: Prisma.IngredientTranslationUncheckedCreateNestedOneWithoutIngredientInput
@@ -222,6 +236,7 @@ export type IngredientProfileUncheckedCreateInput = {
 export type IngredientProfileUpdateInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutProfileNestedInput
   translation?: Prisma.IngredientTranslationUpdateOneWithoutIngredientNestedInput
@@ -231,6 +246,7 @@ export type IngredientProfileUpdateInput = {
 export type IngredientProfileUncheckedUpdateInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutProfileNestedInput
   translation?: Prisma.IngredientTranslationUncheckedUpdateOneWithoutIngredientNestedInput
@@ -240,31 +256,37 @@ export type IngredientProfileUncheckedUpdateInput = {
 export type IngredientProfileCreateManyInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
 }
 
 export type IngredientProfileUpdateManyMutationInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
 }
 
 export type IngredientProfileUncheckedUpdateManyInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
 }
 
 export type IngredientProfileCountOrderByAggregateInput = {
   canonicalName?: Prisma.SortOrder
   classification?: Prisma.SortOrder
+  containsGluten?: Prisma.SortOrder
 }
 
 export type IngredientProfileMaxOrderByAggregateInput = {
   canonicalName?: Prisma.SortOrder
   classification?: Prisma.SortOrder
+  containsGluten?: Prisma.SortOrder
 }
 
 export type IngredientProfileMinOrderByAggregateInput = {
   canonicalName?: Prisma.SortOrder
   classification?: Prisma.SortOrder
+  containsGluten?: Prisma.SortOrder
 }
 
 export type IngredientProfileScalarRelationFilter = {
@@ -274,6 +296,10 @@ export type IngredientProfileScalarRelationFilter = {
 
 export type EnumIngredientDietFieldUpdateOperationsInput = {
   set?: $Enums.IngredientDiet
+}
+
+export type NullableBoolFieldUpdateOperationsInput = {
+  set?: boolean | null
 }
 
 export type IngredientProfileCreateNestedOneWithoutTranslationInput = {
@@ -335,6 +361,7 @@ export type IngredientProfileUpdateOneRequiredWithoutRecipeIngredientsNestedInpu
 export type IngredientProfileCreateWithoutTranslationInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutProfileInput
   aliases?: Prisma.IngredientAliasCreateNestedManyWithoutIngredientInput
@@ -343,6 +370,7 @@ export type IngredientProfileCreateWithoutTranslationInput = {
 export type IngredientProfileUncheckedCreateWithoutTranslationInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutProfileInput
   aliases?: Prisma.IngredientAliasUncheckedCreateNestedManyWithoutIngredientInput
@@ -367,6 +395,7 @@ export type IngredientProfileUpdateToOneWithWhereWithoutTranslationInput = {
 export type IngredientProfileUpdateWithoutTranslationInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutProfileNestedInput
   aliases?: Prisma.IngredientAliasUpdateManyWithoutIngredientNestedInput
@@ -375,6 +404,7 @@ export type IngredientProfileUpdateWithoutTranslationInput = {
 export type IngredientProfileUncheckedUpdateWithoutTranslationInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutProfileNestedInput
   aliases?: Prisma.IngredientAliasUncheckedUpdateManyWithoutIngredientNestedInput
@@ -383,6 +413,7 @@ export type IngredientProfileUncheckedUpdateWithoutTranslationInput = {
 export type IngredientProfileCreateWithoutAliasesInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutProfileInput
   translation?: Prisma.IngredientTranslationCreateNestedOneWithoutIngredientInput
@@ -391,6 +422,7 @@ export type IngredientProfileCreateWithoutAliasesInput = {
 export type IngredientProfileUncheckedCreateWithoutAliasesInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedCreateNestedManyWithoutIngredientInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutProfileInput
   translation?: Prisma.IngredientTranslationUncheckedCreateNestedOneWithoutIngredientInput
@@ -415,6 +447,7 @@ export type IngredientProfileUpdateToOneWithWhereWithoutAliasesInput = {
 export type IngredientProfileUpdateWithoutAliasesInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutProfileNestedInput
   translation?: Prisma.IngredientTranslationUpdateOneWithoutIngredientNestedInput
@@ -423,6 +456,7 @@ export type IngredientProfileUpdateWithoutAliasesInput = {
 export type IngredientProfileUncheckedUpdateWithoutAliasesInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedUpdateManyWithoutIngredientNestedInput
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutProfileNestedInput
   translation?: Prisma.IngredientTranslationUncheckedUpdateOneWithoutIngredientNestedInput
@@ -431,6 +465,7 @@ export type IngredientProfileUncheckedUpdateWithoutAliasesInput = {
 export type IngredientProfileCreateWithoutAllergensInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   recipeIngredients?: Prisma.RecipeIngredientCreateNestedManyWithoutProfileInput
   translation?: Prisma.IngredientTranslationCreateNestedOneWithoutIngredientInput
   aliases?: Prisma.IngredientAliasCreateNestedManyWithoutIngredientInput
@@ -439,6 +474,7 @@ export type IngredientProfileCreateWithoutAllergensInput = {
 export type IngredientProfileUncheckedCreateWithoutAllergensInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   recipeIngredients?: Prisma.RecipeIngredientUncheckedCreateNestedManyWithoutProfileInput
   translation?: Prisma.IngredientTranslationUncheckedCreateNestedOneWithoutIngredientInput
   aliases?: Prisma.IngredientAliasUncheckedCreateNestedManyWithoutIngredientInput
@@ -463,6 +499,7 @@ export type IngredientProfileUpdateToOneWithWhereWithoutAllergensInput = {
 export type IngredientProfileUpdateWithoutAllergensInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   recipeIngredients?: Prisma.RecipeIngredientUpdateManyWithoutProfileNestedInput
   translation?: Prisma.IngredientTranslationUpdateOneWithoutIngredientNestedInput
   aliases?: Prisma.IngredientAliasUpdateManyWithoutIngredientNestedInput
@@ -471,6 +508,7 @@ export type IngredientProfileUpdateWithoutAllergensInput = {
 export type IngredientProfileUncheckedUpdateWithoutAllergensInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   recipeIngredients?: Prisma.RecipeIngredientUncheckedUpdateManyWithoutProfileNestedInput
   translation?: Prisma.IngredientTranslationUncheckedUpdateOneWithoutIngredientNestedInput
   aliases?: Prisma.IngredientAliasUncheckedUpdateManyWithoutIngredientNestedInput
@@ -479,6 +517,7 @@ export type IngredientProfileUncheckedUpdateWithoutAllergensInput = {
 export type IngredientProfileCreateWithoutRecipeIngredientsInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenCreateNestedManyWithoutIngredientInput
   translation?: Prisma.IngredientTranslationCreateNestedOneWithoutIngredientInput
   aliases?: Prisma.IngredientAliasCreateNestedManyWithoutIngredientInput
@@ -487,6 +526,7 @@ export type IngredientProfileCreateWithoutRecipeIngredientsInput = {
 export type IngredientProfileUncheckedCreateWithoutRecipeIngredientsInput = {
   canonicalName: string
   classification: $Enums.IngredientDiet
+  containsGluten?: boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedCreateNestedManyWithoutIngredientInput
   translation?: Prisma.IngredientTranslationUncheckedCreateNestedOneWithoutIngredientInput
   aliases?: Prisma.IngredientAliasUncheckedCreateNestedManyWithoutIngredientInput
@@ -511,6 +551,7 @@ export type IngredientProfileUpdateToOneWithWhereWithoutRecipeIngredientsInput =
 export type IngredientProfileUpdateWithoutRecipeIngredientsInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUpdateManyWithoutIngredientNestedInput
   translation?: Prisma.IngredientTranslationUpdateOneWithoutIngredientNestedInput
   aliases?: Prisma.IngredientAliasUpdateManyWithoutIngredientNestedInput
@@ -519,6 +560,7 @@ export type IngredientProfileUpdateWithoutRecipeIngredientsInput = {
 export type IngredientProfileUncheckedUpdateWithoutRecipeIngredientsInput = {
   canonicalName?: Prisma.StringFieldUpdateOperationsInput | string
   classification?: Prisma.EnumIngredientDietFieldUpdateOperationsInput | $Enums.IngredientDiet
+  containsGluten?: Prisma.NullableBoolFieldUpdateOperationsInput | boolean | null
   allergens?: Prisma.IngredientAllergenUncheckedUpdateManyWithoutIngredientNestedInput
   translation?: Prisma.IngredientTranslationUncheckedUpdateOneWithoutIngredientNestedInput
   aliases?: Prisma.IngredientAliasUncheckedUpdateManyWithoutIngredientNestedInput
@@ -576,6 +618,7 @@ export type IngredientProfileCountOutputTypeCountAliasesArgs<ExtArgs extends run
 export type IngredientProfileSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   canonicalName?: boolean
   classification?: boolean
+  containsGluten?: boolean
   allergens?: boolean | Prisma.IngredientProfile$allergensArgs<ExtArgs>
   recipeIngredients?: boolean | Prisma.IngredientProfile$recipeIngredientsArgs<ExtArgs>
   translation?: boolean | Prisma.IngredientProfile$translationArgs<ExtArgs>
@@ -586,19 +629,22 @@ export type IngredientProfileSelect<ExtArgs extends runtime.Types.Extensions.Int
 export type IngredientProfileSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   canonicalName?: boolean
   classification?: boolean
+  containsGluten?: boolean
 }, ExtArgs["result"]["ingredientProfile"]>
 
 export type IngredientProfileSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   canonicalName?: boolean
   classification?: boolean
+  containsGluten?: boolean
 }, ExtArgs["result"]["ingredientProfile"]>
 
 export type IngredientProfileSelectScalar = {
   canonicalName?: boolean
   classification?: boolean
+  containsGluten?: boolean
 }
 
-export type IngredientProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"canonicalName" | "classification", ExtArgs["result"]["ingredientProfile"]>
+export type IngredientProfileOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"canonicalName" | "classification" | "containsGluten", ExtArgs["result"]["ingredientProfile"]>
 export type IngredientProfileInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   allergens?: boolean | Prisma.IngredientProfile$allergensArgs<ExtArgs>
   recipeIngredients?: boolean | Prisma.IngredientProfile$recipeIngredientsArgs<ExtArgs>
@@ -620,6 +666,7 @@ export type $IngredientProfilePayload<ExtArgs extends runtime.Types.Extensions.I
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     canonicalName: string
     classification: $Enums.IngredientDiet
+    containsGluten: boolean | null
   }, ExtArgs["result"]["ingredientProfile"]>
   composites: {}
 }
@@ -1049,6 +1096,7 @@ export interface Prisma__IngredientProfileClient<T, Null = never, ExtArgs extend
 export interface IngredientProfileFieldRefs {
   readonly canonicalName: Prisma.FieldRef<"IngredientProfile", 'String'>
   readonly classification: Prisma.FieldRef<"IngredientProfile", 'IngredientDiet'>
+  readonly containsGluten: Prisma.FieldRef<"IngredientProfile", 'Boolean'>
 }
     
 

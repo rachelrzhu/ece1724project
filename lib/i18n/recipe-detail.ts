@@ -1,4 +1,5 @@
 import type { Messages } from "@/lib/i18n";
+import { ingredientWarningMessages } from "./recipe-labels";
 
 export const detailMessages = {
   "Recipe": ["食谱", "Recette"],
@@ -26,15 +27,11 @@ export const detailMessages = {
   ],
   "Your dietary flags": ["饮食提醒", "Vos alertes alimentaires"],
   "Known conflicts": ["已知冲突", "Incompatibilités connues"],
-  "No known conflicts in mapped ingredients.": ["已识别的食材中没有已知冲突。", "Aucune incompatibilité connue parmi les ingrédients répertoriés."],
-  "Incomplete ingredient information": ["食材信息不完整", "Informations incomplètes sur les ingrédients"],
-  "These entries have missing or incomplete records for your settings.": [
-    "根据你的饮食设置，这些食材的信息缺失或不完整。", "Les données sur ces ingrédients sont absentes ou incomplètes pour vos préférences.",
-  ],
-  "Flags use recorded ingredient information. Check product labels and preparation for possible cross-contact.": [
-    "提醒依据已记录的食材信息。请查看产品标签，并注意制作过程中可能发生的交叉接触。", "Ces alertes reposent sur les données disponibles. Vérifiez les étiquettes et les conditions de préparation pour évaluer les risques de contact croisé.",
-  ],
+  ...ingredientWarningMessages,
   "Contains meat or seafood": ["含肉类或海鲜", "Contient de la viande ou des produits de la mer"],
+  "Contains meat or poultry": ["含畜肉或禽肉", "Contient de la viande ou de la volaille"],
+  "Contains seafood": ["含水产品", "Contient du poisson ou des fruits de mer"],
+  "Contains a gluten-containing grain": ["含麸质谷物", "Contient une céréale avec du gluten"],
   "Contains an animal-derived ingredient": ["含动物来源的食材", "Contient un ingrédient d’origine animale"],
   "Contains milk": ["含乳类", "Contient du lait"],
   "Contains eggs": ["含蛋类", "Contient des œufs"],
@@ -67,6 +64,10 @@ export const scalingMessages = {
   "Reset": ["重置", "Réinitialiser"],
   "Serves {servings}": ["{servings} 人份", "Pour {servings} pers."],
   "×{factor} batch": ["原配方的 {factor} 倍", "×{factor} la recette"],
+  "Ingredient units": ["食材单位", "Unités des ingrédients"],
+  "Original": ["原单位", "D’origine"],
+  "Metric": ["公制", "Métriques"],
+  "Imperial": ["英制", "Impériales"],
   "Ingredient quantities": ["食材用量", "Quantités des ingrédients"],
   "Scaling notes": ["用量调整提示", "Remarques sur les quantités"],
   "The original cooking time and temperature may need adjustment.": ["可能需要调整原食谱的烹饪时间和温度。", "Le temps et la température de cuisson d’origine peuvent nécessiter un ajustement."],

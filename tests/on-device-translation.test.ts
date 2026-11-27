@@ -61,4 +61,37 @@ describe("on-device recipe translation", () => {
     expect(manual?.strings.get("Velouté")).toBe("译：Velouté");
     expect(manual?.needsSource).toBe(false);
   });
+
+  it("uses the recipe language for short labels and honors an explicit source", async () => {
+    const { Translator, create } = installedTranslator();
+    const detect = vi.fn(async (text: string) => [{ detectedLanguage: text === "Roux" ? "fr" : "en", confidence: 0.98 }]);
+    const LanguageDetector: BrowserLanguageTools["LanguageDetector"] = {
+      availability: async () => "available", create: async () => ({ detect, destroy: vi.fn() }),
+    };
+    const fields = ["Roux", "Warm the milk and whisk in the butter."];
+    const result = await translateRecipe({ LanguageDetector, Translator }, fields, "fr", signal, noDownload);
+    expect(result?.strings.get("Roux")).toBe("译：Roux");
+    expect(detect).not.toHaveBeenCalledWith("Roux", { signal });
+    detect.mockClear();
+    await translateRecipe({ LanguageDetector, Translator }, ["Mélange maison"], "en", signal, noDownload, "fr");
+    expect(detect).not.toHaveBeenCalled();
+    expect(create).toHaveBeenLastCalledWith({ sourceLanguage: "fr", targetLanguage: "en", signal });
+  });
+
+  it("continues with other languages and reports partial translations after a download fails", async () => {
+    const { create } = installedTranslator();
+    const result = await translateRecipe({ Translator: {
+      availability: async () => "available",
+      create: options => options.sourceLanguage === "zh" ? Promise.reject(new Error("Download failed")) : create(),
+    } }, ["打散鸡蛋。", "Battez les œufs dans un bol."], "en", signal, noDownload);
+    expect([...result!.strings.keys()]).toEqual(["Battez les œufs dans un bol."]);
+    expect(result?.incomplete).toBe(true);
+    expect(result?.canRetry).toBe(true);
+  });
+
+  it("completes catalog-only recipes without native APIs", async () => {
+    expect(await translateRecipe({}, [], "zh", signal, noDownload)).toEqual({
+      strings: new Map(), needsSource: false, incomplete: false, canRetry: false,
+    });
+  });
 });

@@ -1,16 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { Allergen } from "@/generated/prisma/enums";
+import { Allergen, DietPreference } from "@/generated/prisma/enums";
 import {
-  allergenChoices, buildDietaryContext, defaultPreferences, dietChoices, dietaryInputSchema, parseAllergenFilter,
+  additionalAllergenChoices, allergenChoices, buildDietaryContext, commonAllergenChoices,
+  defaultPreferences, dietChoices, dietaryInputSchema, parseAllergenFilter,
 } from "@/lib/dietary/policy";
 
 const profiles = [
-  { canonicalName: "milk chocolate with peanuts", classification: "NON_VEGAN", allergens: [{ allergen: "PEANUT" }, { allergen: "MILK" }] },
-  { canonicalName: "egg", classification: "VEGETARIAN", allergens: [{ allergen: "EGG" }] },
-  { canonicalName: "chicken thighs", classification: "NON_VEGETARIAN", allergens: [] },
-  { canonicalName: "salt", classification: "VEGAN", allergens: [] },
-  { canonicalName: "soy sauce", classification: "UNKNOWN", allergens: [{ allergen: "SOY" }] },
-  { canonicalName: "shrimp", classification: "NON_VEGETARIAN", allergens: [{ allergen: "CRUSTACEANS_MOLLUSCS" }] },
+  { canonicalName: "milk chocolate with peanuts", classification: "NON_VEGAN", containsGluten: null, allergens: [{ allergen: "PEANUT" }, { allergen: "MILK" }] },
+  { canonicalName: "egg", classification: "VEGETARIAN", containsGluten: false, allergens: [{ allergen: "EGG" }] },
+  { canonicalName: "chicken thighs", classification: "MEAT", containsGluten: false, allergens: [] },
+  { canonicalName: "salt", classification: "VEGAN", containsGluten: false, allergens: [] },
+  { canonicalName: "soy sauce", classification: "UNKNOWN", containsGluten: null, allergens: [{ allergen: "SOY" }] },
+  { canonicalName: "shrimp", classification: "SEAFOOD", containsGluten: false, allergens: [{ allergen: "CRUSTACEANS_MOLLUSCS" }] },
+  { canonicalName: "barley", classification: "VEGAN", containsGluten: true, allergens: [] },
+  { canonicalName: "house stock", classification: "NON_VEGETARIAN", containsGluten: null, allergens: [] },
 ] as const;
 
 const ingredients = [
@@ -30,10 +33,18 @@ describe("dietary preferences", () => {
 
   it("accepts any supported combination and preserves an empty profile", () => {
     expect(dietaryInputSchema.parse(defaultPreferences)).toEqual({ diet: "NONE", allergens: [] });
-    expect(dietChoices.map((choice) => choice.value)).toEqual(["NONE", "VEGETARIAN", "VEGAN"]);
+    expect(dietChoices.map((choice) => choice.value)).toEqual(Object.values(DietPreference));
     expect(allergenChoices.map((choice) => choice.value).sort()).toEqual(Object.values(Allergen).sort());
     expect(dietaryInputSchema.parse({ diet: "VEGETARIAN", allergens: ["MILK", "PEANUT"] }))
       .toEqual({ diet: "VEGETARIAN", allergens: ["MILK", "PEANUT"] });
+  });
+
+  it("keeps additional sensitivities selectable alongside the nine common allergens", () => {
+    expect(commonAllergenChoices).toHaveLength(9);
+    expect(additionalAllergenChoices.map(choice => choice.value)).toEqual(["MUSTARD", "SULPHITES"]);
+    expect([...commonAllergenChoices, ...additionalAllergenChoices]).toEqual(allergenChoices);
+    expect(parseAllergenFilter(["CRUSTACEANS_MOLLUSCS", "MUSTARD", "SULPHITES"], "").allergens)
+      .toEqual(["CRUSTACEANS_MOLLUSCS", "MUSTARD", "SULPHITES"]);
   });
 
   it.each([
@@ -61,7 +72,7 @@ describe("reported dietary conflicts", () => {
     const vegetarian = buildDietaryContext({ diet: "VEGETARIAN", allergens: ["MILK"] }, profiles);
     expect(vegetarian.summarize([egg, chicken, ingredients[0]])).toEqual({
       conflicts: [
-        { ingredient: "Chicken thighs", reasons: ["Contains meat or seafood"] },
+        { ingredient: "Chicken thighs", reasons: ["Contains meat or poultry"] },
         { ingredient: "Milk Chocolate with Peanuts", reasons: ["Contains milk"] },
       ],
       unknownIngredients: ["Egg", "Chicken thighs", "Milk Chocolate with Peanuts"],
@@ -99,5 +110,42 @@ describe("reported dietary conflicts", () => {
     const context = buildDietaryContext({ diet: "NONE", allergens: ["CRUSTACEANS_MOLLUSCS"] }, profiles);
     expect(context.summarize([{ name: "Shrimp", canonicalName: "shrimp" }]).conflicts[0].reasons)
       .toEqual(["Contains crustaceans or molluscs"]);
+  });
+
+  it("distinguishes land meat and seafood while retaining older ambiguous classifications", () => {
+    const rows = ["chicken thighs", "shrimp", "egg", "house stock"].map(name => ({ name, canonicalName: name }));
+    const summary = (diet: DietPreference) => buildDietaryContext({ diet, allergens: [] }, profiles).summarize(rows);
+    expect(summary("PESCATARIAN")).toEqual({
+      conflicts: [{ ingredient: "chicken thighs", reasons: ["Contains meat or poultry"] }],
+      unknownIngredients: ["house stock"],
+    });
+    expect(summary("VEGETARIAN").conflicts).toContainEqual({ ingredient: "shrimp", reasons: ["Contains seafood"] });
+    expect(summary("VEGAN").conflicts).toContainEqual({ ingredient: "house stock", reasons: ["Contains meat or seafood"] });
+  });
+
+  it("flags gluten sources independently of wheat allergy and leaves unassessed foods visible", () => {
+    const rows = ["barley", "soy sauce", "salt"].map(name => ({ name, canonicalName: name }));
+    const context = buildDietaryContext({ diet: "GLUTEN_FREE", allergens: [] }, profiles);
+    expect(context.conflictNames).toEqual(["barley"]);
+    expect(context.summarize(rows)).toEqual({
+      conflicts: [{ ingredient: "barley", reasons: ["Contains a gluten-containing grain"] }],
+      unknownIngredients: ["soy sauce"],
+    });
+    expect(buildDietaryContext({ diet: "NONE", allergens: ["WHEAT_TRITICALE"] }, profiles)
+      .summarize(rows).conflicts).toEqual([]);
+  });
+
+  it.each([
+    ["DAIRY_FREE", "MILK", "milk chocolate with peanuts", "Contains milk"],
+    ["EGG_FREE", "EGG", "egg", "Contains eggs"],
+  ] as const)("uses positive ingredient evidence for %s and shows overlapping warnings once", (diet, allergen, name, reason) => {
+    const rows = [name, "salt", "soy sauce"].map(name => ({ name, canonicalName: name }));
+    const context = buildDietaryContext({ diet, allergens: [] }, profiles);
+    expect(context.summarize(rows)).toEqual({
+      conflicts: [{ ingredient: name, reasons: [reason] }],
+      unknownIngredients: ["soy sauce"],
+    });
+    const overlapping = buildDietaryContext({ diet, allergens: [allergen] }, profiles);
+    expect(overlapping.summarize(rows).conflicts).toEqual(context.summarize(rows).conflicts);
   });
 });

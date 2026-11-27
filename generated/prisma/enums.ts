@@ -29,7 +29,11 @@ export type RecipeDifficulty = (typeof RecipeDifficulty)[keyof typeof RecipeDiff
 export const DietPreference = {
   NONE: 'NONE',
   VEGETARIAN: 'VEGETARIAN',
-  VEGAN: 'VEGAN'
+  VEGAN: 'VEGAN',
+  PESCATARIAN: 'PESCATARIAN',
+  GLUTEN_FREE: 'GLUTEN_FREE',
+  DAIRY_FREE: 'DAIRY_FREE',
+  EGG_FREE: 'EGG_FREE'
 } as const
 
 export type DietPreference = (typeof DietPreference)[keyof typeof DietPreference]
@@ -57,7 +61,9 @@ export const IngredientDiet = {
   VEGETARIAN: 'VEGETARIAN',
   NON_VEGETARIAN: 'NON_VEGETARIAN',
   NON_VEGAN: 'NON_VEGAN',
-  UNKNOWN: 'UNKNOWN'
+  UNKNOWN: 'UNKNOWN',
+  MEAT: 'MEAT',
+  SEAFOOD: 'SEAFOOD'
 } as const
 
 export type IngredientDiet = (typeof IngredientDiet)[keyof typeof IngredientDiet]

@@ -261,12 +261,12 @@
   color: var(--color-brand);
 }
 
-.sortPicker {
+.resultsPicker {
   position: relative;
   font-size: .875rem;
 }
 
-.sortPicker summary {
+.resultsPicker summary {
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
@@ -280,10 +280,10 @@
   font-weight: 600;
 }
 
-.sortPicker summary::-webkit-details-marker { display: none; }
-.sortPicker[open] summary svg { transform: rotate(180deg); }
+.resultsPicker summary::-webkit-details-marker { display: none; }
+.resultsPicker[open] summary svg { transform: rotate(180deg); }
 
-.sortPicker nav {
+.resultsPicker nav {
   position: absolute;
   z-index: 10;
   top: calc(100% + .25rem);
@@ -295,14 +295,14 @@
   box-shadow: 0 4px 12px #0001;
 }
 
-.sortPicker nav a {
+.resultsPicker nav a {
   display: block;
   padding: .625rem;
   border-radius: .5rem;
 }
 
-.sortPicker nav a:hover,
-.sortPicker nav a[aria-current] {
+.resultsPicker nav a:hover,
+.resultsPicker nav a[aria-current] {
   color: var(--color-brand);
   background: var(--color-tint);
 }

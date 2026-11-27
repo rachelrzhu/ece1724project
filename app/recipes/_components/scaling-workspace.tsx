@@ -8,7 +8,9 @@ import { unitMessages } from "@/lib/i18n/units";
 import { Button, Input } from "@/app/_components/material";
 import { useId, useMemo, useState } from "react";
 import { Provider, useDispatch, useSelector } from "react-redux";
-import { formatScaledQuantity, type ScalingIngredient, type ScalingRecipe } from "@/lib/recipes/scaling";
+import { useDisplayUnits } from "@/app/_components/display-unit-provider";
+import { formatConvertedQuantity, formatScaledQuantity } from "@/lib/recipes/measurements";
+import { getDisplayMeasurement, type ScalingIngredient, type ScalingRecipe } from "@/lib/recipes/scaling";
 import {
   makeScalingStore,
   scalingActions,
@@ -113,33 +115,59 @@ function ScalingControls({ recipe }: { recipe: ScalingRecipe }) {
   );
 }
 
+const displaySystems = [
+  { value: "original", label: "Original" },
+  { value: "metric", label: "Metric" },
+  { value: "imperial", label: "Imperial" },
+] as const;
+
 function IngredientPreview({ recipe }: { recipe: ScalingRecipe }) {
   const locale = useLocale();
   const t = makeTranslator(locale, scalingMessages);
   const unitLabel = makeTranslator<Messages>(locale, unitMessages);
+  const { system, chooseSystem } = useDisplayUnits();
+  const groupName = useId();
   const preview = useScalingSelector(state => selectPreview(state, recipe, locale));
   const scaled = preview.ok && preview.factor !== 1;
-  const amounts = preview.ok
-    ? preview.ingredients.map(({ scaledQuantity, ...item }) => ({ ...item, quantity: scaledQuantity }))
-    : recipe.ingredients;
+  const ingredients = preview.ok ? preview.ingredients : recipe.ingredients.map(item => ({
+    ...item, scaledQuantity: item.quantity === null ? null : Number(item.quantity),
+  }));
   const servings = formatScaledQuantity(preview.ok ? preview.servings : Number(recipe.baseServings), locale);
 
   return (
     <div>
+      <fieldset className="mb-3 min-w-0">
+        <legend className="mb-1.5 text-sm font-semibold">{t("Ingredient units")}</legend>
+        <div className="inline-flex max-w-full rounded-lg border border-line bg-canvas p-0.5">
+          {displaySystems.map(({ value, label }) => (
+            <label key={value} className="relative cursor-pointer">
+              <input type="radio" name={groupName} value={value} checked={system === value}
+                onChange={() => chooseSystem(value)} className="peer absolute inset-0 size-full cursor-pointer opacity-0" />
+              <span className="grid min-h-11 place-items-center rounded-md px-3 text-sm font-semibold text-subtle peer-checked:bg-brand peer-checked:text-primary-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand">
+                {t(label)}
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="flex flex-wrap items-center justify-between gap-2 border-y border-line bg-canvas px-3 py-2 text-sm text-ink" role="status">
         <p className="font-semibold wrap-anywhere">{t("Serves {servings}", { servings })}</p>
         {scaled && <p className="wrap-anywhere">{t("×{factor} batch", { factor: formatScaledQuantity(preview.factor, locale) })}</p>}
       </div>
       <ul className="mt-2 divide-y divide-line" aria-label={t("Ingredient quantities")}>
-        {amounts.map((item) => (
-          <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,42%)] gap-3 py-3 wrap-anywhere">
-            <div>
-              <p className="font-semibold">{item.name}</p>
-              {item.note && <p className="text-sm text-subtle"><RecipeText text={item.note} /></p>}
-            </div>
-            {item.quantity !== null && <span className="text-end text-subtle">{formatScaledQuantity(Number(item.quantity), locale)} {item.unit ? unitLabel(item.unit) : ""}</span>}
-          </li>
-        ))}
+        {ingredients.map((item) => {
+          const { quantity, unit } = getDisplayMeasurement(item.scaledQuantity, item.unit, system);
+          const format = quantity === item.scaledQuantity ? formatScaledQuantity : formatConvertedQuantity;
+          return (
+            <li key={item.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,42%)] gap-3 py-3 wrap-anywhere">
+              <div>
+                <p className="font-semibold">{item.name}</p>
+                {item.note && <p className="text-sm text-subtle"><RecipeText text={item.note} /></p>}
+              </div>
+              {quantity !== null && <span className="text-end text-subtle">{format(quantity, locale)} {unit ? unitLabel(unit) : ""}</span>}
+            </li>
+          );
+        })}
       </ul>
       {preview.ok && preview.warnings.length > 0 && (
         <ul className="mt-2 list-disc space-y-1 rounded-lg border border-warning/25 bg-warning/10 p-3 ps-7 text-sm text-warning" aria-label={t("Scaling notes")}>

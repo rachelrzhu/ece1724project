@@ -1,6 +1,6 @@
 import { makeTranslator, type Locale, type Messages } from "@/lib/i18n";
 import { actionMessages } from "./action-messages";
-import { dietMessages, difficultyMessages } from "./recipe-labels";
+import { dietMessages, difficultyMessages, ingredientWarningMessages } from "./recipe-labels";
 
 export const homeMessages = {
   "What’s cooking tonight?": ["今晚做什么菜？", "Qu’est-ce qu’on cuisine ce soir ?"],
@@ -65,9 +65,7 @@ export const discoveryMessages = {
   "Home cook": ["家庭厨师", "Cuisinier amateur"],
   "{count} ingredient with known conflicts": ["{count} 种食材与饮食偏好冲突", "{count} ingrédient incompatible avec vos préférences"],
   "{count} ingredients with known conflicts": ["{count} 种食材与饮食偏好冲突", "{count} ingrédients incompatibles avec vos préférences"],
-  "{count} ingredient with incomplete information": ["{count} 种食材的信息不完整", "Informations incomplètes pour {count} ingrédient"],
-  "{count} ingredients with incomplete information": ["{count} 种食材的信息不完整", "Informations incomplètes pour {count} ingrédients"],
-  "No known conflicts in mapped ingredients.": ["已识别的食材未发现饮食冲突。", "Aucune incompatibilité connue parmi les ingrédients identifiés."],
+  ...ingredientWarningMessages,
   "Edit {title}": ["编辑《{title}》", "Modifier « {title} »"],
   Edit: ["编辑", "Modifier"],
   "Recipe display": ["食谱显示方式", "Affichage des recettes"],
@@ -77,6 +75,8 @@ export const discoveryMessages = {
   "Most liked": ["最多人喜欢", "Les plus aimées"],
   "Most saved": ["最多人收藏", "Les plus enregistrées"],
   "Sort by {sort}": ["排序：{sort}", "Trier par : {sort}"],
+  "{count} per page": ["每页 {count} 条", "{count} par page"],
+  "Recipes per page": ["每页食谱数", "Recettes par page"],
   "Sort recipes": ["食谱排序", "Trier les recettes"],
   "Loading recipes…": ["正在加载食谱…", "Chargement des recettes…"],
   "Sign in to view your recipes.": ["登录后即可查看你的食谱。", "Connectez-vous pour voir vos recettes."],
@@ -129,7 +129,7 @@ export const discoveryMessages = {
   Search: ["搜索", "Rechercher"],
   "Search or exclude ingredients in English, 中文, or français.": ["支持用中文、英语或法语搜索或排除食材。", "Recherchez ou excluez des ingrédients en français, en anglais ou en chinois."],
   "More filters": ["更多筛选", "Plus de filtres"],
-  "Allergens to exclude": ["要排除的过敏原", "Allergènes à exclure"],
+  "Common allergens to exclude": ["要排除的常见过敏原", "Allergènes courants à exclure"],
   "Ingredient name to exclude": ["要排除的食材名称", "Nom de l’ingrédient à exclure"],
   "e.g. egg, 鸡蛋, œuf": ["例如：鸡蛋、egg、œuf", "p. ex. œuf, egg, 鸡蛋"],
   "Hide known conflicts": ["隐藏与饮食偏好冲突的食谱", "Masquer les incompatibilités connues"],

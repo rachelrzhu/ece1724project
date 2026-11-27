@@ -4,7 +4,9 @@
 | --- | --- | --- | --- |
 | Dev | `dev`, or a feature branch merged into `dev` | Local Development / Preview | Build and test ongoing work. |
 | Preprod | `preprod` | Preview, with branch-specific credentials | Test a release through its Vercel URL before it goes live. |
-| Prod | `main` | Production | Serve https://ece1724project.vercel.app. |
+| Prod | `main` | Production | Serve [From My Kitchen](https://frommykitchen.vercel.app/). |
+
+Vercel redirects the original `ece1724project.vercel.app` address to `frommykitchen.vercel.app` so existing recipe links still open the same recipe.
 
 Keep `main` as Vercel's Production Branch. A separate `prod` branch is unnecessary: `main` is prod. Branch previews work on Vercel Hobby; paid Custom Environments are optional.
 
@@ -86,7 +88,7 @@ Dev and preprod each started with an empty Neon database and a separate private 
 | Development, local | `http://localhost:3000/api/auth/callback/google` |
 | Development, Vercel Preview on `dev` | `https://ece1724project-git-dev-rachelrzhus-projects.vercel.app/api/auth/callback/google` |
 | Preprod, Vercel Preview on `preprod` | `https://ece1724project-git-preprod-rachelrzhus-projects.vercel.app/api/auth/callback/google` |
-| Production | `https://ece1724project.vercel.app/api/auth/callback/google` |
+| Production | `https://frommykitchen.vercel.app/api/auth/callback/google` |
 
 3. In local `.env.local`, set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from the development client and `BETTER_AUTH_URL=http://localhost:3000`. If you run locally at another origin, register its exact callback and use that origin in the app. Configure the local database with the auth migration and a `BETTER_AUTH_SECRET` of at least 32 characters.
 4. In Vercel **Project Settings → Environment Variables**, set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `BETTER_AUTH_URL` in each intended target. Use Preview with the **Git Branch** set to `dev` or `preprod`, and the production client with the Production target. Set `BETTER_AUTH_URL` to the origin in the matching table row (omit the callback path). Keep the client secret server-only and retain each target's database and auth secret.

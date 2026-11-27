@@ -54,7 +54,9 @@ export function ScalingPreview({ result }: { result: ScalingResult }) {
 }
 ```
 
-Use `result.error.field` to place validation feedback beside the relevant control. Rows keep their original `quantity` and unit. Use `scaledQuantity` for the preview and the original recipe for edits. The engine uses JavaScript numbers for calculations. The preview rounds scaled quantities, servings, and batch factors to at most one decimal place. A positive value that would round to zero appears as `<0.1`. The same display rule applies at the original serving count. The editor preserves older, higher-precision measurements until the author chooses to change them.
+Use `result.error.field` to place validation feedback beside the relevant control. Rows keep their original `quantity` and unit. Use `scaledQuantity` for the preview and the original recipe for edits. The engine uses JavaScript numbers for calculations. Servings, batch factors, and quantities shown in their original units use at most one decimal place. A positive value that would round to zero appears as `<0.1`. The editor preserves older, higher-precision measurements until the author chooses to change them.
+
+The **Ingredient units** control applies to the whole list. It starts in **Original** and remembers the cook’s selection in a browser cookie. **Metric** and **Imperial** choose units within each ingredient’s dimension. For example, 2 tsp becomes 10 mL, and 400 g becomes 14.1 oz. Converted values use up to three significant digits so even a small amount such as 0.0353 oz stays measurable. Switching units always starts from the unrounded quantity for the current batch.
 
 The database supplies the recipe editor’s common-unit menu. New recipes use 1–100 whole servings. Scaling accepts targets from 0.1 to 100 servings, and measured amounts from 0.1 to 1,000,000, with at most one decimal. Switching units or modes retains the exact batch behind the rounded control until the cook edits it.
 

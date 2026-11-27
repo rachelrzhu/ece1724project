@@ -34,12 +34,21 @@ export function isValidBaseServings(amount: number) {
   return Number.isInteger(amount) && amount >= 1 && amount <= MAX_SERVINGS;
 }
 
-const quantityFormat = { maximumFractionDigits: 1, useGrouping: false };
-const displayFormats = {
-  en: new Intl.NumberFormat("en", quantityFormat),
-  zh: new Intl.NumberFormat("zh", quantityFormat),
-  fr: new Intl.NumberFormat("fr", quantityFormat),
-} satisfies Record<Locale, Intl.NumberFormat>;
+function quantityFormats(precision: Intl.NumberFormatOptions) {
+  const options = { useGrouping: false, ...precision };
+  return {
+    en: new Intl.NumberFormat("en", options),
+    zh: new Intl.NumberFormat("zh", options),
+    fr: new Intl.NumberFormat("fr", options),
+  } satisfies Record<Locale, Intl.NumberFormat>;
+}
+
+const displayFormats = quantityFormats({ maximumFractionDigits: 1 });
+const convertedFormats = quantityFormats({ maximumSignificantDigits: 3 });
+
+export function formatConvertedQuantity(value: number, locale: Locale = "en"): string {
+  return convertedFormats[locale].format(value);
+}
 
 export function formatScaledQuantity(value: number, locale: Locale = "en"): string {
   const formatter = displayFormats[locale];

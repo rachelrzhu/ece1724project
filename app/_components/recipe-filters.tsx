@@ -6,17 +6,24 @@ import Link from "next/link";
 import { Icon } from "./icons";
 import { Button, Input } from "./material";
 import type { Collection } from "./site-header";
-import { allergenChoices, type ExploreAllergenFilter } from "@/lib/dietary/policy";
+import { additionalAllergenChoices, allergenChoices, commonAllergenChoices, type ExploreAllergenFilter } from "@/lib/dietary/policy";
 import { RecipeDifficulty } from "@/generated/prisma/enums";
+import { defaultRecipePageSize, type RecipePageSize } from "@/lib/product/pagination";
 import type { RecipeSort } from "@/lib/product/queries";
 import { MAX_READY_MINUTES } from "@/lib/recipes/ready-in";
 import styles from "./recipe-collection.module.css";
+
+const allergenGroups = [
+  { legend: "Common allergens to exclude", choices: commonAllergenChoices },
+  { legend: "Additional allergens and sensitivities", choices: additionalAllergenChoices },
+] as const;
 
 export type BrowseState = {
   collection: Collection;
   path: string;
   query: string;
   page: number;
+  pageSize: RecipePageSize;
   view: "cards" | "list";
   difficulty?: RecipeDifficulty;
   sort: RecipeSort;
@@ -25,7 +32,7 @@ export type BrowseState = {
   allergenFilter?: ExploreAllergenFilter;
 };
 
-export function collectionHref({ collection, path, query, page, view, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter }: BrowseState) {
+export function collectionHref({ collection, path, query, page, pageSize, view, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter }: BrowseState) {
   const params = new URLSearchParams();
   if (collection !== "explore") params.set("collection", collection);
   if (view === "list") params.set("view", view);
@@ -34,6 +41,7 @@ export function collectionHref({ collection, path, query, page, view, difficulty
   if (sort !== "recent") params.set("sort", sort);
   if (maxMinutes) params.set("maxMinutes", String(maxMinutes));
   if (page > 1) params.set("page", String(page));
+  if (pageSize !== defaultRecipePageSize) params.set("pageSize", String(pageSize));
   if (hideDietaryConflicts) params.set("dietary", "1");
   for (const allergen of allergenFilter?.allergens ?? []) params.append("allergen", allergen);
   if (allergenFilter?.ingredient) params.set("exclude", allergenFilter.ingredient);
@@ -78,8 +86,9 @@ function ActiveFilters({ state, locale }: { state: BrowseState; locale: Locale }
 
 export function RecipeFilters({ state, hasPreferences, locale }: { state: BrowseState; hasPreferences: boolean; locale: Locale }) {
   const t = discoveryTranslator(locale);
-  const { collection, path, query, view, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
+  const { collection, path, query, pageSize, view, difficulty, sort, maxMinutes, hideDietaryConflicts, allergenFilter } = state;
   const scopeFields = <>
+    {pageSize !== defaultRecipePageSize && <input type="hidden" name="pageSize" value={pageSize} />}
     {collection !== "explore" && <input type="hidden" name="collection" value={collection} />}
     {view === "list" && <input type="hidden" name="view" value={view} />}
     {sort !== "recent" && <input type="hidden" name="sort" value={sort} />}
@@ -126,17 +135,21 @@ export function RecipeFilters({ state, hasPreferences, locale }: { state: Browse
               <summary><Icon name="filters" className="size-4" />{t("More filters")}<Icon name="chevron" className={styles.chevron} /></summary>
               <div className={styles.filterPanel}>
                 {allergenFilter && (
-                  <fieldset>
-                    <legend className="mb-1 text-sm font-semibold">{t("Allergens to exclude")}</legend>
-                    <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-3">
-                      {allergenChoices.map(({ value, label }) => (
-                        <label key={value} className={styles.checkLabel}>
-                          <input type="checkbox" name="allergen" value={value} defaultChecked={allergenFilter.allergens.includes(value)} />
-                          {t(label)}
-                        </label>
-                      ))}
-                    </div>
-                  </fieldset>
+                  <div className="min-w-0 space-y-3">
+                    {allergenGroups.map(({ legend, choices }) => (
+                      <fieldset key={legend}>
+                        <legend className="mb-1 text-sm font-semibold">{t(legend)}</legend>
+                        <div className="grid grid-cols-2 gap-x-3 sm:grid-cols-3">
+                          {choices.map(({ value, label }) => (
+                            <label key={value} className={styles.checkLabel}>
+                              <input type="checkbox" name="allergen" value={value} defaultChecked={allergenFilter.allergens.includes(value)} />
+                              {t(label)}
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                    ))}
+                  </div>
                 )}
                 <div className="min-w-0 space-y-3">
                   {allergenFilter && (
