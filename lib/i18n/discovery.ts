@@ -66,7 +66,6 @@ export const discoveryMessages = {
   "{count} ingredient with known conflicts": ["{count} 种食材与饮食偏好冲突", "{count} ingrédient incompatible avec vos préférences"],
   "{count} ingredients with known conflicts": ["{count} 种食材与饮食偏好冲突", "{count} ingrédients incompatibles avec vos préférences"],
   ...ingredientWarningMessages,
-  "No known conflicts in mapped ingredients.": ["已识别的食材未发现饮食冲突。", "Aucune incompatibilité connue parmi les ingrédients identifiés."],
   "Edit {title}": ["编辑《{title}》", "Modifier « {title} »"],
   Edit: ["编辑", "Modifier"],
   "Recipe display": ["食谱显示方式", "Affichage des recettes"],

@@ -68,7 +68,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     const flags = reader.getByRole("region", { name: "Your dietary flags", exact: true });
     await flags.getByText(ingredientWarning, { exact: true }).waitFor();
     assert.equal(await flags.getByText(ingredient, { exact: true }).count(), 0);
-    await reader.getByText("No known conflicts in mapped ingredients.", { exact: true }).waitFor();
+    assert.equal(await flags.innerText(), ingredientWarning);
     await reader.goto(results);
     await openMoreFilters(reader);
     await reader.getByRole("checkbox", { name: "Hide known conflicts", exact: true }).check();
@@ -107,7 +107,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     }
     passed("The page language controls ingredient names and preserves allergy flags when showing the original");
     await guest.goto(detail);
-    assert.equal(await guest.getByRole("heading", { name: "Your dietary flags", exact: true }).count(), 0);
+    assert.equal(await guest.getByRole("region", { name: "Your dietary flags", exact: true }).count(), 0);
     await guest.goto(filtered);
     await guest.getByRole("link", { name: title, exact: true }).waitFor();
     await openMoreFilters(guest);

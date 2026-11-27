@@ -1,4 +1,5 @@
 import { discoveryTranslator } from "@/lib/i18n/discovery";
+import { prepareRecipeText } from "@/lib/i18n/recipe-copy";
 import { difficultyLabels } from "@/lib/i18n/recipe-labels";
 import { getLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n";
@@ -40,7 +41,7 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
   const duration = minutes ? t("{count} min", { count: minutes })
     : recipe.source?.estimatedMinutes ? t("about {count} min", { count: recipe.source.estimatedMinutes }) : null;
   return (
-    <RecipeTranslation texts={[recipe.title, recipe.description]}>
+    <RecipeTranslation {...prepareRecipeText([recipe.title, recipe.description], locale)}>
       <Card as="article" className={styles.entry}>
         <RecipeCover fileId={recipe.coverFileId} className={styles.cover} />
         <div className={styles.body}>
@@ -66,7 +67,7 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
               <CookByline cook={recipe.author} displayNameOnly={collection === "explore"} />
             </p>
           )}
-          {dietary && (
+          {dietary && (dietary.conflicts.length > 0 || dietary.unknownIngredients.length > 0) && (
             <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm">
               {dietary.conflicts.length > 0 && (
                 <span className="font-semibold text-rust">
@@ -74,12 +75,9 @@ function RecipeEntry({ recipe, collection, showAuthor, signedIn, returnTo, local
                 </span>
               )}
               {dietary.unknownIngredients.length > 0 && (
-                <span className="text-subtle">
+                <span className="text-xs text-subtle">
                   {t("Some ingredients are unrecognized. Please check the ingredient list before cooking.")}
                 </span>
-              )}
-              {!dietary.conflicts.length && !dietary.unknownIngredients.length && (
-                <span className="text-subtle">{t("No known conflicts in mapped ingredients.")}</span>
               )}
             </div>
           )}

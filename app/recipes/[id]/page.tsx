@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { makeTranslator, type Locale, type Messages } from "@/lib/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { detailMessages } from "@/lib/i18n/recipe-detail";
+import { catalogRecipeText, prepareRecipeText } from "@/lib/i18n/recipe-copy";
 import { difficultyLabels, difficultyMessages } from "@/lib/i18n/recipe-labels";
 import { RecipeTranslation, RecipeText, RecipeTranslationControls } from "@/app/_components/recipe-translation";
 import { ButtonLink } from "@/app/_components/material";
@@ -22,7 +23,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/rec
   const [recipe, locale] = await Promise.all([getRecipe(id).catch(() => null), getLocale()]);
   const t = makeTranslator(locale, detailMessages);
   if (recipe?.visibility !== "PUBLIC") return { title: t("Recipe"), robots: { index: false, follow: false } };
-  return { title: options.edit === "1" ? t("Edit recipe") : recipe.title };
+  return { title: options.edit === "1" ? t("Edit recipe") : catalogRecipeText(recipe.title, locale) ?? recipe.title };
 }
 
 function recipeFacts(recipe: RecipeDetailData, locale: Locale) {
@@ -68,7 +69,7 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
   const dietaryNames = new Map(ingredients.map(item => [item.name, item.localizedName]));
   const hasCatalogTranslation = ingredients.some(item => item.localizedName && item.localizedName !== item.name);
   return (
-    <RecipeTranslation texts={texts} hasCatalogTranslation={hasCatalogTranslation}>
+    <RecipeTranslation {...prepareRecipeText(texts, locale)} hasCatalogTranslation={hasCatalogTranslation}>
       <PageFrame title={<RecipeText text={recipe.title} />} back={{ href: "/recipes", label: t("Explore recipes") }}>
         <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,0.7fr)] md:gap-8">
           <div className="flex max-w-3xl flex-col gap-4">
@@ -106,26 +107,24 @@ export default async function RecipePage({ params, searchParams }: PageProps<"/r
           </div>
           <RecipeCover fileId={recipe.coverFileId} showPlaceholderLabel className="aspect-[4/3] rounded-md border border-line" />
         </div>
-        {dietary && (
-          <section aria-labelledby="dietary-flags" className="site-panel space-y-3">
-            <h2 id="dietary-flags" className="site-heading text-xl">{t("Your dietary flags")}</h2>
-            {dietary.conflicts.length ? (
+        {dietary && (dietary.conflicts.length > 0 || dietary.unknownIngredients.length > 0) && (
+          <section aria-label={t("Your dietary flags")} className="space-y-2">
+            {dietary.conflicts.length > 0 && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-rust">{t("Known conflicts")}</h3>
+                <h2 className="site-heading text-xl text-rust">{t("Known conflicts")}</h2>
                 <dl className="space-y-2">
                   {dietary.conflicts.map(({ ingredient, reasons }, index) => (
                     <div key={index} className="text-sm wrap-anywhere">
-                      <dt className="font-semibold"><RecipeText text={ingredient} translation={dietaryNames.get(ingredient) ?? ingredient} /></dt>
+                      <dt className="font-semibold"><RecipeText text={ingredient} translation={dietaryNames.get(ingredient)} /></dt>
                       <dd><ul className="list-disc ps-5 text-subtle">{reasons.map((reason) => <li key={reason}>{translateReason(reason)}</li>)}</ul></dd>
                     </div>
                   ))}
                 </dl>
               </div>
-            ) : <p className="text-sm">{t("No known conflicts in mapped ingredients.")}</p>}
-            {dietary.unknownIngredients.length > 0 && (
-              <p className="text-sm text-subtle">{t("Some ingredients are unrecognized. Please check the ingredient list before cooking.")}</p>
             )}
-            <p className="text-sm text-subtle">{t("Flags use recorded ingredient information. Check product labels and preparation for possible cross-contact.")}</p>
+            {dietary.unknownIngredients.length > 0 && (
+              <p className="text-xs text-subtle">{t("Some ingredients are unrecognized. Please check the ingredient list before cooking.")}</p>
+            )}
           </section>
         )}
         <div className="grid items-start gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-12">

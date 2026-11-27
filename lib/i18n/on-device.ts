@@ -5,20 +5,24 @@ type Detection = { detectedLanguage: string; confidence: number };
 type Detector = { detect(text: string, options: { signal: AbortSignal }): Promise<Detection[]>; destroy(): void };
 type Translator = { translate(text: string, options: { signal: AbortSignal }): Promise<string>; destroy(): void };
 type Pair = { sourceLanguage: string; targetLanguage: Locale };
+type ModelOptions = {
+  signal: AbortSignal;
+  monitor?: (monitor: { addEventListener(type: "downloadprogress", listener: (event: { loaded: number }) => void): void }) => void;
+};
 
 export type BrowserLanguageTools = {
   LanguageDetector?: {
     availability(): Promise<Availability>;
-    create(options: { signal: AbortSignal }): Promise<Detector>;
+    create(options: ModelOptions): Promise<Detector>;
   };
   Translator?: {
     availability(pair: Pair): Promise<Availability>;
-    create(options: Pair & { signal: AbortSignal }): Promise<Translator>;
+    create(options: Pair & ModelOptions): Promise<Translator>;
   };
 };
 
 export type BeginDownload = <T>(model: "detector" | "translator", create: () => Promise<T>, modelId: string) => Promise<T>;
-export type TranslationResult = { strings: Map<string, string>; needsSource: boolean };
+export type TranslationResult = { strings: Map<string, string>; needsSource: boolean; incomplete: boolean; canRetry: boolean };
 
 async function openModel<T>(
   availability: Availability, model: "detector" | "translator", create: () => Promise<T>, beginDownload: BeginDownload, modelId: string,
@@ -67,34 +71,50 @@ function likelyLanguage(text: string): string | undefined {
   if (english >= 2 && english > french) return "en";
 }
 
+function isShortLatinPhrase(text: string) {
+  return /\p{Script=Latin}/u.test(text) && !/\p{Script=Han}/u.test(text) && (text.match(/\p{L}+/gu)?.length ?? 0) < 4;
+}
+
 // All models and results live only for this view. Cook-authored strings never leave the browser.
 export async function translateRecipe(
   browser: BrowserLanguageTools, texts: readonly string[], target: Locale, signal: AbortSignal, beginDownload: BeginDownload,
   fallbackSource?: Locale, onTranslatedPair?: (strings: ReadonlyMap<string, string>) => void,
+  onDownloadProgress?: (fraction: number) => void,
 ): Promise<TranslationResult | null> {
   const { LanguageDetector, Translator } = browser;
   signal.throwIfAborted();
-  if (!Translator) return null;
-
   const entries = [...new Set(texts.filter(text => /\p{L}/u.test(text)))];
   const translated = new Map<string, string>();
-  if (!entries.length) return { strings: translated, needsSource: false };
+  if (!entries.length) return { strings: translated, needsSource: false, incomplete: false, canRetry: false };
+  if (!Translator) return null;
 
+  const options: ModelOptions = { signal };
+  if (onDownloadProgress) {
+    options.monitor = monitor => monitor.addEventListener("downloadprogress", event => onDownloadProgress(event.loaded));
+  }
   let detector: Detector | null = null;
   const sample = entries.map(text => text.slice(0, 400)).join("\n").slice(0, 1800);
   const inferred = likelyLanguage(sample);
-  if (LanguageDetector) {
+  if (!fallbackSource && LanguageDetector && !isShortLatinPhrase(sample)) {
     try {
       const availability = await LanguageDetector.availability();
       // Skip an optional detector download when the recipe language is already clear.
-      if (availability === "available" || (!inferred && !fallbackSource)) {
-        detector = await openModel(availability, "detector", () => LanguageDetector.create({ signal }), beginDownload, "detector");
+      if (availability === "available" || !inferred) {
+        detector = await openModel(availability, "detector", () => LanguageDetector.create(options), beginDownload, "detector");
       }
     } catch {
       signal.throwIfAborted();
     }
   }
-  async function detect(text: string) {
+  async function detect(text: string, context?: string) {
+    const hint = likelyLanguage(text);
+    // Chrome's detector is unreliable on single words and short phrases. Prefer
+    // the surrounding recipe for ambiguous Latin labels such as "roux".
+    if (isShortLatinPhrase(text)) {
+      if (hint && hint !== "other") return hint;
+      if (context === "en" || context === "fr") return context;
+      return undefined;
+    }
     if (detector) {
       try {
         const detected = language((await detector.detect(text, { signal }))[0]);
@@ -103,21 +123,27 @@ export async function translateRecipe(
         signal.throwIfAborted();
       }
     }
-    return likelyLanguage(text);
+    return hint ?? context;
   }
   const groups = new Map<string, string[]>();
   let needsSource = false;
+  let incomplete = false;
+  let canRetry = false;
   try {
     // Short titles and ingredient notes often need the context of the surrounding recipe.
     const context = fallbackSource ?? await detect(sample);
     for (const text of entries) {
       signal.throwIfAborted();
-      const source = await detect(text.slice(0, 1500)) ?? context;
+      const source = fallbackSource ?? (text === sample ? context : await detect(text.slice(0, 1500), context));
       if (!source) {
         needsSource = true;
         continue;
       }
-      if (!["en", "fr", "zh", "zh-Hant"].includes(source) || source.split("-")[0] === target) continue;
+      if (source === target) continue;
+      if (source === "other") {
+        incomplete = true;
+        continue;
+      }
       const existing = groups.get(source);
       if (existing) existing.push(text);
       else groups.set(source, [text]);
@@ -126,32 +152,40 @@ export async function translateRecipe(
     detector?.destroy();
   }
 
-  let completed = false;
   for (const [sourceLanguage, strings] of groups) {
     signal.throwIfAborted();
     const pair = { sourceLanguage, targetLanguage: target };
-    const translator = await openModel(await Translator.availability(pair), "translator",
-      () => Translator.create({ ...pair, signal }), beginDownload, sourceLanguage + ":" + target);
-    if (!translator) continue;
-
+    let translator: Translator | null = null;
     try {
+      translator = await openModel(await Translator.availability(pair), "translator",
+        () => Translator.create({ ...pair, ...options }), beginDownload, sourceLanguage + ":" + target);
+      if (!translator) {
+        incomplete = true;
+        continue;
+      }
       for (const text of strings) {
         signal.throwIfAborted();
         try {
           const result = await translator.translate(text, { signal });
           if (result.trim()) {
-            completed = true;
             if (result !== text) translated.set(text, result);
-          }
-        } catch {
+          } else incomplete = true;
+        } catch (error) {
           // A field can exceed the model's input limit; continue with the other fields.
           signal.throwIfAborted();
+          incomplete = true;
+          if (!(error instanceof DOMException && error.name === "QuotaExceededError")) canRetry = true;
         }
       }
+    } catch {
+      // One unavailable language pack should not prevent translating the next pair.
+      signal.throwIfAborted();
+      incomplete = true;
+      canRetry = true;
     } finally {
-      translator.destroy();
+      translator?.destroy();
     }
     if (translated.size) onTranslatedPair?.(translated);
   }
-  return groups.size && !completed ? null : { strings: translated, needsSource };
+  return { strings: translated, needsSource, incomplete, canRetry };
 }

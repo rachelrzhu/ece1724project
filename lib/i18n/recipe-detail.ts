@@ -27,11 +27,7 @@ export const detailMessages = {
   ],
   "Your dietary flags": ["饮食提醒", "Vos alertes alimentaires"],
   "Known conflicts": ["已知冲突", "Incompatibilités connues"],
-  "No known conflicts in mapped ingredients.": ["已识别的食材中没有已知冲突。", "Aucune incompatibilité connue parmi les ingrédients répertoriés."],
   ...ingredientWarningMessages,
-  "Flags use recorded ingredient information. Check product labels and preparation for possible cross-contact.": [
-    "提醒依据已记录的食材信息。请查看产品标签，并注意制作过程中可能发生的交叉接触。", "Ces alertes reposent sur les données disponibles. Vérifiez les étiquettes et les conditions de préparation pour évaluer les risques de contact croisé.",
-  ],
   "Contains meat or seafood": ["含肉类或海鲜", "Contient de la viande ou des produits de la mer"],
   "Contains an animal-derived ingredient": ["含动物来源的食材", "Contient un ingrédient d’origine animale"],
   "Contains milk": ["含乳类", "Contient du lait"],

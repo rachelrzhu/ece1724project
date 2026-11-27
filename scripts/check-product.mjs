@@ -33,7 +33,11 @@ const title = "Smoketest " + runId;
 const ingredient = "Cocoa " + runId;
 const copyTitle = "Personal recipe " + runId;
 const fixture = await readFile(new URL("../tests/fixtures/storage-sample.png", import.meta.url));
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.argv.includes("--chrome") ? {
+  channel: "chrome",
+  // Chrome installs its on-device language packs through the component updater.
+  ignoreDefaultArgs: ["--disable-component-update", "--disable-background-networking"],
+} : {});
 const [ownerContext, readerContext, guestContext] = await Promise.all(
   Array.from({ length: 3 }, () => createContext()),
 );
