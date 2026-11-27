@@ -1,0 +1,29 @@
+flowchart TB
+    accTitle: Project development process
+    accDescr: Rachel and Grace agreed on the cooking use case and service contracts. They built the backend and frontend in parallel, then integrated and tested their work. Presentation and final delivery are planned milestones.
+    subgraph engineering["Design and implementation"]
+        direction LR
+        scope["Define the cooking use case<br/>and choose the MVP"]
+        contract["Agree on data, permissions<br/>and service contracts"]
+        back["Rachel · backend<br/>Prisma, auth, photos, scaling math"]
+        front["Grace · frontend<br/>Recipe screens and Redux controls"]
+        integrated["Integrate the recipe workflow"]
+        scope --> contract
+        contract --> back & front
+        back & front --> integrated
+    end
+    subgraph delivery["Verification and planned delivery"]
+        direction LR
+        verify["Run unit, migration and<br/>two-account browser tests"]
+        fixes["Fix defects"]
+        demo["Nov 26 milestone<br/>Freeze the demo and slides"]
+        finalWork["Verify clean setup, finish the<br/>report and record the demo"]
+        submit["Dec 6 milestone<br/>Submit final project"]
+        verify -->|"failure"| fixes
+        fixes -->|"retest"| verify
+        verify -->|"pass"| demo
+        demo --> finalWork --> submit
+    end
+    engineering --> delivery
+    classDef milestone fill:#edf4eb,stroke:#5c8057,color:#18351f
+    class demo,submit milestone

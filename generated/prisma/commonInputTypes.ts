@@ -199,6 +199,11 @@ export type EnumIngredientDietFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumIngredientDietFilter<$PrismaModel> | $Enums.IngredientDiet
 }
 
+export type BoolNullableFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedBoolNullableFilter<$PrismaModel> | boolean | null
+}
+
 export type EnumIngredientDietWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.IngredientDiet | Prisma.EnumIngredientDietFieldRefInput<$PrismaModel>
   in?: $Enums.IngredientDiet[] | Prisma.ListEnumIngredientDietFieldRefInput<$PrismaModel>
@@ -207,6 +212,14 @@ export type EnumIngredientDietWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumIngredientDietFilter<$PrismaModel>
   _max?: Prisma.NestedEnumIngredientDietFilter<$PrismaModel>
+}
+
+export type BoolNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedBoolNullableWithAggregatesFilter<$PrismaModel> | boolean | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolNullableFilter<$PrismaModel>
 }
 
 export type EnumAllergenFilter<$PrismaModel = never> = {
@@ -591,6 +604,11 @@ export type NestedEnumIngredientDietFilter<$PrismaModel = never> = {
   not?: Prisma.NestedEnumIngredientDietFilter<$PrismaModel> | $Enums.IngredientDiet
 }
 
+export type NestedBoolNullableFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedBoolNullableFilter<$PrismaModel> | boolean | null
+}
+
 export type NestedEnumIngredientDietWithAggregatesFilter<$PrismaModel = never> = {
   equals?: $Enums.IngredientDiet | Prisma.EnumIngredientDietFieldRefInput<$PrismaModel>
   in?: $Enums.IngredientDiet[] | Prisma.ListEnumIngredientDietFieldRefInput<$PrismaModel>
@@ -599,6 +617,14 @@ export type NestedEnumIngredientDietWithAggregatesFilter<$PrismaModel = never> =
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumIngredientDietFilter<$PrismaModel>
   _max?: Prisma.NestedEnumIngredientDietFilter<$PrismaModel>
+}
+
+export type NestedBoolNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedBoolNullableWithAggregatesFilter<$PrismaModel> | boolean | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumAllergenFilter<$PrismaModel = never> = {

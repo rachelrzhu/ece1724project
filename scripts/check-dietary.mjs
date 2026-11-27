@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { isDeepStrictEqual } from "node:util";
 
 const mappedIngredient = "milk chocolate with peanuts";
+const ingredientWarning = "Some ingredients are unrecognized. Please check the ingredient list before cooking.";
 
 async function readPreferences(page) {
   await page.goto("/account");
   const pattern = page.getByLabel("Dietary pattern", { exact: true });
   await pattern.waitFor();
-  const group = page.getByRole("group", { name: "Allergens to flag", exact: true });
-  const allergens = await group.locator('input[type="checkbox"]:checked')
+  const form = page.getByRole("form", { name: "Dietary preferences", exact: true });
+  const allergens = await form.locator('input[name="allergens"]:checked')
     .evaluateAll((inputs) => inputs.map((input) => input.value).sort());
   return { pattern: await pattern.inputValue(), allergens };
 }
@@ -17,8 +18,8 @@ async function savePreferences(page, preferences) {
   await page.goto("/account");
   const select = page.getByLabel("Dietary pattern", { exact: true });
   await select.selectOption(preferences.pattern);
-  const group = page.getByRole("group", { name: "Allergens to flag", exact: true });
-  const choices = await group.getByRole("checkbox").all();
+  const form = page.getByRole("form", { name: "Dietary preferences", exact: true });
+  const choices = await form.getByRole("checkbox").all();
   for (const choice of choices) {
     const value = await choice.getAttribute("value");
     await choice.setChecked(preferences.allergens.includes(value));
@@ -57,7 +58,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
   const applyFilters = (page) => page.getByRole("button", { name: "Apply filters", exact: true }).click();
 
   try {
-    await savePreferences(reader, { pattern: "VEGAN", allergens: ["MILK", "PEANUT"] });
+    await savePreferences(reader, { pattern: "VEGAN", allergens: ["MILK", "MUSTARD", "PEANUT"] });
     assert(isDeepStrictEqual(await readPreferences(owner), otherProfile), "Editing preferences changed the other account.");
     await guest.goto("/account");
     assert.equal(await guest.getByLabel("Dietary pattern", { exact: true }).count(), 0);
@@ -65,9 +66,9 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
 
     await reader.goto(detail);
     const flags = reader.getByRole("region", { name: "Your dietary flags", exact: true });
-    await flags.getByRole("heading", { name: "Incomplete ingredient information", exact: true }).waitFor();
-    await flags.getByText(ingredient, { exact: true }).waitFor();
-    await reader.getByText("No known conflicts in mapped ingredients.", { exact: true }).waitFor();
+    await flags.getByText(ingredientWarning, { exact: true }).waitFor();
+    assert.equal(await flags.getByText(ingredient, { exact: true }).count(), 0);
+    assert.equal(await flags.innerText(), ingredientWarning);
     await reader.goto(results);
     await openMoreFilters(reader);
     await reader.getByRole("checkbox", { name: "Hide known conflicts", exact: true }).check();
@@ -76,7 +77,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
       && url.searchParams.get("maxMinutes") === "30");
     await reader.reload();
     await link.waitFor();
-    await reader.getByText("1 ingredient with incomplete information", { exact: true }).waitFor();
+    await reader.getByText(ingredientWarning, { exact: true }).waitFor();
     await reader.getByRole("link", { name: "Remove dietary filter", exact: true }).click();
     await reader.waitForURL((url) => !url.searchParams.has("dietary") && url.searchParams.get("maxMinutes") === "30");
     passed("An unmapped ingredient stays visible and marked incomplete when time and dietary filters are combined");
@@ -106,12 +107,17 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     }
     passed("The page language controls ingredient names and preserves allergy flags when showing the original");
     await guest.goto(detail);
-    assert.equal(await guest.getByRole("heading", { name: "Your dietary flags", exact: true }).count(), 0);
+    assert.equal(await guest.getByRole("region", { name: "Your dietary flags", exact: true }).count(), 0);
     await guest.goto(filtered);
     await guest.getByRole("link", { name: title, exact: true }).waitFor();
     await openMoreFilters(guest);
-    await guest.getByRole("checkbox", { name: "Milk", exact: true }).check();
-    await guest.getByRole("checkbox", { name: "Peanuts", exact: true }).check();
+    const common = guest.getByRole("group", { name: "Common allergens to exclude", exact: true });
+    const additional = guest.getByRole("group", { name: "Additional allergens and sensitivities", exact: true });
+    assert.equal(await common.getByRole("checkbox").count(), 9);
+    await additional.getByRole("checkbox", { name: "Mustard", exact: true }).waitFor();
+    await additional.getByRole("checkbox", { name: "Sulphites", exact: true }).waitFor();
+    await common.getByRole("checkbox", { name: "Milk", exact: true }).check();
+    await common.getByRole("checkbox", { name: "Peanuts", exact: true }).check();
     await applyFilters(guest);
     await noMatch(guest).waitFor();
     assert.deepEqual(new URL(guest.url()).searchParams.getAll("allergen"), ["MILK", "PEANUT"]);
@@ -147,6 +153,7 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
       { pattern: "NONE", allergens: ["MILK"] },
       { pattern: "NONE", allergens: ["PEANUT"] },
       { pattern: "VEGAN", allergens: [] },
+      { pattern: "DAIRY_FREE", allergens: [] },
     ]) {
       await savePreferences(reader, profile);
       await reader.goto(filtered);
@@ -156,11 +163,11 @@ export async function checkDietaryPreferences({ owner, reader, guest, title, det
     await savePreferences(reader, { pattern: "VEGETARIAN", allergens: [] });
     await reader.goto(filtered);
     await link.waitFor();
-    await reader.getByText("1 ingredient with incomplete information", { exact: true }).waitFor();
+    await reader.getByText(ingredientWarning, { exact: true }).waitFor();
     await clearPreferences(reader);
     assert(isDeepStrictEqual(await readPreferences(owner), otherProfile), "Clearing preferences changed the other account.");
     await editIngredient(owner, detail, ingredient);
-    passed("Milk, peanuts and a vegan pattern each hide the conflicting recipe; a vegetarian pattern keeps it");
+    passed("Milk, peanut, vegan and dairy-free preferences each hide the conflicting recipe. A vegetarian preference keeps it");
   } finally {
     // A failed navigation on the test tab must not interrupt restoring a local cook's settings.
     const restore = await reader.context().newPage();

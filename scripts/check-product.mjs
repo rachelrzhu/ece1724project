@@ -33,7 +33,11 @@ const title = "Smoketest " + runId;
 const ingredient = "Cocoa " + runId;
 const copyTitle = "Personal recipe " + runId;
 const fixture = await readFile(new URL("../tests/fixtures/storage-sample.png", import.meta.url));
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.argv.includes("--chrome") ? {
+  channel: "chrome",
+  // Chrome installs its on-device language packs through the component updater.
+  ignoreDefaultArgs: ["--disable-component-update", "--disable-background-networking"],
+} : {});
 const [ownerContext, readerContext, guestContext] = await Promise.all(
   Array.from({ length: 3 }, () => createContext()),
 );
@@ -251,6 +255,13 @@ try {
   await reader.reload();
   assert.equal(await list.getAttribute("aria-current"), "page");
 
+  await reader.getByText("24 per page", { exact: true }).click();
+  const pageSizes = reader.getByRole("navigation", { name: "Recipes per page", exact: true });
+  assert.deepEqual(await pageSizes.getByRole("link").allTextContents(), ["12", "24", "48", "96"]);
+  await pageSizes.getByRole("link", { name: "12", exact: true }).click();
+  await reader.waitForURL((url) => url.searchParams.get("pageSize") === "12"
+    && url.searchParams.get("view") === "list" && url.searchParams.get("q") === title);
+
   const readyIn = reader.getByRole("spinbutton", { name: "Ready in", exact: true });
   const submitSearch = reader.getByRole("button", { name: "Search", exact: true });
   await readyIn.fill("29");
@@ -263,6 +274,8 @@ try {
   await reader.reload();
   assert.equal(await readyIn.inputValue(), "30");
   assert.equal(await list.getAttribute("aria-current"), "page");
+  await reader.getByText("12 per page", { exact: true }).waitFor();
+  passed("Recipe collections default to 24 per page and retain the selected page size through filtering and refresh");
 
   const like = reader.getByRole("button", { name: "Like " + title, exact: true });
   const dislike = reader.getByRole("button", { name: "Dislike " + title, exact: true });

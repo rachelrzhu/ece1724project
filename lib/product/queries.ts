@@ -6,6 +6,7 @@ import { getDatabase } from "@/lib/db/client";
 import { readSession } from "@/lib/auth/server";
 import { readDietaryContext } from "@/lib/dietary/server";
 import { publicAvatarImage } from "@/lib/product/avatar";
+import { parseRecipePageSize } from "@/lib/product/pagination";
 import type { ExploreAllergenFilter } from "@/lib/dietary/policy";
 import { visibleRecipeWhere } from "@/lib/recipes/access";
 import { getPublishedSource, publishedRecipeIdsReadyWithin } from "@/lib/recipes/published-sources";
@@ -26,7 +27,6 @@ const cardSelect = {
   coverFileId: true,
   author: { select: publicCookSelect },
 } as const;
-export const recipePageSize = 6;
 
 export type RecipeSort = "recent" | "likes" | "saved";
 export type ReactionSummary = { likes: number; dislikes: number; viewerLikes: boolean | null };
@@ -60,6 +60,7 @@ const matchingIngredientNames = cache(async (text: string) => {
 export async function listRecipes({
   query = "",
   page = 1,
+  pageSize: requestedPageSize,
   collection = "explore",
   authorId,
   difficulty,
@@ -70,6 +71,7 @@ export async function listRecipes({
 }: {
   query?: string;
   page?: number;
+  pageSize?: number | string;
   collection?: string;
   authorId?: string;
   difficulty?: RecipeDifficulty;
@@ -100,6 +102,7 @@ export async function listRecipes({
   ])];
   const viewer = session?.user.id ?? null;
   const pageNumber = Number.isFinite(page) ? Math.max(1, Math.floor(page)) : 1;
+  const pageSize = parseRecipePageSize(requestedPageSize);
   const where = {
     AND: [
       ...(maxMinutes === undefined ? [] : [{
@@ -153,15 +156,15 @@ export async function listRecipes({
       where,
       select,
       orderBy,
-      skip: (page - 1) * recipePageSize,
-      take: recipePageSize,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     });
   }
   const [firstPageRows, total] = await Promise.all([
     pageNumber === 1 ? readPage(1) : null,
     db.recipe.count({ where }),
   ]);
-  const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / recipePageSize)));
+  const boundedPage = Math.min(pageNumber, Math.max(1, Math.ceil(total / pageSize)));
   const rows = firstPageRows ?? await readPage(boundedPage);
   const recipeIds = rows.map(row => row.id);
   const [reactions, saved] = await Promise.all([
@@ -179,6 +182,7 @@ export async function listRecipes({
   return {
     total,
     page: boundedPage,
+    pageSize,
     rows: rows.map(({ ingredients, ...recipe }) => {
       const source = getPublishedSource(recipe.id);
       const minutes = recipe.prepMinutes + recipe.cookMinutes;

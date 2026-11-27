@@ -1,0 +1,22 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"23px","primaryTextColor":"#191D24","lineColor":"#657896","edgeLabelBackground":"#FFFFFF","background":"#FFFFFF"},"flowchart":{"htmlLabels":true,"curve":"linear","nodeSpacing":62,"rankSpacing":64,"padding":24,"wrappingWidth":390}}}%%
+flowchart LR
+    %% Sources: app/actions.ts, lib/auth/server.ts, lib/storage/image.ts, app/api/images/[id]/route.ts, lib/db/client.ts, lib/storage/blob.ts, docs/deployment.md
+    accTitle: From My Kitchen hosted architecture
+    accDescr: The React interface scales each open recipe in a local Redux store. On Vercel, Next.js Server Components read and render recipes. Server Actions use Zod to validate recipe edits and save them. Route Handlers delegate sign-in to Better Auth and check image access before streaming photos. Sharp inspects uploaded images. Prisma ORM reads and writes recipe and account records in Neon PostgreSQL. The server stores photo bytes in private Vercel Blob.
+
+    browser["<b>React in the browser</b><br/><br/>Browse and edit recipes<br/>Scale ingredients locally"]
+    server["<b>Next.js on Vercel</b><br/><br/><b>Server Components</b><br/>Read and render recipes<br/><br/><b>Server Actions</b><br/>Validate and save edits<br/><br/><b>Route Handlers</b><br/>Handle sign-in and serve images"]
+    database[("<b>Neon PostgreSQL</b><br/><br/>Recipes, accounts, sessions<br/>and image metadata")]
+    photos[("<b>Private Vercel Blob</b><br/><br/>Uploaded cover photos<br/>and profile images")]
+
+    browser <-->|HTTPS| server
+    server <-->|Prisma ORM<br/>Reads and writes| database
+    server <-->|Blob SDK| photos
+
+    classDef client fill:#FFFFFF,stroke:#657896,stroke-width:2px,color:#191D24
+    classDef app fill:#203E86,stroke:#203E86,stroke-width:2px,color:#FFFFFF
+    classDef store fill:#EDF2FC,stroke:#657896,stroke-width:2px,color:#191D24
+    class browser client
+    class server app
+    class database,photos store
+    linkStyle default stroke:#657896,stroke-width:2px

@@ -1,0 +1,26 @@
+%%{init: {"theme":"base","themeVariables":{"fontFamily":"Arial, sans-serif","fontSize":"23px","primaryTextColor":"#191D24","lineColor":"#657896","edgeLabelBackground":"#FFFFFF","background":"#FFFFFF"},"flowchart":{"htmlLabels":true,"curve":"linear","nodeSpacing":32,"rankSpacing":58,"padding":22,"wrappingWidth":340}}}%%
+flowchart LR
+    %% Sources: app/recipes/[id]/page.tsx, app/recipes/_components/scaling-workspace.tsx, lib/recipes/scaling-workspace.ts, lib/i18n/on-device.ts, lib/i18n/index.ts, lib/product/queries.ts
+    accTitle: From My Kitchen browser architecture
+    accDescr: Next.js supplies the React view with the recipe and site language. A Redux Toolkit store and TypeScript scaling engine update ingredient quantities locally. Bundled messages localize the interface and catalog records supply ingredient names. The browser can translate cook-authored text on device using the Translator API. Source language comes from detection, local language cues, or the reader's choice. Original text remains available when translation cannot run.
+
+    page["<b>React recipe view</b><br/><br/>Recipe data and site language<br/>from Next.js"]
+    scaling["<b>Per-recipe scaling workspace</b><br/><br/>Redux Toolkit manages state<br/>TypeScript scales quantities"]
+    labels["<b>UI and ingredient labels</b><br/><br/>Bundled interface messages<br/>Catalog translations for names"]
+    translation["<b>On-device translation</b><br/><br/>Browser Translator API<br/>Optional LanguageDetector API"]
+
+    preview["<b>Live quantity preview</b><br/><br/>Scale by servings or by<br/>an ingredient on hand"]
+    languages["<b>Localized labels</b><br/><br/>English, French or Chinese"]
+    prose["<b>Cook-authored text</b><br/><br/>Display translated text when available<br/>or keep the original"]
+
+    page --> scaling --> preview
+    page --> labels --> languages
+    page --> translation --> prose
+
+    classDef client fill:#203E86,stroke:#203E86,stroke-width:2px,color:#FFFFFF
+    classDef feature fill:#EDF2FC,stroke:#657896,stroke-width:2px,color:#191D24
+    classDef result fill:#FFFFFF,stroke:#657896,stroke-width:2px,color:#191D24
+    class page client
+    class scaling,labels,translation feature
+    class preview,languages,prose result
+    linkStyle default stroke:#657896,stroke-width:2px

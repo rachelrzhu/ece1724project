@@ -5,7 +5,12 @@ import { useLocale } from "@/app/_components/language-provider";
 import { Button } from "@/app/_components/material";
 import { useState, useTransition } from "react";
 import { saveDietaryPreferences } from "@/app/dietary-actions";
-import { allergenChoices, dietChoices, type DietaryPreferences } from "@/lib/dietary/policy";
+import { additionalAllergenChoices, commonAllergenChoices, dietChoices, type DietaryPreferences } from "@/lib/dietary/policy";
+
+const allergenGroups = [
+  { legend: "Common allergens to flag", choices: commonAllergenChoices },
+  { legend: "Additional allergens and sensitivities", choices: additionalAllergenChoices },
+] as const;
 
 export default function DietaryPreferencesForm({ preferences }: { preferences: DietaryPreferences }) {
   const t = accountText(useLocale());
@@ -46,23 +51,25 @@ export default function DietaryPreferencesForm({ preferences }: { preferences: D
             {dietChoices.map(({ value, label }) => <option key={value} value={value}>{t(label)}</option>)}
           </select>
         </div>
-        <fieldset className="min-w-0">
-          <legend className="mb-1 font-semibold">{t("Allergens to flag")}</legend>
-          <div className="grid grid-cols-2 gap-x-3">
-            {allergenChoices.map(({ value, label }) => (
-              <label key={value} className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
-                <input type="checkbox" name="allergens" value={value} className="size-4 shrink-0 accent-brand"
-                  checked={draft.allergens.includes(value)} onChange={(event) => {
-                    const allergens = event.currentTarget.checked
-                      ? [...draft.allergens, value]
-                      : draft.allergens.filter((entry) => entry !== value);
-                    setDraft({ ...draft, allergens });
-                  }} />
-                {t(label)}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        {allergenGroups.map(({ legend, choices }) => (
+          <fieldset key={legend} className="min-w-0">
+            <legend className="mb-1 font-semibold">{t(legend)}</legend>
+            <div className="grid grid-cols-2 gap-x-3">
+              {choices.map(({ value, label }) => (
+                <label key={value} className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+                  <input type="checkbox" name="allergens" value={value} className="size-4 shrink-0 accent-brand"
+                    checked={draft.allergens.includes(value)} onChange={(event) => {
+                      const allergens = event.currentTarget.checked
+                        ? [...draft.allergens, value]
+                        : draft.allergens.filter((entry) => entry !== value);
+                      setDraft({ ...draft, allergens });
+                    }} />
+                  {t(label)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))}
         <p className="text-sm text-subtle">{t("Ingredient records can be incomplete. Check product labels and preparation for possible cross-contact.")}</p>
         <div className="flex flex-wrap gap-2">
           <Button type="submit" className="min-h-11" disabled={pending}>{t(pending ? "Saving…" : "Save preferences")}</Button>
